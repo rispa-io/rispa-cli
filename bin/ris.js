@@ -7,6 +7,9 @@ const fs = require('fs')
 const path = require('path')
 const { prompt } = require('inquirer')
 
+const ACTIVATORS_CACHE_PATH = '../build/activators.json';
+const LERNA_JSON_PATH = '../lerna.json';
+
 let packageName = process.argv[2]
 let command = process.argv[3]
 const args = process.argv.slice(4)
@@ -50,6 +53,7 @@ function runInSinglePackage(packageName, packages, command, args, useYarn) {
   const callScriptStrategy = callScript(useYarn)
 
   if (!packageInfo) {
+
     console.log(`Can't find package with name: ${packageName}.\n`)
 
     selectPackage(packages).then(async ({ packageName }) => {
@@ -61,6 +65,7 @@ function runInSinglePackage(packageName, packages, command, args, useYarn) {
       process.exit(result)
     }).catch(handleError);
   } else if (packageInfo.commands.indexOf(command) === -1) {
+
     console.log(`Can't find command "${command}" in package with name: ${packageName}.\n`)
 
     selectCommand(packageInfo.commands).then(({ command }) => {
@@ -94,16 +99,48 @@ function runInSinglePackage(packageName, packages, command, args, useYarn) {
 }
 
 function scanPackages() {
-  const cache = requireIfExist('../build/activators.json')
+  const cache = requireIfExist(ACTIVATORS_CACHE_PATH)
+  const lernaJson = requireIfExist(LERNA_JSON_PATH)
 
-  const lernaJson = requireIfExist('../lerna.json')
-  const packagePaths = ['node_modules/*'].concat(lernaJson && lernaJson.packages ? lernaJson.packages : [])
+  const packageScanPaths = ['node_modules/*'].concat(lernaJson && lernaJson.packages ? lernaJson.packages : [])
+  const packagesByPaths = packageScanPaths.reduce((result, path) => {
+    const packages = cache && cache.paths[path] ?
+      findPackagesByPathFromCache(path, cache) :
+      findPackagesByPath(path)
 
-  const packages = packagePaths
-    .map(path => cache && cache.paths[path] ? findPackagesByPathFromCache(path, cache) : findPackagesByPath(path))
-    .reduce((result, currentResult) => Object.assign(result, currentResult))
+    result[path] = packages;
+    return result;
+  }, {})
+  const packages = Object.keys(packagesByPaths).reduce((result, path) => Object.assign(result, packagesByPaths[path]), {})
+
+  saveCache(packagesByPaths, packages)
 
   return packages;
+}
+
+function saveCache(packagesByPaths, packages) {
+  const cachePath = path.resolve(__dirname, ACTIVATORS_CACHE_PATH)
+  const cacheDirPath = path.dirname(cachePath)
+
+  if (!fs.existsSync(cacheDirPath)) {
+    fs.mkdirSync(cacheDirPath)
+  }
+
+  fs.writeFileSync(cachePath, JSON.stringify({
+    paths: Object.keys(packagesByPaths)
+      .reduce((result, path) => {
+        const packages = packagesByPaths[path]
+        result[path] = Object.keys(packages).filter((key, idx, keys) => keys.indexOf(packages[key].name) === idx)
+        return result
+      }, {}),
+
+    packages: Object.keys(packages)
+      .filter((key, idx, keys) => keys.indexOf(packages[key].name) === idx)
+      .reduce((result, key) => {
+        result[key] = packages[key]
+        return result
+      }, {})
+  }, null, 2))
 }
 
 function findPackagesByPathFromCache(path, cache) {
