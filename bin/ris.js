@@ -2,15 +2,18 @@
 'use strict';
 
 const spawn = require('cross-spawn')
-const fs = require('fs')
 const glob = require('glob')
+const fs = require('fs')
 const path = require('path')
+const { prompt } = require('inquirer')
 
-const packageName = process.argv[2]
-const command = process.argv[3]
+let packageName = process.argv[2]
+let command = process.argv[3]
 const args = process.argv.slice(4)
 
-const lernaJson = requireIfExist("../lerna.json");
+const useYarn = fs.existsSync('../yarn.lock')
+
+const lernaJson = requireIfExist('../lerna.json')
 
 const packagePaths = ['node_modules/*'].concat(lernaJson && lernaJson.packages ? lernaJson.packages : [])
 
@@ -21,7 +24,9 @@ const packages = packagePaths.map(packagePath =>
       return result
     }
 
+    const name = packageJson['name']
     const rispaName = packageJson['rispa:name']
+
     if (packageName === 'all' && !(packageJson.scripts && command in packageJson.scripts)) {
       return result
     }
@@ -29,7 +34,8 @@ const packages = packagePaths.map(packagePath =>
     const packageInfo = {
       path: packageFolder,
       alias: rispaName,
-      name: packageJson['name']
+      name: name,
+      commands: Object.keys(packageJson.scripts)
     }
 
     if (rispaName) {
@@ -42,57 +48,69 @@ const packages = packagePaths.map(packagePath =>
   }, {})
 ).reduce((result, currentResult) => Object.assign(result, currentResult))
 
-if (packages !== 'all' && !packages[packageName]) {
-  console.log(`Can't find package with name: ${packageName}.\n\nList of available packages:`)
-  printPackages(packages);
+if (packageName === 'all') {
+  const result = callScriptList(packages, command, args)
+  process.exit(result)
+} else if (!packages[packageName]) {
+  console.log(`Can't find package with name: ${packageName}.\n`)
 
-  process.exit(1)
-}
+  selectPackage(packages).then(async ({ packageName }) => {
+    const packageInfo = packages[packageName]
 
-const result = callScript(packageName, packages, command, args)
-process.exit(result)
+    const { command } = await selectCommand(packageInfo.commands)
 
-function printPackages(packages) {
-  Object.keys(packages).forEach((key) => {
-    const { alias, name } = packages[key];
-
-    if (alias === key) {
-      console.log(` - ${alias} - alias for ${name}`)
-    } else {
-      console.log(` - ${name}`);
-    }
+    const result = callScript(packages[packageName], command, args)
+    process.exit(result)
+  }).catch(e => {
+    console.log(e)
+    process.exit(1)
   });
+} else {
+  const result = callScript(packages[packageName], command, args)
+  process.exit(result)
 }
 
-function callScript(packageName, packages, command, args) {
-  if (packageName === 'all') {
-    return Object.values(packages).reduce((result, packageInfo) => {
-      const res = spawn.sync(
-        'yarn',
-        [command].concat(args),
-        {
-          cwd: packageInfo.path,
-          stdio: 'inherit',
-        })
-      return res.status || result
-    }, 0)
-  } else {
-    return spawn.sync(
-      'yarn',
-      [command].concat(args),
-      {
-        cwd: packages[packageName].path,
-        stdio: 'inherit',
-      }
-    ).status
-  }
+function selectPackage(packages) {
+  return prompt([{
+    type: 'list',
+    name: 'packageName',
+    message: 'Select available package:',
+    paginated: true,
+    choices: [...new Set(Object.keys(packages).map((key) => packages[key]))]
+  }])
+}
+
+function selectCommand(commands) {
+  return prompt([{
+    type: 'list',
+    name: 'command',
+    message: 'Select available command:',
+    paginated: true,
+    choices: commands
+  }])
+}
+
+function callScriptList(packages, command, args) {
+  return Object.values(packages)
+    .reduce((result, packageInfo) => callScript(packageInfo, command, args) || result, 0)
+}
+
+function callScript(packageInfo, command, args) {
+  return spawn.sync(
+    useYarn ? 'yarn' : "npm",
+    [...(useYarn ? [] : ["run"]), command].concat(args),
+    {
+      cwd: packageInfo.path,
+      stdio: 'inherit',
+    }
+  ).status
 }
 
 function requireIfExist(id) {
   try {
     return require(id)
   } catch (e) {
-    if (e instanceof Error && e.code === "MODULE_NOT_FOUND") {
+    if (e instanceof Error && e.code === 'MODULE_NOT_FOUND') {
       return null
     }
     throw e;

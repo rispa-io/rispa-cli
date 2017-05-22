@@ -24,6 +24,7 @@
   "homepage": "https://github.com/rispa-io/rispa-cli#readme",
   "dependencies": {
     "cross-spawn": "^5.1.0",
-    "glob": "^7.1.2"
+    "glob": "^7.1.2",
+    "inquirer": "^3.0.6"
   }
 }
