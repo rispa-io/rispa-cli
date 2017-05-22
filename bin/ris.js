@@ -37,16 +37,16 @@ function callScript(packageName, packageNames, command, args){
   if (packageName === 'all') {
     return Object.values(packageNames).reduce( (result, path) => {
       const res = spawn.sync(
-       'yarn',
-       [command].concat(args),
-       {
-         cwd: path,
-         stdio: 'inherit'
-       })
-       return res.status || result
-   }, 0 )
-   } else {
-     return spawn.sync(
+        'yarn',
+        [command].concat(args),
+        {
+          cwd: path,
+          stdio: 'inherit'
+        })
+      return res.status || result
+    }, 0 )
+  } else {
+    return spawn.sync(
       'yarn',
       [command].concat(args),
       {
@@ -54,5 +54,5 @@ function callScript(packageName, packageNames, command, args){
         stdio: 'inherit'
       }
     ).status
-   }
+  }
 }
