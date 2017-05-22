@@ -11,7 +11,7 @@ let packageName = process.argv[2]
 let command = process.argv[3]
 const args = process.argv.slice(4)
 
-const useYarn = fs.existsSync('../yarn.lock')
+const useYarn = fs.existsSync('./yarn.lock')
 
 const lernaJson = requireIfExist('../lerna.json')
 
@@ -48,7 +48,10 @@ const packages = packagePaths.map(packagePath =>
   }, {})
 ).reduce((result, currentResult) => Object.assign(result, currentResult))
 
-if (packageName === 'all') {
+if (!Object.keys(packages).length) {
+  console.log(`Can't find packages.`)
+  process.exit(1)
+} else if (packageName === 'all') {
   const result = callScriptList(packages, command, args)
   process.exit(result)
 } else if (!packages[packageName]) {
@@ -76,7 +79,7 @@ function selectPackage(packages) {
     name: 'packageName',
     message: 'Select available package:',
     paginated: true,
-    choices: [...new Set(Object.keys(packages).map((key) => packages[key]))]
+    choices: [...new Set(Object.keys(packages).map(key => packages[key].name))]
   }])
 }
 
@@ -97,8 +100,8 @@ function callScriptList(packages, command, args) {
 
 function callScript(packageInfo, command, args) {
   return spawn.sync(
-    useYarn ? 'yarn' : "npm",
-    [...(useYarn ? [] : ["run"]), command].concat(args),
+    useYarn ? 'yarn' : 'npm',
+    [...(useYarn ? [] : ['run']), command].concat(args),
     {
       cwd: packageInfo.path,
       stdio: 'inherit',
