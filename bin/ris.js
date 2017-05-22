@@ -13,12 +13,12 @@ const args = process.argv.slice(4)
 
 const useYarn = fs.existsSync('./yarn.lock')
 
-const lernaJson = requireIfExist('../lerna.json')
-const packagePaths = ['node_modules/*'].concat(lernaJson && lernaJson.packages ? lernaJson.packages : [])
+run(packageName, command, args, useYarn);
 
-run(packageName, findPackages(packagePaths), command, args, useYarn);
+function run(packageName, command, args, useYarn) {
 
-function run(packageName, packages, command, args, useYarn) {
+  const packages = scanPackages();
+
   if (!Object.keys(packages).length) {
     console.log(`Can't find packages.`)
     process.exit(1)
@@ -45,7 +45,11 @@ function runInAllPackages(packages, command, args, useYarn) {
 }
 
 function runInSinglePackage(packageName, packages, command, args, useYarn) {
-  if (!packages[packageName]) {
+
+  const packageInfo = packages[packageName]
+  const callScriptStrategy = callScript(useYarn)
+
+  if (!packageInfo) {
     console.log(`Can't find package with name: ${packageName}.\n`)
 
     selectPackage(packages).then(async ({ packageName }) => {
@@ -53,14 +57,18 @@ function runInSinglePackage(packageName, packages, command, args, useYarn) {
 
       const { command } = await selectCommand(packageInfo.commands)
 
-      const result = callScript(packages[packageName], command, args, useYarn)
+      const result = callScriptStrategy(packageInfo, command, args, useYarn)
       process.exit(result)
-    }).catch(e => {
-      console.log(e)
-      process.exit(1)
-    });
+    }).catch(handleError);
+  } else if (packageInfo.commands.indexOf(command) === -1) {
+    console.log(`Can't find command "${command}" in package with name: ${packageName}.\n`)
+
+    selectCommand(packageInfo.commands).then(({ command }) => {
+      const result = callScriptStrategy(packageInfo, command, args, useYarn)
+      process.exit(result)
+    }).catch(handleError);
   } else {
-    const result = callScript(packages[packageName], command, args, useYarn)
+    const result = callScriptStrategy(packageInfo, command, args)
     process.exit(result)
   }
 
@@ -85,33 +93,60 @@ function runInSinglePackage(packageName, packages, command, args, useYarn) {
   }
 }
 
-function findPackages(packagePaths) {
-  return packagePaths.map(packagePath =>
-    glob.sync(packagePath).reduce((result, packageFolder) => {
-      const packageJson = requireIfExist(`../${packageFolder}/package.json`)
-      if (!packageJson || !packageJson['rispa:plugin']) {
-        return result
-      }
+function scanPackages() {
+  const cache = requireIfExist('../build/activators.json')
 
-      const name = packageJson['name']
-      const rispaName = packageJson['rispa:name']
+  const lernaJson = requireIfExist('../lerna.json')
+  const packagePaths = ['node_modules/*'].concat(lernaJson && lernaJson.packages ? lernaJson.packages : [])
 
-      const packageInfo = {
-        path: packageFolder,
-        alias: rispaName,
-        name: name,
-        commands: Object.keys(packageJson.scripts)
-      }
+  const packages = packagePaths
+    .map(path => cache && cache.paths[path] ? findPackagesByPathFromCache(path, cache) : findPackagesByPath(path))
+    .reduce((result, currentResult) => Object.assign(result, currentResult))
 
-      if (rispaName) {
-        result[rispaName] = packageInfo
-      }
+  return packages;
+}
 
-      result[packageInfo.name] = packageInfo
+function findPackagesByPathFromCache(path, cache) {
+  return cache.paths[path].reduce((result, packageName) => {
+    const packageInfo = cache.packages[packageName];
 
+    if (packageInfo.alias) {
+      result[packageInfo.alias] = packageInfo
+    }
+
+    result[packageInfo.name] = packageInfo
+
+    return result
+  }, {})
+}
+
+function findPackagesByPath(path) {
+  return glob.sync(path).reduce((result, packageFolder) => {
+    const packageJson = requireIfExist(`../${packageFolder}/package.json`)
+    if (!packageJson || !packageJson['rispa:plugin']) {
       return result
-    }, {})
-  ).reduce((result, currentResult) => Object.assign(result, currentResult))
+    }
+
+    const name = packageJson['name']
+    const rispaName = packageJson['rispa:name']
+    const activatorPath = `../${packageFolder}/.rispa/activator.js`;
+
+    const packageInfo = {
+      path: packageFolder,
+      alias: rispaName,
+      name: name,
+      commands: Object.keys(packageJson.scripts),
+      activatorPath: fs.existsSync(activatorPath) ? activatorPath : null
+    }
+
+    if (rispaName) {
+      result[rispaName] = packageInfo
+    }
+
+    result[packageInfo.name] = packageInfo
+
+    return result
+  }, {})
 }
 
 function callScriptList(packageInfoList, command, args, useYarn) {
@@ -155,4 +190,9 @@ function requireIfExist(id) {
     }
     throw e;
   }
+}
+
+function handleError(error) {
+  console.log(e)
+  process.exit(1)
 }
