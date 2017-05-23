@@ -1,5 +1,3 @@
-'use strict';
-
 const spawn = require('cross-spawn')
 const fs = require('fs')
 
@@ -27,23 +25,23 @@ function callScriptByNpm(packageInfo, command, args) {
   ).status
 }
 
-module.exports.requireIfExist = (id) => {
+module.exports.requireIfExist = id => {
   try {
     return require(id)
   } catch (e) {
     if (e instanceof Error && e.code === 'MODULE_NOT_FOUND') {
       return null
     }
-    throw e;
+    throw e
   }
 }
 
-module.exports.handleError = (error) => {
+module.exports.handleError = error => {
   console.log(error)
   process.exit(1)
 }
 
-module.exports.callScript = USE_YARN ? callScriptByYarn : callScriptByNpm;
+module.exports.callScript = USE_YARN ? callScriptByYarn : callScriptByNpm
 
 module.exports.callScriptList = (packageInfoList, command, args) => (
   packageInfoList.reduce((result, packageInfo) => callScript(packageInfo, command, args) || result, 0)

@@ -1,15 +1,15 @@
-'use strict';
+
 
 const glob = require('glob')
 const fs = require('fs')
 const path = require('path')
 
-const { requireIfExist } = require('./core');
+const { requireIfExist } = require('./core')
 
-const BASE_PATH = process.cwd();
-const ACTIVATORS_CACHE_PATH = path.resolve(BASE_PATH, './build/activators.json');
-const ACTIVATORS_CACHE_DIR_PATH = path.dirname(ACTIVATORS_CACHE_PATH);
-const LERNA_JSON_PATH = path.resolve(BASE_PATH, './lerna.json');
+const BASE_PATH = process.cwd()
+const ACTIVATORS_CACHE_PATH = path.resolve(BASE_PATH, './build/activators.json')
+const ACTIVATORS_CACHE_DIR_PATH = path.dirname(ACTIVATORS_CACHE_PATH)
+const LERNA_JSON_PATH = path.resolve(BASE_PATH, './lerna.json')
 
 function saveCache(packagesByPaths, packages) {
   if (!fs.existsSync(ACTIVATORS_CACHE_DIR_PATH)) {
@@ -29,13 +29,13 @@ function saveCache(packagesByPaths, packages) {
       .reduce((result, key) => {
         result[key] = packages[key]
         return result
-      }, {})
+      }, {}),
   }, null, 2))
 }
 
 function findPackagesByPathFromCache(path, cache) {
   return cache.paths[path].reduce((result, packageName) => {
-    const packageInfo = cache.packages[packageName];
+    const packageInfo = cache.packages[packageName]
 
     if (packageInfo.alias) {
       result[packageInfo.alias] = packageInfo
@@ -55,16 +55,16 @@ function findPackagesByPath(packagesPath) {
       return result
     }
 
-    const name = packageJson['name']
+    const name = packageJson.name
     const rispaName = packageJson['rispa:name']
     const activatorPath = `${packagePath}/.rispa/activator.js`
 
     const packageInfo = {
       path: packagePath,
       alias: rispaName,
-      name: name,
+      name,
       commands: Object.keys(packageJson.scripts),
-      activatorPath: fs.existsSync(activatorPath) ? activatorPath : null
+      activatorPath: fs.existsSync(activatorPath) ? activatorPath : null,
     }
 
     if (rispaName) {
@@ -91,8 +91,8 @@ module.exports = function scanPackages() {
       findPackagesByPathFromCache(path, activatorsCache) :
       findPackagesByPath(path)
 
-    result[path] = packages;
-    return result;
+    result[path] = packages
+    return result
   }, {})
 
   const packages = Object.keys(packagesByPaths)
@@ -100,5 +100,5 @@ module.exports = function scanPackages() {
 
   saveCache(packagesByPaths, packages)
 
-  return packages;
+  return packages
 }

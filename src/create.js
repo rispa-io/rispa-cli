@@ -1,4 +1,4 @@
-'use strict';
+
 
 const fs = require('fs')
 const path = require('path')
@@ -19,11 +19,11 @@ async function create(projectName, ...args) {
       projectName = (await enterProjectName()).projectName
     }
 
-    projectName = projectName.replace(/\s+/g, '-').toLowerCase();
+    projectName = projectName.replace(/\s+/g, '-').toLowerCase()
 
-    const { data: { items: plugins } } = await githubApi.plugins();
+    const { data: { items: plugins } } = await githubApi.plugins()
 
-    const { installPluginsNames } = await selectInstallPlugins(plugins);
+    const { installPluginsNames } = await selectInstallPlugins(plugins)
 
     const plop = nodePlop(GENERATORS_PATH)
     const results = await plop.getGenerator('project').runActions({ projectName })
@@ -39,7 +39,7 @@ async function create(projectName, ...args) {
     console.log(`Project "${projectName}" successfully generated!`)
     process.exit(1)
   } catch (e) {
-    handleError(e);
+    handleError(e)
   }
 }
 
@@ -47,7 +47,7 @@ function enterProjectName() {
   return prompt([{
     type: 'input',
     name: 'projectName',
-    message: 'Enter project name:'
+    message: 'Enter project name:',
   }])
 }
 
@@ -56,7 +56,7 @@ function selectInstallPlugins(plugins) {
     type: 'checkbox',
     message: 'Select install plugins:',
     name: 'installPluginsNames',
-    choices: plugins
+    choices: plugins,
   }])
 }
 
@@ -69,4 +69,4 @@ function installPlugins(pluginsNames, plugins, path) {
     })
 }
 
-module.exports = create;
+module.exports = create

@@ -3,9 +3,6 @@
   "version": "0.1.0",
   "description": "Rispa CLI - entry point to project generator",
   "main": "/bin/ris.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rispa-io/rispa-cli.git"
@@ -28,5 +25,12 @@
     "glob": "^7.1.2",
     "inquirer": "^3.0.6",
     "node-plop": "^0.6.0"
+  },
+  "devDependencies": {
+    "@rispa/eslint-config": "^1.0.0"
+  },
+  "scripts": {
+    "lint": "rispa-eslint",
+    "lint:fix": "rispa-eslint --fix"
   }
 }

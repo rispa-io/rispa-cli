@@ -1,5 +1,5 @@
-const project = require('./project');
+const project = require('./project')
 
-module.exports = (plop) => {
+module.exports = plop => {
   plop.setGenerator('project', project)
 }
