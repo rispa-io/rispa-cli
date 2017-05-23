@@ -1,11 +1,11 @@
 const spawn = require('cross-spawn')
 
-module.exports.cloneRepository = (cloneUrl, path) => {
-  return spawn.sync(
+module.exports.cloneRepository = (cloneUrl, path) => (
+  spawn.sync(
     'git',
     ['clone', cloneUrl],
     {
-      cwd: path
+      cwd: path,
     }
   ).status
-}
+)

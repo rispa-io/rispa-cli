@@ -1,4 +1,4 @@
-'use strict';
+/* eslint-disable no-use-before-define, no-console, import/no-dynamic-require, global-require */
 
 const spawn = require('cross-spawn')
 const fs = require('fs')
@@ -27,24 +27,28 @@ function callScriptByNpm(packageInfo, command, args) {
   ).status
 }
 
-module.exports.requireIfExist = (id) => {
+const requireIfExist = id => {
   try {
     return require(id)
   } catch (e) {
     if (e instanceof Error && e.code === 'MODULE_NOT_FOUND') {
       return null
     }
-    throw e;
+    throw e
   }
 }
 
-module.exports.handleError = (error) => {
+const handleError = error => {
   console.log(error)
   process.exit(1)
 }
 
-module.exports.callScript = USE_YARN ? callScriptByYarn : callScriptByNpm;
+const callScript = USE_YARN ? callScriptByYarn : callScriptByNpm
 
-module.exports.callScriptList = (packageInfoList, command, args) => (
+const callScriptList = (packageInfoList, command, args) => (
   packageInfoList.reduce((result, packageInfo) => callScript(packageInfo, command, args) || result, 0)
 )
+
+module.exports = {
+  requireIfExist, handleError, callScript, callScriptList,
+}

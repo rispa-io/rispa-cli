@@ -28,5 +28,8 @@
     "glob": "^7.1.2",
     "inquirer": "^3.0.6",
     "node-plop": "^0.6.0"
+  },
+  "devDependencies": {
+    "@rispa/eslint-config": "https://github.com/rispa-io/rispa-eslint-config.git"
   }
 }

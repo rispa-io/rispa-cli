@@ -1,9 +1,7 @@
-'use strict';
-
 const path = require('path')
 
 module.exports = {
-  description: `Generator for project structure`,
+  description: 'Generator for project structure',
   prompts: [],
   actions: () => ([
     {
