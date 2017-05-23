@@ -1,10 +1,10 @@
-/* eslint-disable no-console */
+/* eslint-disable no-console, import/no-dynamic-require, global-require, no-shadow */
+
 const { prompt } = require('inquirer')
 
 const {
   handleError,
-  callScript,
-  callScriptList,
+  callScript, callScriptList,
 } = require('./core')
 const scanPackages = require('./packages')
 
@@ -33,8 +33,7 @@ function runInAllPackages(packages, command, args) {
     .filter((value, idx, values) => values.indexOf(value) === idx)
 
   if (!packageInfoList.find(({ commands }) => commands.indexOf(command) !== -1)) {
-    console.log(`Can't find command "${command}" in packages.\n`)
-    process.exit(1)
+    handleError(`Can't find command "${command}" in packages.\n`)
   }
 
   const result = callScriptList(packageInfoList, command, args)
@@ -45,7 +44,9 @@ function runInSinglePackage(packageName, packages, command, args) {
   const packageInfo = packages[packageName]
 
   if (!packageInfo) {
-    console.log(`Can't find package with name: ${packageName}.\n`)
+    if (packageName) {
+      console.log(`Can't find package with name: ${packageName}.\n`)
+    }
 
     selectPackage(packages).then(async ({ packageName }) => {
       const packageInfo = packages[packageName]
@@ -72,8 +73,7 @@ function run(packageName, command, ...args) {
   const packages = scanPackages()
 
   if (!Object.keys(packages).length) {
-    console.log('Can\'t find packages.')
-    process.exit(1)
+    handleError('Can\'t find packages.')
   }
 
   if (packageName === 'all') {

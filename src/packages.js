@@ -1,4 +1,4 @@
-
+/* eslint-disable no-console, import/no-dynamic-require, global-require */
 
 const glob = require('glob')
 const fs = require('fs')
@@ -18,9 +18,10 @@ function saveCache(packagesByPaths, packages) {
 
   fs.writeFileSync(ACTIVATORS_CACHE_PATH, JSON.stringify({
     paths: Object.keys(packagesByPaths)
-      .reduce((result, path) => {
-        const packages = packagesByPaths[path]
-        result[path] = Object.keys(packages).filter((key, idx, keys) => keys.indexOf(packages[key].name) === idx)
+      .reduce((result, packagesPath) => {
+        const currentPackages = packagesByPaths[packagesPath]
+        result[packagesPath] = Object.keys(currentPackages)
+          .filter((key, idx, keys) => keys.indexOf(currentPackages[key].name) === idx)
         return result
       }, {}),
 
@@ -33,8 +34,28 @@ function saveCache(packagesByPaths, packages) {
   }, null, 2))
 }
 
-function findPackagesByPathFromCache(path, cache) {
-  return cache.paths[path].reduce((result, packageName) => {
+function packageInfoByPath(packagePath) {
+  const packageJson = requireIfExist(`${packagePath}/package.json`)
+
+  if (!packageJson || !packageJson['rispa:plugin']) {
+    return null
+  }
+
+  const name = packageJson.name
+  const rispaName = packageJson['rispa:name']
+  const activatorPath = `${packagePath}/.rispa/activator.js`
+
+  return {
+    path: packagePath,
+    alias: rispaName,
+    name,
+    commands: packageJson.scripts ? Object.keys(packageJson.scripts) : [],
+    activatorPath: fs.existsSync(activatorPath) && activatorPath,
+  }
+}
+
+function findPackagesByPathFromCache(packagesPath, cache) {
+  return cache.paths[packagesPath].reduce((result, packageName) => {
     const packageInfo = cache.packages[packageName]
 
     if (packageInfo.alias) {
@@ -49,26 +70,13 @@ function findPackagesByPathFromCache(path, cache) {
 
 function findPackagesByPath(packagesPath) {
   return glob.sync(packagesPath).reduce((result, packagePath) => {
-    const packageJson = requireIfExist(`${packagePath}/package.json`)
-
-    if (!packageJson || !packageJson['rispa:plugin']) {
+    const packageInfo = packageInfoByPath(packagePath)
+    if (!packageInfo) {
       return result
     }
 
-    const name = packageJson.name
-    const rispaName = packageJson['rispa:name']
-    const activatorPath = `${packagePath}/.rispa/activator.js`
-
-    const packageInfo = {
-      path: packagePath,
-      alias: rispaName,
-      name,
-      commands: Object.keys(packageJson.scripts),
-      activatorPath: fs.existsSync(activatorPath) ? activatorPath : null,
-    }
-
-    if (rispaName) {
-      result[rispaName] = packageInfo
+    if (packageInfo.alias) {
+      result[packageInfo.alias] = packageInfo
     }
 
     result[packageInfo.name] = packageInfo
@@ -82,21 +90,21 @@ module.exports = function scanPackages() {
   const lernaJson = requireIfExist(LERNA_JSON_PATH)
 
   const lernaPackagesPaths = lernaJson && lernaJson.packages ?
-    lernaJson.packages.map(path => `${BASE_PATH}/${path}`) : []
+    lernaJson.packages.map(packagesPath => `${BASE_PATH}/${packagesPath}`) : []
 
   const packageScanPaths = [`${BASE_PATH}/node_modules/*`, ...lernaPackagesPaths]
 
-  const packagesByPaths = packageScanPaths.reduce((result, path) => {
-    const packages = activatorsCache && activatorsCache.paths[path] ?
-      findPackagesByPathFromCache(path, activatorsCache) :
-      findPackagesByPath(path)
+  const packagesByPaths = packageScanPaths.reduce((result, packagesPath) => {
+    const packages = activatorsCache && activatorsCache.paths[packagesPath] ?
+      findPackagesByPathFromCache(packagesPath, activatorsCache) :
+      findPackagesByPath(packagesPath)
 
     result[path] = packages
     return result
   }, {})
 
   const packages = Object.keys(packagesByPaths)
-    .reduce((result, path) => Object.assign(result, packagesByPaths[path]), {})
+    .reduce((result, packagesPath) => Object.assign(result, packagesByPaths[packagesPath]), {})
 
   saveCache(packagesByPaths, packages)
 
