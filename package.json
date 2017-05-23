@@ -23,8 +23,10 @@
   },
   "homepage": "https://github.com/rispa-io/rispa-cli#readme",
   "dependencies": {
+    "axios": "^0.16.1",
     "cross-spawn": "^5.1.0",
     "glob": "^7.1.2",
-    "inquirer": "^3.0.6"
+    "inquirer": "^3.0.6",
+    "node-plop": "^0.6.0"
   }
 }

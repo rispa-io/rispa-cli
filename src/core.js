@@ -39,7 +39,7 @@ module.exports.requireIfExist = (id) => {
 }
 
 module.exports.handleError = (error) => {
-  console.log(e)
+  console.log(error)
   process.exit(1)
 }
 
