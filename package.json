@@ -27,10 +27,27 @@
     "node-plop": "^0.6.0"
   },
   "devDependencies": {
-    "@rispa/eslint-config": "^1.0.0"
+    "@rispa/eslint-config": "^1.0.0",
+    "jest": "^20.0.3"
   },
   "scripts": {
+    "test": "jest",
+    "test:update": "jest -u",
+    "test:coverage": "jest --coverage",
     "lint": "rispa-eslint",
     "lint:fix": "rispa-eslint --fix"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 100,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      }
+    }
   }
 }
