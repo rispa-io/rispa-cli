@@ -1,4 +1,4 @@
-/* eslint-disable no-use-before-define, no-console, import/no-dynamic-require, global-require, complexity */
+/* eslint-disable no-console, import/no-dynamic-require, global-require */
 
 const path = require('path')
 const { prompt } = require('inquirer')
@@ -13,8 +13,25 @@ const { installPlugins } = require('./plugin')
 
 const PROJECT_PATH = process.cwd()
 
-async function addPlugin(..._pluginsNames) {
-  let pluginsNames = _pluginsNames
+function selectPlugins(plugins) {
+  return prompt([{
+    type: 'checkbox',
+    message: 'Select install plugins:',
+    name: 'installPluginsNames',
+    choices: plugins,
+  }])
+}
+
+function findPluginsForInstall(plugins, installedPluginsNames) {
+  const pluginsForChoice = plugins.filter(({ name }) => installedPluginsNames.indexOf(name) === -1)
+  if (pluginsForChoice.length === 0) {
+    handleError('Can\'t find plugins for install')
+  }
+
+  return selectPlugins(pluginsForChoice)
+}
+
+async function addPlugin(...pluginsNames) {
   const configuration = readConfiguration(PROJECT_PATH)
   if (!configuration) {
     handleError('Can\'t find rispa project config')
@@ -28,14 +45,9 @@ async function addPlugin(..._pluginsNames) {
   const { data: { items: plugins } } = await githubApi.plugins()
 
   if (pluginsNames.length === 0) {
-    const pluginsForChoice = plugins.filter(({ name }) => configuration.plugins.indexOf(name) === -1)
-    if (pluginsForChoice.length === 0) {
-      handleError('Can\'t find plugins for install')
-    }
+    const { installPluginsNames } = await findPluginsForInstall(plugins, installedPluginsNames)
 
-    const { installPluginsNames } = await selectPlugins(pluginsForChoice)
-
-    pluginsNames = installPluginsNames
+    pluginsNames.push(...installPluginsNames)
   } else {
     const notValidPluginsNames = pluginsNames.filter(pluginName => !plugins.some(({ name }) => name === pluginName))
     if (notValidPluginsNames.length > 0) {
@@ -50,15 +62,6 @@ async function addPlugin(..._pluginsNames) {
   saveConfiguration(configuration, PROJECT_PATH)
 
   process.exit(1)
-}
-
-function selectPlugins(plugins) {
-  return prompt([{
-    type: 'checkbox',
-    message: 'Select install plugins:',
-    name: 'installPluginsNames',
-    choices: plugins,
-  }])
 }
 
 module.exports = addPlugin

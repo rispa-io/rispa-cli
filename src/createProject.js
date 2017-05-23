@@ -1,4 +1,4 @@
-/* eslint-disable no-use-before-define, no-console */
+/* eslint-disable no-console */
 
 const fs = require('fs')
 const path = require('path')
@@ -12,6 +12,23 @@ const { saveConfiguration } = require('./project')
 
 const BASE_PATH = process.cwd()
 const GENERATORS_PATH = path.resolve(__dirname, '../generators/index.js')
+
+function enterProjectName() {
+  return prompt([{
+    type: 'input',
+    name: 'projectName',
+    message: 'Enter project name:',
+  }])
+}
+
+function selectInstallPlugins(plugins) {
+  return prompt([{
+    type: 'checkbox',
+    message: 'Select install plugins:',
+    name: 'installPluginsNames',
+    choices: plugins,
+  }])
+}
 
 async function create(_projectName) {
   try {
@@ -48,23 +65,6 @@ async function create(_projectName) {
   } catch (e) {
     handleError(e)
   }
-}
-
-function enterProjectName() {
-  return prompt([{
-    type: 'input',
-    name: 'projectName',
-    message: 'Enter project name:',
-  }])
-}
-
-function selectInstallPlugins(plugins) {
-  return prompt([{
-    type: 'checkbox',
-    message: 'Select install plugins:',
-    name: 'installPluginsNames',
-    choices: plugins,
-  }])
 }
 
 module.exports = create

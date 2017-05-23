@@ -1,4 +1,4 @@
-/* eslint-disable no-use-before-define, no-console, import/no-dynamic-require, global-require, no-shadow */
+/* eslint-disable no-console, import/no-dynamic-require, global-require, no-shadow */
 
 const { prompt } = require('inquirer')
 
@@ -8,18 +8,24 @@ const {
 } = require('./core')
 const scanPackages = require('./packages')
 
-function run(packageName, command, ...args) {
-  const packages = scanPackages()
+function selectPackage(packages) {
+  return prompt([{
+    type: 'list',
+    name: 'packageName',
+    message: 'Select available package:',
+    paginated: true,
+    choices: [...new Set(Object.keys(packages).map(key => packages[key].name))],
+  }])
+}
 
-  if (!Object.keys(packages).length) {
-    handleError('Can\'t find packages.')
-  }
-
-  if (packageName === 'all') {
-    runInAllPackages(packages, command, args)
-  } else {
-    runInSinglePackage(packageName, packages, command, args)
-  }
+function selectCommand(commands) {
+  return prompt([{
+    type: 'list',
+    name: 'command',
+    message: 'Select available command:',
+    paginated: true,
+    choices: commands,
+  }])
 }
 
 function runInAllPackages(packages, command, args) {
@@ -63,24 +69,18 @@ function runInSinglePackage(packageName, packages, command, args) {
   }
 }
 
-function selectPackage(packages) {
-  return prompt([{
-    type: 'list',
-    name: 'packageName',
-    message: 'Select available package:',
-    paginated: true,
-    choices: [...new Set(Object.keys(packages).map(key => packages[key].name))],
-  }])
-}
+function run(packageName, command, ...args) {
+  const packages = scanPackages()
 
-function selectCommand(commands) {
-  return prompt([{
-    type: 'list',
-    name: 'command',
-    message: 'Select available command:',
-    paginated: true,
-    choices: commands,
-  }])
+  if (!Object.keys(packages).length) {
+    handleError('Can\'t find packages.')
+  }
+
+  if (packageName === 'all') {
+    runInAllPackages(packages, command, args)
+  } else {
+    runInSinglePackage(packageName, packages, command, args)
+  }
 }
 
 module.exports = run

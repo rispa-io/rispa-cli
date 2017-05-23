@@ -1,4 +1,4 @@
-/* eslint-disable no-use-before-define, no-console, import/no-dynamic-require, global-require */
+/* eslint-disable no-console, import/no-dynamic-require, global-require */
 
 const { cloneRepository } = require('./git')
 

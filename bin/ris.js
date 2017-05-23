@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-/* eslint-disable no-use-before-define, no-console, import/no-dynamic-require, global-require */
+/* eslint-disable no-console, import/no-dynamic-require, global-require */
 
 const commands = {
   run: require('../src/runScript'),
