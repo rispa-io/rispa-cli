@@ -3,8 +3,9 @@
 /* eslint-disable no-use-before-define, no-console, import/no-dynamic-require, global-require */
 
 const commands = {
-  run: require('../src/run'),
-  new: require('../src/create'),
+  run: require('../src/runScript'),
+  new: require('../src/createProject'),
+  add: require('../src/addPlugin'),
 }
 
 const command = process.argv[2] || ''

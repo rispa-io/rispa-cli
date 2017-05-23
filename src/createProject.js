@@ -7,7 +7,7 @@ const nodePlop = require('node-plop')
 
 const { handleError } = require('./core')
 const githubApi = require('./githubApi')
-const { cloneRepository } = require('./git')
+const { installPlugins } = require('./plugin')
 const { saveConfiguration } = require('./project')
 
 const BASE_PATH = process.cwd()
@@ -36,9 +36,12 @@ async function create(_projectName) {
       fs.mkdirSync(pluginsPath)
     }
 
-    installPlugins(installPluginsNames, plugins, pluginsPath)
+    installPlugins(installPluginsNames, plugins, [], pluginsPath)
 
-    saveConfiguration({ plugins: installPluginsNames }, projectPath)
+    saveConfiguration({
+      plugins: installPluginsNames,
+      pluginsPath: './packages',
+    }, projectPath)
 
     console.log(`Project "${projectName}" successfully generated!`)
     process.exit(1)
@@ -62,15 +65,6 @@ function selectInstallPlugins(plugins) {
     name: 'installPluginsNames',
     choices: plugins,
   }])
-}
-
-function installPlugins(pluginsNames, plugins, pluginsPath) {
-  plugins.filter(({ name }) => pluginsNames.indexOf(name) !== -1)
-    .forEach(({ name, clone_url: cloneUrl }) => {
-      console.log(`Install plugin: ${name }`)
-
-      cloneRepository(cloneUrl, pluginsPath)
-    })
 }
 
 module.exports = create
