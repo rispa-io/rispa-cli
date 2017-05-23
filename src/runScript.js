@@ -1,4 +1,4 @@
-/* eslint-disable no-use-before-define, no-console, import/no-dynamic-require, global-require, no-shadow */
+/* eslint-disable no-console, import/no-dynamic-require, global-require, no-shadow */
 
 const { prompt } = require('inquirer')
 
@@ -8,19 +8,24 @@ const {
 } = require('./core')
 const scanPackages = require('./packages')
 
-function run(packageName, command, ...args) {
-  const packages = scanPackages()
+function selectPackage(packages) {
+  return prompt([{
+    type: 'list',
+    name: 'packageName',
+    message: 'Select available package:',
+    paginated: true,
+    choices: [...new Set(Object.keys(packages).map(key => packages[key].name))],
+  }])
+}
 
-  if (!Object.keys(packages).length) {
-    console.log('Can\'t find packages.')
-    process.exit(1)
-  }
-
-  if (packageName === 'all') {
-    runInAllPackages(packages, command, args)
-  } else {
-    runInSinglePackage(packageName, packages, command, args)
-  }
+function selectCommand(commands) {
+  return prompt([{
+    type: 'list',
+    name: 'command',
+    message: 'Select available command:',
+    paginated: true,
+    choices: commands,
+  }])
 }
 
 function runInAllPackages(packages, command, args) {
@@ -28,8 +33,7 @@ function runInAllPackages(packages, command, args) {
     .filter((value, idx, values) => values.indexOf(value) === idx)
 
   if (!packageInfoList.find(({ commands }) => commands.indexOf(command) !== -1)) {
-    console.log(`Can't find command "${command}" in packages.\n`)
-    process.exit(1)
+    handleError(`Can't find command "${command}" in packages.\n`)
   }
 
   const result = callScriptList(packageInfoList, command, args)
@@ -40,7 +44,9 @@ function runInSinglePackage(packageName, packages, command, args) {
   const packageInfo = packages[packageName]
 
   if (!packageInfo) {
-    console.log(`Can't find package with name: ${packageName}.\n`)
+    if (packageName) {
+      console.log(`Can't find package with name: ${packageName}.\n`)
+    }
 
     selectPackage(packages).then(async ({ packageName }) => {
       const packageInfo = packages[packageName]
@@ -63,24 +69,18 @@ function runInSinglePackage(packageName, packages, command, args) {
   }
 }
 
-function selectPackage(packages) {
-  return prompt([{
-    type: 'list',
-    name: 'packageName',
-    message: 'Select available package:',
-    paginated: true,
-    choices: [...new Set(Object.keys(packages).map(key => packages[key].name))],
-  }])
-}
+function run(packageName, command, ...args) {
+  const packages = scanPackages()
 
-function selectCommand(commands) {
-  return prompt([{
-    type: 'list',
-    name: 'command',
-    message: 'Select available command:',
-    paginated: true,
-    choices: commands,
-  }])
+  if (!Object.keys(packages).length) {
+    handleError('Can\'t find packages.')
+  }
+
+  if (packageName === 'all') {
+    runInAllPackages(packages, command, args)
+  } else {
+    runInSinglePackage(packageName, packages, command, args)
+  }
 }
 
 module.exports = run
