@@ -81,7 +81,7 @@ function packageInfoByPath(packagePath) {
     alias: rispaName,
     name,
     commands: packageJson.scripts ? Object.keys(packageJson.scripts) : [],
-    activatorPath: fs.existsSync(activatorPath) ? activatorPath : null,
+    activatorPath: fs.existsSync(activatorPath) && activatorPath,
   }
 }
 

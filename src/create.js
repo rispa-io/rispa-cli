@@ -8,6 +8,7 @@ const nodePlop = require('node-plop')
 const { handleError } = require('./core')
 const githubApi = require('./githubApi')
 const { cloneRepository } = require('./git')
+const { saveConfiguration } = require('./project')
 
 const BASE_PATH = process.cwd()
 const GENERATORS_PATH = path.resolve(__dirname, '../generators/index.js')
@@ -28,13 +29,16 @@ async function create(_projectName) {
     const plop = nodePlop(GENERATORS_PATH)
     await plop.getGenerator('project').runActions({ projectName })
 
-    const pluginsPath = path.resolve(BASE_PATH, `./${projectName}/packages`)
+    const projectPath = path.resolve(BASE_PATH, `./${projectName}`)
+    const pluginsPath = `${projectPath}/packages`
 
     if (!fs.existsSync(pluginsPath)) {
       fs.mkdirSync(pluginsPath)
     }
 
     installPlugins(installPluginsNames, plugins, pluginsPath)
+
+    saveConfiguration({ plugins: installPluginsNames }, projectPath)
 
     console.log(`Project "${projectName}" successfully generated!`)
     process.exit(1)
@@ -63,7 +67,7 @@ function selectInstallPlugins(plugins) {
 function installPlugins(pluginsNames, plugins, pluginsPath) {
   plugins.filter(({ name }) => pluginsNames.indexOf(name) !== -1)
     .forEach(({ name, clone_url: cloneUrl }) => {
-      console.log(`Install plugin: ${name}`)
+      console.log(`Install plugin: ${name }`)
 
       cloneRepository(cloneUrl, pluginsPath)
     })
