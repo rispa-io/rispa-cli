@@ -6,18 +6,17 @@ const path = require('path')
 
 const { requireIfExist } = require('./core');
 
-const ACTIVATORS_CACHE_PATH = '../build/activators.json';
-const LERNA_JSON_PATH = '../lerna.json';
+const BASE_PATH = process.cwd();
+const ACTIVATORS_CACHE_PATH = path.resolve(BASE_PATH, './build/activators.json');
+const ACTIVATORS_CACHE_DIR_PATH = path.dirname(ACTIVATORS_CACHE_PATH);
+const LERNA_JSON_PATH = path.resolve(BASE_PATH, './lerna.json');
 
 function saveCache(packagesByPaths, packages) {
-  const cachePath = path.resolve(__dirname, ACTIVATORS_CACHE_PATH)
-  const cacheDirPath = path.dirname(cachePath)
-
-  if (!fs.existsSync(cacheDirPath)) {
-    fs.mkdirSync(cacheDirPath)
+  if (!fs.existsSync(ACTIVATORS_CACHE_DIR_PATH)) {
+    fs.mkdirSync(ACTIVATORS_CACHE_DIR_PATH)
   }
 
-  fs.writeFileSync(cachePath, JSON.stringify({
+  fs.writeFileSync(ACTIVATORS_CACHE_PATH, JSON.stringify({
     paths: Object.keys(packagesByPaths)
       .reduce((result, path) => {
         const packages = packagesByPaths[path]
@@ -49,18 +48,19 @@ function findPackagesByPathFromCache(path, cache) {
 }
 
 function findPackagesByPath(packagesPath) {
-  return glob.sync(packagesPath).reduce((result, packageFolder) => {
-    const packageJson = requireIfExist(`../${packageFolder}/package.json`)
+  return glob.sync(packagesPath).reduce((result, packagePath) => {
+    const packageJson = requireIfExist(`${packagePath}/package.json`)
+
     if (!packageJson || !packageJson['rispa:plugin']) {
       return result
     }
 
     const name = packageJson['name']
     const rispaName = packageJson['rispa:name']
-    const activatorPath = path.resolve(__dirname, `../${packageFolder}/.rispa/activator.js`);
+    const activatorPath = `${packagePath}/.rispa/activator.js`;
 
     const packageInfo = {
-      path: packageFolder,
+      path: packagePath,
       alias: rispaName,
       name: name,
       commands: Object.keys(packageJson.scripts),
@@ -78,19 +78,25 @@ function findPackagesByPath(packagesPath) {
 }
 
 module.exports = function scanPackages() {
-  const cache = requireIfExist(ACTIVATORS_CACHE_PATH)
+  const activatorsCache = requireIfExist(ACTIVATORS_CACHE_PATH)
   const lernaJson = requireIfExist(LERNA_JSON_PATH)
 
-  const packageScanPaths = ['node_modules/*'].concat(lernaJson && lernaJson.packages ? lernaJson.packages : [])
+  const lernaPackagesPaths = lernaJson && lernaJson.packages ?
+    lernaJson.packages.map(path => `${BASE_PATH}/${path}`) : []
+
+  const packageScanPaths = [`${BASE_PATH}/node_modules/*`, ...lernaPackagesPaths]
+
   const packagesByPaths = packageScanPaths.reduce((result, path) => {
-    const packages = cache && cache.paths[path] ?
-      findPackagesByPathFromCache(path, cache) :
+    const packages = activatorsCache && activatorsCache.paths[path] ?
+      findPackagesByPathFromCache(path, activatorsCache) :
       findPackagesByPath(path)
 
     result[path] = packages;
     return result;
   }, {})
-  const packages = Object.keys(packagesByPaths).reduce((result, path) => Object.assign(result, packagesByPaths[path]), {})
+
+  const packages = Object.keys(packagesByPaths)
+    .reduce((result, path) => Object.assign(result, packagesByPaths[path]), {})
 
   saveCache(packagesByPaths, packages)
 
