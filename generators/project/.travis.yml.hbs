@@ -1,0 +1,31 @@
+language: node_js
+
+node_js:
+  - "stable"
+
+sudo: false
+
+before_script:
+  - yarn lerna bootstrap
+
+script:
+  - yarn ris all lint
+  - yarn ris all stylelint
+  - yarn ris all test:coverage
+
+# notifications:
+#   slack:
+#     rooms:
+#
+#     on_success: always
+#     on_failure: always
+#     on_start: never
+#   webhooks:
+#     urls:
+#
+#     on_success: always
+#     on_failure: never
+#     on_start: never
+
+cache:
+  yarn: true
