@@ -15,8 +15,8 @@ async function create(projectName, ...args) {
 
     const { installPlugins } = await selectInstallPlugins(plugins);
 
-    console.log("projectName", projectName);
-    console.log("installPlugins", installPlugins);
+    console.log('projectName', projectName);
+    console.log('installPlugins', installPlugins);
   } catch (e) {
     handleError(e);
   }

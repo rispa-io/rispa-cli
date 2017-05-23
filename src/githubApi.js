@@ -11,6 +11,6 @@ const api = axios.create({
 
 module.exports = {
   plugins() {
-    return api.get("/search/repositories?q=user:rispa-io+topic:rispa-plugin")
+    return api.get('/search/repositories?q=user:rispa-io+topic:rispa-plugin')
   }
 }
