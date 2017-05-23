@@ -57,7 +57,7 @@ function findPackagesByPath(packagesPath) {
 
     const name = packageJson['name']
     const rispaName = packageJson['rispa:name']
-    const activatorPath = `${packagePath}/.rispa/activator.js`;
+    const activatorPath = `${packagePath}/.rispa/activator.js`
 
     const packageInfo = {
       path: packagePath,
