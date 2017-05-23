@@ -40,7 +40,9 @@ function runInSinglePackage(packageName, packages, command, args) {
   const packageInfo = packages[packageName]
 
   if (!packageInfo) {
-    console.log(`Can't find package with name: ${packageName}.\n`)
+    if (packageName) {
+      console.log(`Can't find package with name: ${packageName}.\n`)
+    }
 
     selectPackage(packages).then(async ({ packageName }) => {
       const packageInfo = packages[packageName]
