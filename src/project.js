@@ -12,7 +12,12 @@ const readConfiguration = projectPath => {
 
 const saveConfiguration = (configuration, projectPath) => {
   const configurationPath = path.resolve(projectPath, CONFIGURATION_PATH)
-  fs.writeFileSync(configurationPath, JSON.stringify(configuration, null, 2))
+  try {
+    fs.writeFileSync(configurationPath, JSON.stringify(configuration, null, 2))
+    return true
+  } catch (e) {
+    return false
+  }
 }
 
 module.exports = {
