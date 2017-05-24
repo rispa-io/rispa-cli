@@ -6,6 +6,7 @@ const commands = {
   run: require('../src/runScript'),
   new: require('../src/createProject'),
   add: require('../src/addPlugin'),
+  update: require('../src/updatePlugins'),
 }
 
 const command = process.argv[2] || ''
