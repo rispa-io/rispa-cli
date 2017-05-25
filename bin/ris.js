@@ -5,7 +5,7 @@
 const commands = {
   run: require('../src/runScript'),
   new: require('../src/createProject'),
-  add: require('../src/addPlugin'),
+  add: require('../src/addPlugins'),
   update: require('../src/updatePlugins'),
 }
 

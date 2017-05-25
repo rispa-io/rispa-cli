@@ -12,9 +12,9 @@ const inquirer = require('inquirer')
 const core = require('../core')
 const githubApi = require('../githubApi')
 
-const addPlugin = require('../addPlugin')
+const addPlugins = require('../addPlugins')
 
-describe('add plugin', () => {
+describe('add plugins', () => {
   let originalExit
 
   const pluginsNames = ['rispa-core', 'rispa-eslint-config']
@@ -58,7 +58,7 @@ describe('add plugin', () => {
       [projectConfigPath]: projectConfig,
     })
 
-    await expect(addPlugin(...pluginsNames))
+    await expect(addPlugins(...pluginsNames))
       .rejects.toBe(1)
   })
 
@@ -69,7 +69,7 @@ describe('add plugin', () => {
       }),
     })
 
-    await expect(addPlugin(...pluginsNames))
+    await expect(addPlugins(...pluginsNames))
       .rejects.toBe(1)
   })
 
@@ -78,7 +78,7 @@ describe('add plugin', () => {
       [projectConfigPath]: projectConfig,
     })
 
-    await expect(addPlugin())
+    await expect(addPlugins())
       .rejects.toBe(1)
   })
 
@@ -87,7 +87,7 @@ describe('add plugin', () => {
       [projectConfigPath]: {},
     })
 
-    await expect(addPlugin())
+    await expect(addPlugins())
       .rejects.toBe(1)
   })
 
@@ -97,7 +97,7 @@ describe('add plugin', () => {
     })
     const notExistPlugin = 'invalid'
 
-    await expect(addPlugin(notExistPlugin))
+    await expect(addPlugins(notExistPlugin))
       .rejects.toHaveProperty('message', `Can't find plugins with names:\n - ${notExistPlugin}`)
   })
 
@@ -108,14 +108,14 @@ describe('add plugin', () => {
       }),
     })
 
-    await expect(addPlugin())
+    await expect(addPlugins())
       .rejects.toHaveProperty('message', 'Can\'t find plugins for install')
   })
 
   it('should failed add plugins - project config not found', async () => {
     core.setMockModules({})
 
-    await expect(addPlugin())
+    await expect(addPlugins())
       .rejects.toHaveProperty('message', 'Can\'t find rispa project config')
   })
 })
