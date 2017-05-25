@@ -8,6 +8,9 @@ core.setMockModules = newMockModules => { mockModules = newMockModules }
 core.requireIfExist = id => {
   const mockModule = mockModules[id]
   if (mockModule) {
+    if (typeof mockModule === 'object') {
+      return Object.assign({}, mockModule)
+    }
     return mockModule
   }
 

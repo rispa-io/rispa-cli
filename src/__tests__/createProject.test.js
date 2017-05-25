@@ -4,6 +4,7 @@ jest.resetAllMocks()
 jest.mock('inquirer')
 jest.mock('node-plop')
 jest.mock('fs-extra')
+jest.mock('cross-spawn')
 jest.mock('../core')
 jest.mock('../githubApi')
 
@@ -36,7 +37,6 @@ describe('create project', () => {
       value: originalExit,
     })
 
-    require('../packages').setMockPackages({})
     require('inquirer').setMockAnswers({})
   })
 

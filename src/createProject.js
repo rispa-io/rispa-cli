@@ -62,15 +62,9 @@ async function create(...args) {
 
     projectName = performProjectName(projectName)
 
-    console.log('projectName', projectName)
-
     const { data: { items: plugins } } = await githubApi.plugins()
 
-    console.log('plugins', plugins)
-
     const { installPluginsNames } = await selectInstallPlugins(plugins)
-
-    console.log('installPluginsNames', installPluginsNames)
 
     await generateProject(projectName, installPluginsNames, plugins)
   } catch (e) {

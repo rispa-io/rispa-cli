@@ -13,6 +13,6 @@ describe('manipulation with plugins', () => {
     }))
     const installedPluginsNames = ['core']
 
-    expect(installPlugins(installPluginsNames, plugins, installedPluginsNames, 'path')).toBe(1)
+    expect(installPlugins(installPluginsNames, plugins, installedPluginsNames, 'path')).toHaveLength(1)
   })
 })
