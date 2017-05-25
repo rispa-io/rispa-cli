@@ -13,7 +13,7 @@ function installPlugins(pluginsNames, plugins, installedPluginsNames, pluginsPat
 
       console.log(`Already installed plugin with name: ${name}`)
       return false
-    }).length
+    })
 }
 
 module.exports = {

@@ -37,6 +37,8 @@ async function updatePlugins() {
   configuration.plugins = plugins.map(({ name }) => name)
 
   saveConfiguration(configuration, PROJECT_PATH)
+
+  process.exit(1)
 }
 
 module.exports = updatePlugins

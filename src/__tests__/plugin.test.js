@@ -1,5 +1,6 @@
 /* eslint-disable import/no-dynamic-require, global-require */
 
+jest.resetAllMocks()
 jest.mock('cross-spawn')
 
 const { installPlugins } = require('../plugin')
@@ -12,6 +13,6 @@ describe('manipulation with plugins', () => {
     }))
     const installedPluginsNames = ['core']
 
-    expect(installPlugins(installPluginsNames, plugins, installedPluginsNames, 'path')).toBe(1)
+    expect(installPlugins(installPluginsNames, plugins, installedPluginsNames, 'path')).toHaveLength(1)
   })
 })
