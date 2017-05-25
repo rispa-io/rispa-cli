@@ -1,28 +1,20 @@
 /* eslint-disable import/no-dynamic-require, global-require */
 
 jest.resetAllMocks()
-jest.mock('inquirer')
 jest.mock('fs-extra')
 jest.mock('cross-spawn')
 jest.mock('../core')
-jest.mock('../githubApi')
 
 const fs = require('fs-extra')
-const inquirer = require('inquirer')
 const core = require('../core')
-const githubApi = require('../githubApi')
 
-const updatePlugins = require('../updatePlugins')
+const removePlugins = require('../removePlugins')
 
-describe('update plugins', () => {
+describe('remove plugins', () => {
   let originalExit
 
   const pluginsNames = ['rispa-core', 'rispa-eslint-config']
   const pluginsPath = '/sample/path'
-  const plugins = pluginsNames.map(pluginName => ({
-    name: pluginName,
-    clone_url: 'url',
-  }))
   const projectConfigPath = `${process.cwd()}/.rispa.json`
   const projectConfig = {
     plugins: [],
@@ -36,11 +28,6 @@ describe('update plugins', () => {
         throw code
       },
     })
-
-    inquirer.setMockAnswers({
-      installPluginsNames: pluginsNames,
-    })
-    githubApi.setMockPlugins(plugins)
   })
 
   afterAll(() => {
@@ -49,27 +36,37 @@ describe('update plugins', () => {
     })
 
     fs.setMockFiles([])
-    inquirer.setMockAnswers({})
     core.setMockModules({})
-    githubApi.setMockPlugins([])
   })
 
-  it('should success update plugins', async () => {
+  it('should success remove plugin', async () => {
     core.setMockModules({
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
       }),
     })
-    fs.setMockFiles(pluginsNames.map(pluginName => `${pluginsPath}/${pluginName}/.git`))
 
-    await expect(updatePlugins())
+    await expect(removePlugins(...pluginsNames))
       .rejects.toBe(1)
   })
 
   it('should failed update plugins - project config not found', async () => {
     core.setMockModules({})
 
-    await expect(updatePlugins())
+    await expect(removePlugins())
       .rejects.toHaveProperty('message', 'Can\'t find rispa project config')
+  })
+
+  it('should failed update plugins - cant remove plugin', async () => {
+    core.setMockModules({
+      [projectConfigPath]: Object.assign({}, projectConfig, {
+        plugins: pluginsNames,
+      }),
+    })
+
+    fs.setMockRemoveCallback(() => { throw new Error() })
+
+    await expect(removePlugins(...pluginsNames))
+      .rejects.toBe(1)
   })
 })
