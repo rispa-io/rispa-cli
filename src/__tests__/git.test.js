@@ -1,5 +1,8 @@
 /* eslint-disable import/no-dynamic-require, global-require */
 
+jest.resetAllMocks()
+jest.mock('cross-spawn')
+
 const { cloneRepository, pullRepository, resetRepository } = require('../git')
 
 describe('working with git', () => {

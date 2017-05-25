@@ -14,7 +14,9 @@ core.requireIfExist = id => {
   return null
 }
 
-core.handleError = error => { throw new Error(error) }
+core.handleError = error => {
+  throw new Error(error instanceof Error ? error.message : error)
+}
 
 core.callScript = () => 0
 
