@@ -9,16 +9,11 @@ axios.setMockData = data => { mockData = data }
 
 axios.create = () => ({
   get(url) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const data = mockData[url]
-        if (data) {
-          resolve({ data })
-        } else {
-          reject({})
-        }
-      }, 0)
-    })
+    const data = mockData[url]
+    if (data) {
+      return Promise.resolve({ data })
+    }
+    return Promise.reject({})
   },
 })
 

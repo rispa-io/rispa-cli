@@ -52,5 +52,5 @@ const callScriptList = (packageInfoList, command, args) => (
 )
 
 module.exports = {
-  requireIfExist, handleError, callScriptByYarn, callScriptByNpm, callScript, callScriptList,
+  requireIfExist, handleError, callScriptByYarn, callScriptByNpm, callScript, callScriptList, useYarn,
 }

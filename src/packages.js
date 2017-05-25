@@ -107,12 +107,6 @@ function scanPackages(projectPath = process.cwd()) {
   return packages
 }
 
-module.exports = scanPackages
-
-module.exports.saveCache = saveCache
-
-module.exports.packageInfoByPath = packageInfoByPath
-
-module.exports.findPackagesByPathFromCache = findPackagesByPathFromCache
-
-module.exports.findPackagesByPath = findPackagesByPath
+module.exports = {
+  scanPackages, saveCache, packageInfoByPath, findPackagesByPathFromCache, findPackagesByPath,
+}

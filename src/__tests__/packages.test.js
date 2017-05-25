@@ -5,11 +5,9 @@ jest.mock('fs-extra')
 jest.mock('glob')
 jest.mock('../core')
 
-const scanPackages = require('../packages')
-
 const {
-  findPackagesByPath, findPackagesByPathFromCache, packageInfoByPath, saveCache,
-} = scanPackages
+  scanPackages, findPackagesByPath, findPackagesByPathFromCache, packageInfoByPath, saveCache,
+} = require('../packages')
 
 describe('scan packages', () => {
   const basePath = '/sample/path'
@@ -21,16 +19,23 @@ describe('scan packages', () => {
     const packageInfo = {
       name: packageName,
       path: `${basePath}/${packageName}`,
-      alias: idx % 2 ? `@rispa/${packageName}` : null,
-      commands: idx % 2 ? ['start'] : [],
-      activatorPath: idx % 2 ? `${basePath}/${packageName}/.rispa/activator.js` : false,
+    }
+
+    if (idx % 2) {
+      packageInfo.alias = `@rispa/${packageName}`
+      packageInfo.commands = ['start']
+      packageInfo.activatorPath = `${basePath}/${packageName}/.rispa/activator.js`
+    } else {
+      packageInfo.alias = null
+      packageInfo.commands = []
+      packageInfo.activatorPath = false
     }
 
     if (packageInfo.alias) {
       result[packageInfo.alias] = packageInfo
     }
-
     result[packageName] = packageInfo
+
     return result
   }, {})
 
@@ -74,6 +79,7 @@ describe('scan packages', () => {
   afterAll(() => {
     require('glob').setMockPaths({})
     require('../core').setMockModules({})
+    require('fs-extra').setMockFiles([])
   })
 
   it('should success save cache', () => {
