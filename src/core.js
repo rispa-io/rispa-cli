@@ -1,9 +1,10 @@
 /* eslint-disable no-console, import/no-dynamic-require, global-require */
 
+const path = require('path')
 const spawn = require('cross-spawn')
-const fs = require('fs')
+const fs = require('fs-extra')
 
-const USE_YARN = fs.existsSync('./yarn.lock')
+const PROJECT_PATH = process.cwd()
 
 function callScriptByYarn(packageInfo, command, args) {
   return spawn.sync(
@@ -31,24 +32,25 @@ const requireIfExist = id => {
   try {
     return require(id)
   } catch (e) {
-    if (e instanceof Error && e.code === 'MODULE_NOT_FOUND') {
-      return null
-    }
-    throw e
+    return null
   }
 }
 
 const handleError = error => {
-  console.log(error)
+  console.error(error)
   process.exit(1)
 }
 
-const callScript = USE_YARN ? callScriptByYarn : callScriptByNpm
+const useYarn = () => fs.existsSync(path.resolve(PROJECT_PATH, './yarn.lock'))
+
+const callScript = (packageInfo, command, args) => useYarn() ?
+  callScriptByYarn(packageInfo, command, args) :
+  callScriptByNpm(packageInfo, command, args)
 
 const callScriptList = (packageInfoList, command, args) => (
   packageInfoList.reduce((result, packageInfo) => callScript(packageInfo, command, args) || result, 0)
 )
 
 module.exports = {
-  requireIfExist, handleError, callScript, callScriptList,
+  requireIfExist, handleError, callScriptByYarn, callScriptByNpm, callScript, callScriptList, useYarn,
 }

@@ -1,11 +1,40 @@
+/* eslint-disable no-console, import/no-dynamic-require, global-require */
+
 const spawn = require('cross-spawn')
 
-module.exports.cloneRepository = (cloneUrl, path) => (
+const cloneRepository = (cloneUrl, path) => (
   spawn.sync(
     'git',
     ['clone', cloneUrl],
     {
       cwd: path,
+      stdio: 'inherit',
     }
   ).status
 )
+
+const pullRepository = path => (
+  spawn.sync(
+    'git',
+    ['pull'],
+    {
+      cwd: path,
+      stdio: 'inherit',
+    }
+  ).status
+)
+
+const resetRepository = path => (
+  spawn.sync(
+    'git',
+    ['reset', '--hard', 'origin/master'],
+    {
+      cwd: path,
+      stdio: 'inherit',
+    }
+  ).status
+)
+
+module.exports = {
+  cloneRepository, pullRepository, resetRepository,
+}
