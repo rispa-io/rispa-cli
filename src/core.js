@@ -2,10 +2,9 @@
 
 const path = require('path')
 const spawn = require('cross-spawn')
-const fs = require('fs')
+const fs = require('fs-extra')
 
 const PROJECT_PATH = process.cwd()
-const USE_YARN = fs.existsSync(path.resolve(PROJECT_PATH, './yarn.lock'))
 
 function callScriptByYarn(packageInfo, command, args) {
   return spawn.sync(
@@ -42,7 +41,11 @@ const handleError = error => {
   process.exit(1)
 }
 
-const callScript = USE_YARN ? callScriptByYarn : callScriptByNpm
+const useYarn = () => fs.existsSync(path.resolve(PROJECT_PATH, './yarn.lock'))
+
+const callScript = (packageInfo, command, args) => useYarn() ?
+  callScriptByYarn(packageInfo, command, args) :
+  callScriptByNpm(packageInfo, command, args)
 
 const callScriptList = (packageInfoList, command, args) => (
   packageInfoList.reduce((result, packageInfo) => callScript(packageInfo, command, args) || result, 0)

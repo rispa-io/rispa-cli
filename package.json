@@ -23,6 +23,7 @@
     "@rispa/eslint-config": "^1.0.0",
     "axios": "^0.16.1",
     "cross-spawn": "^5.1.0",
+    "fs-extra": "^3.0.1",
     "glob": "^7.1.2",
     "inquirer": "^3.0.6",
     "node-plop": "^0.6.0"

@@ -1,12 +1,15 @@
 /* eslint-disable no-console, import/no-dynamic-require, global-require */
 
+jest.mock('fs-extra')
 jest.mock('cross-spawn')
+
+const fs = require('fs-extra')
 
 const {
   requireIfExist, handleError,
   callScript, callScriptList,
   callScriptByYarn, callScriptByNpm,
- } = require('../core')
+} = require('../core')
 
 describe('require modules if exist', () => {
   it('should load package.json data', () => {
@@ -21,11 +24,25 @@ describe('require modules if exist', () => {
 describe('call script', () => {
   const packageInfo = {
     name: 'root',
-    path: process.cwd(),
+    path: 'path',
   }
 
+  require('fs-extra').setMockFiles([])
+
   it('should call script is call script by yarn', () => {
-    expect(callScript).toBe(callScriptByYarn)
+    beforeAll(() => {
+      fs.setMockFiles([`${process.cwd()}/yarn.lock`])
+    })
+
+    afterAll(() => {
+      fs.setMockFiles([])
+    })
+
+    expect(callScript(packageInfo, '--version')).toBe(0)
+  })
+
+  it('should call script is call script by npm', () => {
+    expect(callScript(packageInfo, '--version')).toBe(0)
   })
 
   it('should success call script', () => {

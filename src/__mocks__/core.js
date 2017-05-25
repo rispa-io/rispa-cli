@@ -6,15 +6,13 @@ let mockModules = {
 
 core.setMockModules = newMockModules => { mockModules = newMockModules }
 
-const requireIfExist = core.requireIfExist
-
 core.requireIfExist = id => {
   const mockModule = mockModules[id]
   if (mockModule) {
     return mockModule
   }
 
-  return requireIfExist(id)
+  return null
 }
 
 module.exports = core

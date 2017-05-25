@@ -1,7 +1,7 @@
 /* eslint-disable no-console, import/no-dynamic-require, global-require */
 
 const path = require('path')
-const fs = require('fs')
+const fs = require('fs-extra')
 
 const {
   readConfiguration, saveConfiguration,
