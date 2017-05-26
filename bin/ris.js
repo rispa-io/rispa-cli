@@ -31,8 +31,8 @@ const runCommand = args => {
 
 const isGlobalRun = () => {
   const execPath = process.argv[1]
-  return execPath.indexOf('/node_modules/.bin/') === -1 &&
-    execPath.indexOf('/node_modules/@rispa/cli') === -1
+  return execPath.indexOf(['node_modules', '.bin'].join(path.sep)) === -1 &&
+    execPath.indexOf(['node_modules', '@rispa', 'cli'].join(path.sep)) === -1
 }
 
 const canRunLocalVersion = () => {
