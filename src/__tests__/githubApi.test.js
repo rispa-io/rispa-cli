@@ -1,5 +1,6 @@
 /* eslint-disable import/no-dynamic-require, global-require */
 
+jest.resetAllMocks()
 jest.mock('axios')
 
 const githubApi = require('../githubApi')

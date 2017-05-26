@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Rispa CLI - entry point to project generator",
   "main": "/bin/ris.js",
+  "bin": {
+    "ris": "./bin/ris.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rispa-io/rispa-cli.git"

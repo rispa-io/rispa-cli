@@ -30,41 +30,48 @@ function selectInstallPlugins(plugins) {
   }])
 }
 
-async function create(_projectName) {
+async function generateProject(projectName, installPluginsNames, plugins) {
+  const plop = nodePlop(GENERATORS_PATH)
+  await plop.getGenerator('project').runActions({ projectName })
+
+  const projectPath = path.resolve(BASE_PATH, `./${projectName}`)
+  const pluginsPath = `${projectPath}/packages`
+
+  fs.ensureDirSync(pluginsPath)
+
+  installPlugins(installPluginsNames, plugins, [], pluginsPath)
+
+  saveConfiguration({
+    plugins: installPluginsNames,
+    pluginsPath: './packages',
+  }, projectPath)
+
+  console.log(`Project "${projectName}" successfully generated!`)
+}
+
+function performProjectName(projectName) {
+  return projectName.replace(/\s+/g, '-').toLowerCase()
+}
+
+async function create(...args) {
   try {
-    let projectName = _projectName
-    if (!_projectName) {
+    let projectName = args[0]
+    if (!projectName) {
       projectName = (await enterProjectName()).projectName
     }
 
-    projectName = projectName.replace(/\s+/g, '-').toLowerCase()
+    projectName = performProjectName(projectName)
 
     const { data: { items: plugins } } = await githubApi.plugins()
 
     const { installPluginsNames } = await selectInstallPlugins(plugins)
 
-    const plop = nodePlop(GENERATORS_PATH)
-    await plop.getGenerator('project').runActions({ projectName })
-
-    const projectPath = path.resolve(BASE_PATH, `./${projectName}`)
-    const pluginsPath = `${projectPath}/packages`
-
-    if (!fs.existsSync(pluginsPath)) {
-      fs.mkdirSync(pluginsPath)
-    }
-
-    installPlugins(installPluginsNames, plugins, [], pluginsPath)
-
-    saveConfiguration({
-      plugins: installPluginsNames,
-      pluginsPath: './packages',
-    }, projectPath)
-
-    console.log(`Project "${projectName}" successfully generated!`)
-    process.exit(1)
+    await generateProject(projectName, installPluginsNames, plugins)
   } catch (e) {
     handleError(e)
   }
+
+  process.exit(1)
 }
 
 module.exports = create

@@ -1,5 +1,6 @@
 /* eslint-disable import/no-dynamic-require, global-require */
 
+jest.resetAllMocks()
 jest.mock('fs-extra')
 jest.mock('../core')
 

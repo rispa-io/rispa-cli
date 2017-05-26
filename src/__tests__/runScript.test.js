@@ -1,11 +1,13 @@
 /* eslint-disable import/no-dynamic-require, global-require */
 
+jest.resetAllMocks()
+jest.mock('inquirer')
 jest.mock('../packages')
 jest.mock('../core')
 
 const run = require('../runScript')
 
-describe('run script without errors', () => {
+describe('run script', () => {
   let originalExit
 
   const basePath = '/sample/path'
@@ -25,7 +27,7 @@ describe('run script without errors', () => {
     originalExit = process.exit
     Object.defineProperty(process, 'exit', {
       value: code => {
-        throw new Error(`exit with code ${code}`)
+        throw code
       },
     })
   })
@@ -36,6 +38,7 @@ describe('run script without errors', () => {
     })
 
     require('../packages').setMockPackages({})
+    require('inquirer').setMockAnswers({})
   })
 
   it('should failed run script - packages not found', async () => {
@@ -49,14 +52,14 @@ describe('run script without errors', () => {
     require('../packages').setMockPackages(packages)
 
     await expect(run(packageName, packageCommand))
-      .rejects.toHaveProperty('message', 'exit with code 0')
+      .rejects.toBe(0)
   })
 
   it('should success run script in all packages', async () => {
     require('../packages').setMockPackages(packages)
 
     await expect(run('all', packageCommand))
-      .rejects.toHaveProperty('message', 'exit with code 0')
+      .rejects.toBe(0)
   })
 
   it('should success run script in single package with select package & command with not empty command', async () => {
@@ -67,7 +70,7 @@ describe('run script without errors', () => {
     })
 
     await expect(run('invalid', ''))
-      .rejects.toHaveProperty('message', 'exit with code 0')
+      .rejects.toBe(0)
   })
 
   it('should success run script in single package with select package & command', async () => {
@@ -78,7 +81,7 @@ describe('run script without errors', () => {
     })
 
     await expect(run('', ''))
-      .rejects.toHaveProperty('message', 'exit with code 0')
+      .rejects.toBe(0)
   })
 
   it('should success run script in single package with select command', async () => {
@@ -88,7 +91,7 @@ describe('run script without errors', () => {
     })
 
     await expect(run(packageName, ''))
-      .rejects.toHaveProperty('message', 'exit with code 0')
+      .rejects.toBe(0)
   })
 
   it('should failed run script in all packages - cant find command', async () => {
