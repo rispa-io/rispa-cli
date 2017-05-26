@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@rispa/eslint-config@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@rispa/eslint-config/-/eslint-config-1.0.0.tgz#fd6e06b65320c38ea34ce48729730fae9b605284"
+"@rispa/eslint-config@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@rispa/eslint-config/-/eslint-config-1.0.1.tgz#7a12856e8a28cd8e963615d96622263f7bf8374d"
   dependencies:
     babel-eslint "^7.2.1"
     cross-spawn "^5.1.0"
