@@ -1,7 +1,7 @@
 /* eslint-disable no-console, import/no-dynamic-require, global-require */
 
 const path = require('path')
-const fs = require('fs')
+const fs = require('fs-extra')
 
 const {
   readConfiguration, saveConfiguration,
@@ -37,6 +37,8 @@ async function updatePlugins() {
   configuration.plugins = plugins.map(({ name }) => name)
 
   saveConfiguration(configuration, PROJECT_PATH)
+
+  process.exit(1)
 }
 
 module.exports = updatePlugins

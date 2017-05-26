@@ -57,7 +57,8 @@ async function addPlugin(...pluginsNames) {
 
   installPlugins(pluginsNames, plugins, installedPluginsNames, path.resolve(PROJECT_PATH, pluginsPath))
 
-  configuration.plugins = configuration.plugins.concat(pluginsNames)
+  configuration.plugins = installedPluginsNames.concat(pluginsNames)
+    .filter((pluginName, idx, currentPlugins) => currentPlugins.indexOf(pluginName) === idx)
 
   saveConfiguration(configuration, PROJECT_PATH)
 

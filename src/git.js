@@ -1,3 +1,5 @@
+/* eslint-disable no-console, import/no-dynamic-require, global-require */
+
 const spawn = require('cross-spawn')
 
 const cloneRepository = (cloneUrl, path) => (
@@ -6,6 +8,7 @@ const cloneRepository = (cloneUrl, path) => (
     ['clone', cloneUrl],
     {
       cwd: path,
+      stdio: 'inherit',
     }
   ).status
 )
@@ -16,6 +19,7 @@ const pullRepository = path => (
     ['pull'],
     {
       cwd: path,
+      stdio: 'inherit',
     }
   ).status
 )
@@ -26,6 +30,7 @@ const resetRepository = path => (
     ['reset', '--hard', 'origin/master'],
     {
       cwd: path,
+      stdio: 'inherit',
     }
   ).status
 )
