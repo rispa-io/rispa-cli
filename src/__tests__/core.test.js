@@ -15,7 +15,7 @@ const {
 
 describe('require modules if exist', () => {
   it('should load package.json data', () => {
-    expect(requireIfExist('../package.json')).toHaveProperty('name', 'rispa-cli')
+    expect(requireIfExist('../package.json')).toHaveProperty('name', '@rispa/cli')
   })
 
   it('should not find module', () => {

@@ -6,8 +6,8 @@ const fs = require('fs-extra')
 
 const PROJECT_PATH = process.cwd()
 
-function callScriptByYarn(packageInfo, command, args) {
-  return spawn.sync(
+const callScriptByYarn = (packageInfo, command, args) => (
+  spawn.sync(
     'yarn',
     [command].concat(args),
     {
@@ -15,10 +15,10 @@ function callScriptByYarn(packageInfo, command, args) {
       stdio: 'inherit',
     }
   ).status
-}
+)
 
-function callScriptByNpm(packageInfo, command, args) {
-  return spawn.sync(
+const callScriptByNpm = (packageInfo, command, args) => (
+  spawn.sync(
     'npm',
     ['run', command].concat(args),
     {
@@ -26,7 +26,7 @@ function callScriptByNpm(packageInfo, command, args) {
       stdio: 'inherit',
     }
   ).status
-}
+)
 
 const requireIfExist = id => {
   try {
@@ -52,5 +52,11 @@ const callScriptList = (packageInfoList, command, args) => (
 )
 
 module.exports = {
-  requireIfExist, handleError, callScriptByYarn, callScriptByNpm, callScript, callScriptList, useYarn,
+  requireIfExist,
+  handleError,
+  callScriptByYarn,
+  callScriptByNpm,
+  callScript,
+  callScriptList,
+  useYarn,
 }
