@@ -1,5 +1,3 @@
-/* eslint-disable import/no-dynamic-require, global-require */
-
 jest.resetAllMocks()
 jest.mock('inquirer')
 jest.mock('node-plop')
@@ -7,6 +5,7 @@ jest.mock('fs-extra')
 jest.mock('cross-spawn')
 jest.mock('../core')
 jest.mock('../githubApi')
+jest.mock('../../generators')
 
 const fs = require('fs-extra')
 

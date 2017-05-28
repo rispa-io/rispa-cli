@@ -1,5 +1,3 @@
-/* eslint-disable no-console, import/no-dynamic-require, global-require */
-
 jest.resetAllMocks()
 jest.mock('fs-extra')
 jest.mock('cross-spawn')
