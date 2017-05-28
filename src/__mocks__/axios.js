@@ -1,5 +1,3 @@
-/* eslint-disable import/no-dynamic-require, global-require */
-
 const axios = jest.genMockFromModule('axios')
 
 let mockData = {

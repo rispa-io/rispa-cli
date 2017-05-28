@@ -1,5 +1,3 @@
-/* eslint-disable import/no-dynamic-require, global-require */
-
 jest.resetAllMocks()
 jest.mock('inquirer')
 jest.mock('fs-extra')

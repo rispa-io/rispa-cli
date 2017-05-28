@@ -1,5 +1,3 @@
-/* eslint-disable import/no-dynamic-require, global-require */
-
 const spawn = jest.genMockFromModule('cross-spawn')
 
 function sync(command, args, options) {

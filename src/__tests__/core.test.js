@@ -1,5 +1,3 @@
-/* eslint-disable no-console, import/no-dynamic-require, global-require */
-
 jest.resetAllMocks()
 jest.mock('fs-extra')
 jest.mock('cross-spawn')
@@ -15,7 +13,7 @@ const {
 
 describe('require modules if exist', () => {
   it('should load package.json data', () => {
-    expect(requireIfExist('../package.json')).toHaveProperty('name', 'rispa-cli')
+    expect(requireIfExist('../package.json')).toHaveProperty('name', '@rispa/cli')
   })
 
   it('should not find module', () => {

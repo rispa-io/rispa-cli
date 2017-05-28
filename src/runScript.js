@@ -1,5 +1,3 @@
-/* eslint-disable no-console, import/no-dynamic-require, global-require, no-shadow */
-
 const { prompt } = require('inquirer')
 
 const {

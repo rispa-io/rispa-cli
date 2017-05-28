@@ -1,5 +1,3 @@
-/* eslint-disable no-console, import/no-dynamic-require, global-require */
-
 const path = require('path')
 const { prompt } = require('inquirer')
 
