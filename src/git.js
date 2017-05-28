@@ -1,5 +1,3 @@
-/* eslint-disable no-console, import/no-dynamic-require, global-require */
-
 const spawn = require('cross-spawn')
 
 const cloneRepository = (cloneUrl, path) => (

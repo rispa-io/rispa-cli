@@ -1,5 +1,3 @@
-/* eslint-disable no-console, import/no-dynamic-require, global-require */
-
 const glob = require('glob')
 const fs = require('fs-extra')
 const path = require('path')

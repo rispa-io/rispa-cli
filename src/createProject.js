@@ -1,17 +1,15 @@
-/* eslint-disable no-console */
-
 const fs = require('fs-extra')
 const path = require('path')
 const { prompt } = require('inquirer')
-const nodePlop = require('node-plop')
+const createPlop = require('node-plop')
 
 const { handleError } = require('./core')
 const githubApi = require('./githubApi')
 const { installPlugins } = require('./plugin')
 const { saveConfiguration } = require('./project')
+const setGenerators = require('../generators')
 
 const BASE_PATH = process.cwd()
-const GENERATORS_PATH = path.resolve(__dirname, '../generators/index.js')
 
 function enterProjectName() {
   return prompt([{
@@ -31,7 +29,9 @@ function selectInstallPlugins(plugins) {
 }
 
 async function generateProject(projectName, installPluginsNames, plugins) {
-  const plop = nodePlop(GENERATORS_PATH)
+  const plop = createPlop()
+  setGenerators(plop)
+
   await plop.getGenerator('project').runActions({ projectName })
 
   const projectPath = path.resolve(BASE_PATH, `./${projectName}`)

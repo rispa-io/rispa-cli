@@ -1,5 +1,3 @@
-/* eslint-disable no-console, import/no-dynamic-require, global-require */
-
 const { cloneRepository } = require('./git')
 
 function installPlugins(pluginsNames, plugins, installedPluginsNames, pluginsPath) {

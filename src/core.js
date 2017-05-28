@@ -1,5 +1,3 @@
-/* eslint-disable no-console, import/no-dynamic-require, global-require */
-
 const path = require('path')
 const spawn = require('cross-spawn')
 const fs = require('fs-extra')

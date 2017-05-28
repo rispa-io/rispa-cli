@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-/* eslint-disable no-console, import/no-dynamic-require, global-require */
-
 const spawn = require('cross-spawn')
 const path = require('path')
 const fs = require('fs')
@@ -37,7 +35,7 @@ const isGlobalRun = () => {
 
 const canRunLocalVersion = () => {
   const packageJsonPath = path.resolve(RUN_PATH, './package.json')
-  const { dependencies, devDependencies } = requireIfExist(packageJsonPath)
+  const { dependencies, devDependencies } = requireIfExist(packageJsonPath) || {}
 
   const deps = Object.assign({}, dependencies, devDependencies)
   if (Object.keys(deps).indexOf('@rispa/cli') !== -1) {
