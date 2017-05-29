@@ -1,9 +1,11 @@
 jest.resetAllMocks()
 jest.mock('inquirer')
-jest.mock('../packages')
-jest.mock('../core')
+jest.mock('../../packages')
+jest.mock('../../core')
 
-const run = require('../runScript')
+const mockPackages = require('../../packages')
+
+const run = require.requireActual('../runScript')
 
 describe('run script', () => {
   let originalExit
@@ -35,33 +37,33 @@ describe('run script', () => {
       value: originalExit,
     })
 
-    require('../packages').setMockPackages({})
+    mockPackages.setMockPackages({})
     require('inquirer').setMockAnswers({})
   })
 
   it('should failed run script - packages not found', async () => {
-    require('../packages').setMockPackages({})
+    mockPackages.setMockPackages({})
 
     await expect(run(packageName, packageCommand))
       .rejects.toHaveProperty('message', 'Can\'t find packages.')
   })
 
   it('should success run script in single package', async () => {
-    require('../packages').setMockPackages(packages)
+    mockPackages.setMockPackages(packages)
 
     await expect(run(packageName, packageCommand))
       .rejects.toBe(0)
   })
 
   it('should success run script in all packages', async () => {
-    require('../packages').setMockPackages(packages)
+    mockPackages.setMockPackages(packages)
 
     await expect(run('all', packageCommand))
       .rejects.toBe(0)
   })
 
   it('should success run script in single package with select package & command with not empty command', async () => {
-    require('../packages').setMockPackages(packages)
+    mockPackages.setMockPackages(packages)
     require('inquirer').setMockAnswers({
       command: 'start',
       packageName,
@@ -72,7 +74,7 @@ describe('run script', () => {
   })
 
   it('should success run script in single package with select package & command', async () => {
-    require('../packages').setMockPackages(packages)
+    mockPackages.setMockPackages(packages)
     require('inquirer').setMockAnswers({
       command: 'start',
       packageName,
@@ -83,7 +85,7 @@ describe('run script', () => {
   })
 
   it('should success run script in single package with select command', async () => {
-    require('../packages').setMockPackages(packages)
+    mockPackages.setMockPackages(packages)
     require('inquirer').setMockAnswers({
       command: 'start',
     })
@@ -93,7 +95,7 @@ describe('run script', () => {
   })
 
   it('should failed run script in all packages - cant find command', async () => {
-    require('../packages').setMockPackages(packages)
+    mockPackages.setMockPackages(packages)
     const command = 'invalid'
 
     await expect(run('all', command))

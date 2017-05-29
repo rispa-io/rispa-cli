@@ -2,7 +2,7 @@ const packages = jest.genMockFromModule('../packages')
 
 let mockPackages = {}
 
-packages.setMockPackages = newMockPackages => { mockPackages = newMockPackages }
+packages.setMockPackages = newMockPackages => { mockPackages = Object.assign({}, newMockPackages) }
 
 packages.scanPackages = () => mockPackages
 

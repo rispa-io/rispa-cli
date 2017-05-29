@@ -1,12 +1,12 @@
 jest.resetAllMocks()
 jest.mock('fs-extra')
 jest.mock('cross-spawn')
-jest.mock('../core')
+jest.mock('../../core')
 
-const fs = require('fs-extra')
-const core = require('../core')
+const mockFs = require.requireMock('fs-extra')
+const mockCore = require.requireMock('../../core')
 
-const removePlugins = require('../removePlugins')
+const removePlugins = require.requireActual('../removePlugins')
 
 describe('remove plugins', () => {
   let originalExit
@@ -33,12 +33,12 @@ describe('remove plugins', () => {
       value: originalExit,
     })
 
-    fs.setMockFiles([])
-    core.setMockModules({})
+    mockFs.setMockFiles([])
+    mockCore.setMockModules({})
   })
 
   it('should success remove plugin', async () => {
-    core.setMockModules({
+    mockCore.setMockModules({
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
       }),
@@ -49,20 +49,20 @@ describe('remove plugins', () => {
   })
 
   it('should failed update plugins - project config not found', async () => {
-    core.setMockModules({})
+    mockCore.setMockModules({})
 
     await expect(removePlugins())
       .rejects.toHaveProperty('message', 'Can\'t find rispa project config')
   })
 
   it('should failed update plugins - cant remove plugin', async () => {
-    core.setMockModules({
+    mockCore.setMockModules({
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
       }),
     })
 
-    fs.setMockRemoveCallback(() => { throw new Error() })
+    mockFs.setMockRemoveCallback(() => { throw new Error() })
 
     await expect(removePlugins(...pluginsNames))
       .rejects.toBe(1)

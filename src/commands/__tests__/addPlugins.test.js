@@ -3,14 +3,14 @@ jest.mock('inquirer')
 jest.mock('node-plop')
 jest.mock('fs-extra')
 jest.mock('cross-spawn')
-jest.mock('../core')
-jest.mock('../githubApi')
+jest.mock('../../core')
+jest.mock('../../githubApi')
 
-const inquirer = require('inquirer')
-const core = require('../core')
-const githubApi = require('../githubApi')
+const mockInquirer = require.requireMock('inquirer')
+const mockCore = require.requireMock('../../core')
+const mockGithubApi = require.requireMock('../../githubApi')
 
-const addPlugins = require('../addPlugins')
+const addPlugins = require.requireActual('../addPlugins')
 
 describe('add plugins', () => {
   let originalExit
@@ -35,10 +35,10 @@ describe('add plugins', () => {
       },
     })
 
-    inquirer.setMockAnswers({
+    mockInquirer.setMockAnswers({
       installPluginsNames: pluginsNames,
     })
-    githubApi.setMockPlugins(plugins)
+    mockGithubApi.setMockPlugins(plugins)
   })
 
   afterAll(() => {
@@ -46,13 +46,13 @@ describe('add plugins', () => {
       value: originalExit,
     })
 
-    inquirer.setMockAnswers({})
-    core.setMockModules({})
-    githubApi.setMockPlugins([])
+    mockInquirer.setMockAnswers({})
+    mockCore.setMockModules({})
+    mockGithubApi.setMockPlugins([])
   })
 
   it('should success add plugins', async () => {
-    core.setMockModules({
+    mockCore.setMockModules({
       [projectConfigPath]: projectConfig,
     })
 
@@ -61,7 +61,7 @@ describe('add plugins', () => {
   })
 
   it('should success add plugins, but plugins already installed', async () => {
-    core.setMockModules({
+    mockCore.setMockModules({
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
       }),
@@ -72,7 +72,7 @@ describe('add plugins', () => {
   })
 
   it('should success add plugins with select', async () => {
-    core.setMockModules({
+    mockCore.setMockModules({
       [projectConfigPath]: projectConfig,
     })
 
@@ -81,7 +81,7 @@ describe('add plugins', () => {
   })
 
   it('should success add plugins with select and empty config', async () => {
-    core.setMockModules({
+    mockCore.setMockModules({
       [projectConfigPath]: {},
     })
 
@@ -90,7 +90,7 @@ describe('add plugins', () => {
   })
 
   it('should failed add plugins - plugins not found', async () => {
-    core.setMockModules({
+    mockCore.setMockModules({
       [projectConfigPath]: projectConfig,
     })
     const notExistPlugin = 'invalid'
@@ -100,7 +100,7 @@ describe('add plugins', () => {
   })
 
   it('should failed add plugins - cant find plugins for install', async () => {
-    core.setMockModules({
+    mockCore.setMockModules({
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
       }),
@@ -111,7 +111,7 @@ describe('add plugins', () => {
   })
 
   it('should failed add plugins - project config not found', async () => {
-    core.setMockModules({})
+    mockCore.setMockModules({})
 
     await expect(addPlugins())
       .rejects.toHaveProperty('message', 'Can\'t find rispa project config')

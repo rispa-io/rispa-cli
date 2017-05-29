@@ -6,6 +6,9 @@
   "bin": {
     "ris": "./bin/ris.js"
   },
+  "engines": {
+    "node": ">=7.10.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rispa-io/rispa-cli.git"
@@ -23,12 +26,12 @@
   },
   "homepage": "https://github.com/rispa-io/rispa-cli#readme",
   "dependencies": {
+    "@rispa/generator": "https://github.com/rispa-io/rispa-generator.git",
     "axios": "^0.16.1",
     "cross-spawn": "^5.1.0",
     "fs-extra": "^3.0.1",
     "glob": "^7.1.2",
-    "inquirer": "^3.0.6",
-    "node-plop": "^0.6.0"
+    "inquirer": "^3.0.6"
   },
   "devDependencies": {
     "@rispa/eslint-config": "^1.0.1",

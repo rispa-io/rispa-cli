@@ -1,7 +1,7 @@
 jest.resetAllMocks()
 jest.mock('cross-spawn')
 
-const { installPlugins } = require('../plugin')
+const { installPlugins } = require.requireActual('../plugin')
 
 describe('manipulation with plugins', () => {
   it('should success install plugins', () => {

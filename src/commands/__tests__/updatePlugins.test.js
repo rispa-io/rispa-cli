@@ -2,15 +2,15 @@ jest.resetAllMocks()
 jest.mock('inquirer')
 jest.mock('fs-extra')
 jest.mock('cross-spawn')
-jest.mock('../core')
-jest.mock('../githubApi')
+jest.mock('../../core')
+jest.mock('../../githubApi')
 
-const fs = require('fs-extra')
-const inquirer = require('inquirer')
-const core = require('../core')
-const githubApi = require('../githubApi')
+const mockFs = require.requireMock('fs-extra')
+const mockInquirer = require.requireMock('inquirer')
+const mockCore = require.requireMock('../../core')
+const mockGithubApi = require.requireMock('../../githubApi')
 
-const updatePlugins = require('../updatePlugins')
+const updatePlugins = require.requireActual('../updatePlugins')
 
 describe('update plugins', () => {
   let originalExit
@@ -35,10 +35,10 @@ describe('update plugins', () => {
       },
     })
 
-    inquirer.setMockAnswers({
+    mockInquirer.setMockAnswers({
       installPluginsNames: pluginsNames,
     })
-    githubApi.setMockPlugins(plugins)
+    mockGithubApi.setMockPlugins(plugins)
   })
 
   afterAll(() => {
@@ -46,26 +46,26 @@ describe('update plugins', () => {
       value: originalExit,
     })
 
-    fs.setMockFiles([])
-    inquirer.setMockAnswers({})
-    core.setMockModules({})
-    githubApi.setMockPlugins([])
+    mockFs.setMockFiles([])
+    mockInquirer.setMockAnswers({})
+    mockCore.setMockModules({})
+    mockGithubApi.setMockPlugins([])
   })
 
   it('should success update plugins', async () => {
-    core.setMockModules({
+    mockCore.setMockModules({
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
       }),
     })
-    fs.setMockFiles(pluginsNames.map(pluginName => `${pluginsPath}/${pluginName}/.git`))
+    mockFs.setMockFiles(pluginsNames.map(pluginName => `${pluginsPath}/${pluginName}/.git`))
 
     await expect(updatePlugins())
       .rejects.toBe(1)
   })
 
   it('should failed update plugins - project config not found', async () => {
-    core.setMockModules({})
+    mockCore.setMockModules({})
 
     await expect(updatePlugins())
       .rejects.toHaveProperty('message', 'Can\'t find rispa project config')

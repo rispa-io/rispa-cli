@@ -1,7 +1,9 @@
 jest.resetAllMocks()
 jest.mock('axios')
 
-const githubApi = require('../githubApi')
+const mockAxios = require.requireMock('axios')
+
+const githubApi = require.requireActual('../githubApi')
 
 describe('github api', () => {
   it('should success fetch plugins', async () => {
@@ -13,7 +15,7 @@ describe('github api', () => {
         },
       ],
     }
-    require('axios').setMockData({
+    mockAxios.setMockData({
       '/search/repositories?q=user:rispa-io+topic:rispa-plugin': data,
     })
 

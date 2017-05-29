@@ -1,7 +1,7 @@
 jest.resetAllMocks()
 jest.mock('cross-spawn')
 
-const { cloneRepository, pullRepository, resetRepository } = require('../git')
+const { cloneRepository, pullRepository, resetRepository } = require.requireActual('../git')
 
 describe('working with git', () => {
   it('should success git clone repository', () => {

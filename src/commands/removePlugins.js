@@ -3,12 +3,12 @@ const fs = require('fs-extra')
 
 const {
   readConfiguration, saveConfiguration,
-} = require('./project')
-const { handleError } = require('./core')
+} = require('../project')
+const { handleError } = require('../core')
 
 const PROJECT_PATH = process.cwd()
 
-function removePlugin(plugin) {
+const removePlugin = plugin => {
   try {
     fs.removeSync(plugin.path)
     console.log(`Remove plugin with name: ${plugin.name}`)
@@ -19,7 +19,7 @@ function removePlugin(plugin) {
   }
 }
 
-async function removePlugins(...pluginsNames) {
+const removePlugins = async (...pluginsNames) => {
   const configuration = readConfiguration(PROJECT_PATH)
   if (!configuration || !configuration.plugins || !configuration.pluginsPath) {
     handleError('Can\'t find rispa project config')
