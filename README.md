@@ -22,6 +22,8 @@ ris new project-name
 cd project-name
 ```
 
+<img width="469" alt="ris new" src="https://cloud.githubusercontent.com/assets/6418302/26548234/d1f9e816-447b-11e7-970f-874e6b6dbd99.png">
+
 It will create a directory called `project-name` inside the current run folder.<br>
 Inside that directory, it will generate the initial project structure and install the selected plugins:
 
@@ -43,85 +45,89 @@ project-name/
 
 ### `ris add`
 
-To add plugins, run:
+To add plugins, run inside project directory:
 ```sh
-cd project-name
-ris add plugin-name
+ris add rispa-eslint-config
 ```
 
-It will add plugin with name `plugin-name` in current run project.
+<img width="462" alt="ris add plugin-name" src="https://cloud.githubusercontent.com/assets/6418302/26548383/9ae839c6-447c-11e7-9f47-10c8a76b27ff.png">
+
+It will add plugin with name `rispa-eslint-config` in current run project.
 
 If you want browse and select plugins to install, run:
 
 ```sh
-cd project-name
 ris add
 ```
+
+<img width="707" alt="ris add" src="https://cloud.githubusercontent.com/assets/6418302/26548353/6c382960-447c-11e7-83e5-2f61456f6bf9.png">
 
 It will display available plugins, press `space` to select plugin to installation, finally press `enter` to install selected plugins.
 
 ### `ris update`
 
-To update installed plugins, run:
+To update installed plugins, run inside project directory:
 
 ```sh
-cd project-name
 ris update
 ```
 
 It will pull changes in all installed plugins in current run project.
 
-**The pull changes works through the `git` interface**
+**The pull changes works through the `git` interface.**
 
 ### `ris remove`
 
-To remove plugin, run:
+To remove plugin, run inside project directory:
 
 ```sh
-cd project-name
 ris remove plugin-name
 ```
 
-It will remove plugins with name `plugins-name` from current run project.
+It will remove plugin with name `plugins-name` from current run project.
+
+**Remove a plugin is an unsafe operation,**<br/>
+**because, don't make changes to the client code**<br/>
+**and requires corrections by user.**
 
 ### Launch plugin script
 ### `ris run` or `ris`
 
-To launch plugin script, run:
+To launch plugin script, run inside project directory:
 
 ```sh
-cd project-name
-ris run plugin-name lint
+ris run @rispa/core lint
 ```
 
-It will launch script `lint` in plugin with name `plugin-name`.
+<img width="707" alt="ris run all lint" src="https://cloud.githubusercontent.com/assets/6418302/26548936/21459700-447f-11e7-9561-22f9a3e61030.png">
+
+It will launch script `lint` in plugin with name `@rispa/core`.
 
 ### `ris run all` or `ris all`
 
-To launch script in all plugins, run:
+To launch script in all plugins, run inside project directory:
 
 ```sh
-cd project-name
 ris run all lint
 ```
+
+<img width="707" alt="ris run all lint" src="https://cloud.githubusercontent.com/assets/6418302/26548812/a5634fb0-447e-11e7-8f89-bace7036d1a3.png">
 
 It will launch script `lint` in all installed plugins.
 
 ### Launch generator
 ### `ris g`
 
-To launch package generator, run:
+To launch package generator, run inside project directory:
 
 ```sh
-cd project-name
 ris g ui generator-name
 ```
 
 It will launch generator with name `generator-name` of package `ui` in current run project.
 
-<!--## Philosophy
-* **Modularity:** Logical separation into modules.<br/>
-Horizontal scalability within the project.
+## Plugins
 
-* **Plugin Infrastructure:** Easy management of necessary capabilities.<br/>
-Simple upgrade project modules.-->
+Plugins extend the functionality of the project.
+
+List of available plugins can be seen [here](https://github.com/search?q=topic%3Arispa-plugin+org%3Arispa-io&type=Repositories).
