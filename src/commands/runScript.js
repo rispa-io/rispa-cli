@@ -30,12 +30,13 @@ const runInAllPackages = (packages, command, args) => {
     handleError(`Can't find command "${command}" in packages.`)
   }
 
-  const result = callScriptList(packageInfoList, command, args)
+  const runPaths = packageInfoList.map(({ path: runPath }) => runPath)
+  const result = callScriptList(runPaths, command, args)
   process.exit(result)
 }
 
 const callScriptInSinglePackage = (packageInfo, command, args) => {
-  const result = callScript(packageInfo, command, args)
+  const result = callScript(packageInfo.path, command, args)
   process.exit(result)
 }
 

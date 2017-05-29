@@ -1,9 +1,10 @@
 const fs = require('fs-extra')
 const path = require('path')
+const spawn = require('cross-spawn')
 const { prompt } = require('inquirer')
 const configureGenerators = require('@rispa/generator')
 
-const { handleError } = require('../core')
+const { handleError, callScript } = require('../core')
 const githubApi = require('../githubApi')
 const { installPlugins } = require('../plugin')
 const { saveConfiguration } = require('../project')
@@ -21,6 +22,28 @@ const selectInstallPlugins = plugins => prompt([{
   choices: plugins,
 }])
 
+const installProjectDeps = projectPath => (
+  spawn.sync(
+    'npm',
+    ['install'],
+    {
+      cwd: projectPath,
+      stdio: 'inherit',
+    }
+  ).status
+)
+
+const lernaBootstrapProject = projectPath => (
+  spawn.sync(
+    'npm',
+    ['run', 'bs'],
+    {
+      cwd: projectPath,
+      stdio: 'inherit',
+    }
+  ).status
+)
+
 const generateProject = async (projectName, installPluginsNames, plugins) => {
   const projectPath = path.resolve(process.cwd(), `./${projectName}`)
   const pluginsPath = `${projectPath}/packages`
@@ -36,6 +59,10 @@ const generateProject = async (projectName, installPluginsNames, plugins) => {
     plugins: installPluginsNames,
     pluginsPath: './packages',
   }, projectPath)
+
+  installProjectDeps(projectPath)
+
+  lernaBootstrapProject(projectPath)
 
   console.log(`Project "${projectName}" successfully generated!`)
 }
