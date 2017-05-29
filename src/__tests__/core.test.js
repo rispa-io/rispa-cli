@@ -2,14 +2,14 @@ jest.resetAllMocks()
 jest.mock('fs-extra')
 jest.mock('cross-spawn')
 
-const fs = require('fs-extra')
-const path = require('path')
+const mockFs = require.requireMock('fs-extra')
+const path = require.requireActual('path')
 
 const {
   requireIfExist, handleError,
   callScript, callScriptList,
   callScriptByYarn, callScriptByNpm,
-} = require('../core')
+} = require.requireActual('../core')
 
 describe('require modules if exist', () => {
   it('should load package.json data', () => {
@@ -28,17 +28,17 @@ describe('call script', () => {
   }
 
   afterAll(() => {
-    fs.setMockFiles([])
+    mockFs.setMockFiles([])
   })
 
   it('should call script is call script by npm', () => {
-    fs.setMockFiles([])
+    mockFs.setMockFiles([])
 
     expect(callScript(packageInfo, '--version')).toBe(0)
   })
 
   it('should call script is call script by yarn', () => {
-    fs.setMockFiles([path.resolve(process.cwd(), './yarn.lock')])
+    mockFs.setMockFiles([path.resolve(process.cwd(), './yarn.lock')])
 
     expect(callScript(packageInfo, '--version')).toBe(0)
   })

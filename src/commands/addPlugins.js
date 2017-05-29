@@ -1,26 +1,24 @@
 const path = require('path')
 const { prompt } = require('inquirer')
 
-const { handleError } = require('./core')
+const { handleError } = require('../core')
 const {
   readConfiguration,
   saveConfiguration,
- } = require('./project')
-const githubApi = require('./githubApi')
-const { installPlugins } = require('./plugin')
+ } = require('../project')
+const githubApi = require('../githubApi')
+const { installPlugins } = require('../plugin')
 
 const PROJECT_PATH = process.cwd()
 
-function selectPlugins(plugins) {
-  return prompt([{
-    type: 'checkbox',
-    message: 'Select install plugins:',
-    name: 'installPluginsNames',
-    choices: plugins,
-  }])
-}
+const selectPlugins = plugins => prompt([{
+  type: 'checkbox',
+  message: 'Select install plugins:',
+  name: 'installPluginsNames',
+  choices: plugins,
+}])
 
-function findPluginsForInstall(plugins, installedPluginsNames) {
+const findPluginsForInstall = (plugins, installedPluginsNames) => {
   const pluginsForChoice = plugins.filter(({ name }) => installedPluginsNames.indexOf(name) === -1)
   if (pluginsForChoice.length === 0) {
     handleError('Can\'t find plugins for install')
@@ -29,7 +27,7 @@ function findPluginsForInstall(plugins, installedPluginsNames) {
   return selectPlugins(pluginsForChoice)
 }
 
-async function addPlugin(...pluginsNames) {
+const addPlugin = async (...pluginsNames) => {
   const configuration = readConfiguration(PROJECT_PATH)
   if (!configuration) {
     handleError('Can\'t find rispa project config')

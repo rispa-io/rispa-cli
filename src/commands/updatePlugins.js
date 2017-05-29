@@ -5,24 +5,22 @@ const fs = require('fs-extra')
 
 const {
   readConfiguration, saveConfiguration,
-} = require('./project')
-const { handleError } = require('./core')
-const { pullRepository } = require('./git')
+} = require('../project')
+const { handleError } = require('../core')
+const { pullRepository } = require('../git')
 
-const PROJECT_PATH = process.cwd()
-
-function updatePlugin(plugin) {
+const updatePlugin = plugin => {
   console.log(`Update plugin with name: ${plugin.name}`)
   pullRepository(plugin.path)
 }
 
-async function updatePlugins() {
-  const configuration = readConfiguration(PROJECT_PATH)
+const updatePlugins = async (projectPath = process.cwd()) => {
+  const configuration = readConfiguration(projectPath)
   if (!configuration || !configuration.plugins || !configuration.pluginsPath) {
     handleError('Can\'t find rispa project config')
   }
 
-  const pluginsPath = path.resolve(PROJECT_PATH, configuration.pluginsPath)
+  const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
 
   const plugins = configuration.plugins
     .filter((pluginName, idx, pluginsNames) => pluginsNames.indexOf(pluginName) === idx)
@@ -36,7 +34,7 @@ async function updatePlugins() {
 
   configuration.plugins = plugins.map(({ name }) => name)
 
-  saveConfiguration(configuration, PROJECT_PATH)
+  saveConfiguration(configuration, projectPath)
 
   process.exit(1)
 }

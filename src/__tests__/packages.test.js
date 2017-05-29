@@ -4,16 +4,19 @@ jest.mock('fs-extra')
 jest.mock('glob')
 jest.mock('../core')
 
+const mockGlob = require.requireMock('glob')
+const mockCore = require.requireMock('../core')
+const mockFs = require.requireMock('fs-extra')
+
 const {
   scanPackages, findPackagesByPath, findPackagesByPathFromCache, packageInfoByPath, saveCache,
-} = require('../packages')
+} = require.requireActual('../packages')
 
 describe('scan packages', () => {
   const basePath = '/sample/path'
-  const packagesNames = ['core', 'eslint-config']
+  const packagesNames = ['@rispa/core', '@rispa/eslint-config']
   const packagesScanPath = `${basePath}/node_modules/*`
   const packagesPaths = packagesNames.map(packageName => `${basePath}/${packageName}`)
-
   const packagesInfo = packagesNames.reduce((result, packageName, idx) => {
     const packageInfo = {
       name: packageName,
@@ -21,25 +24,26 @@ describe('scan packages', () => {
     }
 
     if (idx % 2) {
-      packageInfo.alias = `@rispa/${packageName}`
+      packageInfo.alias = packageName.replace('@rispa/', '')
       packageInfo.commands = ['start']
       packageInfo.activatorPath = `${basePath}/${packageName}/.rispa/activator.js`
+      packageInfo.generatorsPath = `${basePath}/${packageName}/.rispa/generators/index.js`
     } else {
-      packageInfo.alias = null
+      packageInfo.alias = undefined
       packageInfo.commands = []
       packageInfo.activatorPath = false
+      packageInfo.generatorsPath = false
     }
 
     if (packageInfo.alias) {
       result[packageInfo.alias] = packageInfo
     }
-    result[packageName] = packageInfo
+    result[packageInfo.name] = packageInfo
 
     return result
   }, {})
 
   const failedPath = '/failed/path'
-
   const cache = {
     paths: {
       [packagesScanPath]: packagesNames,
@@ -48,23 +52,23 @@ describe('scan packages', () => {
   }
 
   beforeAll(() => {
-    require('glob').setMockPaths({
+    mockGlob.setMockPaths({
       [packagesScanPath]: packagesPaths,
       [failedPath]: [`${failedPath}/package`],
     })
 
-    require('fs-extra').setMockFiles([
+    mockFs.setMockFiles([
       `${packagesPaths[1]}/.rispa/activator.js`,
+      `${packagesPaths[1]}/.rispa/generators/index.js`,
     ])
 
-    require('../core').setMockModules(
+    mockCore.setMockModules(
       packagesNames.reduce((modules, name, idx) =>
         Object.assign(modules, {
           [`${basePath}/${name}/package.json`]: {
             name,
             scripts: idx % 2 ? { start: '' } : undefined,
-            'rispa:plugin': true,
-            'rispa:name': idx % 2 ? `@rispa/${name}` : null,
+            'rispa:name': idx % 2 ? name.replace('@rispa/', '') : undefined,
           },
         }),
         {
@@ -76,9 +80,9 @@ describe('scan packages', () => {
   })
 
   afterAll(() => {
-    require('glob').setMockPaths({})
-    require('../core').setMockModules({})
-    require('fs-extra').setMockFiles([])
+    mockGlob.setMockPaths({})
+    mockCore.setMockModules({})
+    mockFs.setMockFiles([])
   })
 
   it('should success save cache', () => {
@@ -128,9 +132,9 @@ describe('scan packages with lerna.json', () => {
   const basePath = '/sample/path'
 
   beforeAll(() => {
-    require('glob').setMockPaths({})
+    mockGlob.setMockPaths({})
 
-    require('../core').setMockModules({
+    mockCore.setMockModules({
       [`${basePath}/build/activators.json`]: {
         paths: {
           [`${basePath}/packages/*`]: [],
@@ -144,8 +148,8 @@ describe('scan packages with lerna.json', () => {
   })
 
   afterAll(() => {
-    require('glob').setMockPaths({})
-    require('../core').setMockModules({})
+    mockGlob.setMockPaths({})
+    mockCore.setMockModules({})
   })
 
   it('should success scan packages with lerna.json', () => {

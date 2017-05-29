@@ -11,11 +11,12 @@ const LOCAL_VERSION_PATH = path.resolve(RUN_PATH, './node_modules/.bin/ris')
 
 const runCommand = args => {
   const commands = {
-    run: () => require('../src/runScript'),
-    new: () => require('../src/createProject'),
-    add: () => require('../src/addPlugins'),
-    update: () => require('../src/updatePlugins'),
-    remove: () => require('../src/removePlugins'),
+    run: () => require('../src/commands/runScript'),
+    new: () => require('../src/commands/createProject'),
+    add: () => require('../src/commands/addPlugins'),
+    update: () => require('../src/commands/updatePlugins'),
+    remove: () => require('../src/commands/removePlugins'),
+    g: () => require('../src/commands/generate'),
   }
 
   const commandName = args[0] || ''

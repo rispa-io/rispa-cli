@@ -2,9 +2,15 @@ jest.resetAllMocks()
 jest.mock('fs-extra')
 jest.mock('../core')
 
-const { saveConfiguration, readConfiguration } = require('../project')
+const mockCore = require.requireMock('../core')
+
+const { saveConfiguration, readConfiguration } = require.requireActual('../project')
 
 describe('project configuration', () => {
+  afterAll(() => {
+    mockCore.setMockModules({})
+  })
+
   const configuration = {
     plugins: [],
     pluginsPath: '/path/packages',
@@ -15,7 +21,7 @@ describe('project configuration', () => {
   })
 
   it('should success read project configuration', () => {
-    require('../core').setMockModules({
+    mockCore.setMockModules({
       '/path/.rispa.json': configuration,
     })
     expect(readConfiguration('/path')).toEqual(configuration)

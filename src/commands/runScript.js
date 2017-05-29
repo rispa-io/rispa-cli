@@ -3,30 +3,26 @@ const { prompt } = require('inquirer')
 const {
   handleError,
   callScript, callScriptList,
-} = require('./core')
-const { scanPackages } = require('./packages')
+} = require('../core')
+const { scanPackages } = require('../packages')
 
-function selectPackage(packages) {
-  return prompt([{
-    type: 'list',
-    name: 'packageName',
-    message: 'Select available package:',
-    paginated: true,
-    choices: [...new Set(Object.keys(packages).map(key => packages[key].name))],
-  }])
-}
+const selectPackage = packages => prompt([{
+  type: 'list',
+  name: 'packageName',
+  message: 'Select available package:',
+  paginated: true,
+  choices: [...new Set(Object.keys(packages).map(key => packages[key].name))],
+}])
 
-function selectCommand(commands) {
-  return prompt([{
-    type: 'list',
-    name: 'command',
-    message: 'Select available command:',
-    paginated: true,
-    choices: commands,
-  }])
-}
+const selectCommand = commands => prompt([{
+  type: 'list',
+  name: 'command',
+  message: 'Select available command:',
+  paginated: true,
+  choices: commands,
+}])
 
-async function runInAllPackages(packages, command, args) {
+const runInAllPackages = (packages, command, args) => {
   const packageInfoList = Object.values(packages)
     .filter((value, idx, values) => values.indexOf(value) === idx)
 
@@ -38,12 +34,12 @@ async function runInAllPackages(packages, command, args) {
   process.exit(result)
 }
 
-function callScriptInSinglePackage(packageInfo, command, args) {
+const callScriptInSinglePackage = (packageInfo, command, args) => {
   const result = callScript(packageInfo, command, args)
   process.exit(result)
 }
 
-async function runInSinglePackage(packageName, packages, command, args) {
+const runInSinglePackage = async (packageName, packages, command, args) => {
   let packageInfo = packages[packageName]
 
   if (!packageInfo) {
@@ -68,7 +64,7 @@ async function runInSinglePackage(packageName, packages, command, args) {
   }
 }
 
-async function run(packageName, command, ...args) {
+const run = async (packageName, command, ...args) => {
   const packages = scanPackages()
 
   if (!Object.keys(packages).length) {
