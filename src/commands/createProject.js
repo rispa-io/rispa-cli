@@ -4,7 +4,7 @@ const spawn = require('cross-spawn')
 const { prompt } = require('inquirer')
 const configureGenerators = require('@rispa/generator')
 
-const { handleError, callScript } = require('../core')
+const { handleError } = require('../core')
 const githubApi = require('../githubApi')
 const { installPlugins } = require('../plugin')
 const { saveConfiguration } = require('../project')
