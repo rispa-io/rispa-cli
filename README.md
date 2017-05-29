@@ -133,8 +133,7 @@ It will launch generator with the name `generator-name` of package `ui` in curre
 
 ## Features
 ### Run local version
-
-If when we call global installed CLI, we find local version of CLI, then call will be redirected to the local version
+If you launched the global installed CLI and if it found local version itself, then call will be redirected to the local version.
 
 ### Structure
 
@@ -144,6 +143,6 @@ Generated project based on [Lerna](https://github.com/lerna/lerna) *monorepo* st
 
 Plugins is part of *monorepo* modules and extend the project functionality.<br/>
 
-[@rispa/core](https://github.com/rispa-io/rispa-core) - is an entry point of all plugins, provides enhancements and ensures correct initialization of connected plugins.
+[@rispa/core](https://github.com/rispa-io/rispa-core) - is an entry point of all plugins, provides enhancements and correct initialization of connected plugins.
 
 List of available plugins can be seen [here](https://github.com/search?q=topic%3Arispa-plugin+org%3Arispa-io&type=Repositories).
