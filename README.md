@@ -2,16 +2,21 @@
 
 `ris` is the Rispa CLI command line utility allowing the creation of project structure, managing plugins, run generators.
 
+* [Getting Started](#getting-started) – How to use.
+* [Features](#features) – About features.
+
+Rispa CLI works on macOS, Windows, and Linux.
+
 ## Getting Started
 
 ### Installation
 
-Install it once globally:
+Install it once globally:м
 ```sh
 npm install -g @rispa/cli
 ```
 
-**You’ll need to have Node >= 7.10 on your machine**.
+**You will need to have Node >= 7.10 on your machine**.
 
 ### Creating project
 
@@ -39,7 +44,7 @@ project-name/
     ...selected-plugins
 ```
 
-`.rispa.json` - is entry point of **RISPA** project, it contains information of current project.
+`.rispa.json` - is an entry point of **RISPA** project, it contains information of current project.
 
 ### Managing plugins
 
@@ -86,8 +91,8 @@ ris remove plugin-name
 
 It will remove plugin with name `plugins-name` from current run project.
 
-**Remove a plugin is an unsafe operation,**<br/>
-**because, don't make changes to the client code**<br/>
+**Plugin remove is an unsafe operation,**<br/>
+**because, it doesn't make changes to the client code**<br/>
 **and requires corrections by user.**
 
 ### Launch plugin script
@@ -124,10 +129,21 @@ To launch package generator, run inside project directory:
 ris g ui generator-name
 ```
 
-It will launch generator with name `generator-name` of package `ui` in current run project.
+It will launch generator with the name `generator-name` of package `ui` in current run project.
 
-## Plugins
+## Features
+### Run local version
 
-Plugins extend the functionality of the project.
+If when we call global installed CLI, we find local version of CLI, then call will be redirected to the local version
+
+### Structure
+
+Generated project based on [Lerna](https://github.com/lerna/lerna) *monorepo* structure.
+
+### Plugins
+
+Plugins is part of *monorepo* modules and extend the project functionality.<br/>
+
+[@rispa/core](https://github.com/rispa-io/rispa-core) - is an entry point of all plugins, provides enhancements and ensures correct initialization of connected plugins.
 
 List of available plugins can be seen [here](https://github.com/search?q=topic%3Arispa-plugin+org%3Arispa-io&type=Repositories).
