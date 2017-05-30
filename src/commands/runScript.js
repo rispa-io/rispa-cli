@@ -25,6 +25,7 @@ const selectCommand = commands => prompt([{
 const runInAllPackages = (packages, command, args) => {
   const packageInfoList = Object.values(packages)
     .filter((value, idx, values) => values.indexOf(value) === idx)
+    .filter(({ commands }) => commands.indexOf(command) !== -1)
 
   if (!packageInfoList.find(({ commands }) => commands.indexOf(command) !== -1)) {
     handleError(`Can't find command "${command}" in packages.`)
