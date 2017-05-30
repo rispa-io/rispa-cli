@@ -3,7 +3,9 @@ const core = jest.genMockFromModule('../core')
 let mockModules = {
 }
 
-core.setMockModules = newMockModules => { mockModules = newMockModules }
+core.setMockModules = newMockModules => {
+  mockModules = newMockModules
+}
 
 core.requireIfExist = id => {
   const mockModule = mockModules[id]
@@ -13,7 +15,6 @@ core.requireIfExist = id => {
     }
     return mockModule
   }
-
   return null
 }
 

@@ -2,26 +2,36 @@ const path = require('path')
 const spawn = require('cross-spawn')
 const fs = require('fs-extra')
 
-const callScriptByYarn = (packageInfo, command, args) => (
+const callScriptByYarn = (runPath, command, args) => (
   spawn.sync(
     'yarn',
     [command].concat(args),
     {
-      cwd: packageInfo.path,
+      cwd: runPath,
       stdio: 'inherit',
     }
   ).status
 )
 
-const callScriptByNpm = (packageInfo, command, args) => (
+const callScriptByNpm = (runPath, command, args) => (
   spawn.sync(
     'npm',
     ['run', command].concat(args),
     {
-      cwd: packageInfo.path,
+      cwd: runPath,
       stdio: 'inherit',
     }
   ).status
+)
+
+const useYarn = (projectPath = process.cwd()) => fs.existsSync(path.resolve(projectPath, './yarn.lock'))
+
+const callScript = (runPath, command, args) => useYarn() ?
+  callScriptByYarn(runPath, command, args) :
+  callScriptByNpm(runPath, command, args)
+
+const callScriptList = (runPaths, command, args) => (
+  runPaths.reduce((result, runPath) => callScript(runPath, command, args) || result, 0)
 )
 
 const requireIfExist = id => {
@@ -36,16 +46,6 @@ const handleError = error => {
   console.error(error)
   process.exit(1)
 }
-
-const useYarn = (projectPath = process.cwd()) => fs.existsSync(path.resolve(projectPath, './yarn.lock'))
-
-const callScript = (packageInfo, command, args) => useYarn() ?
-  callScriptByYarn(packageInfo, command, args) :
-  callScriptByNpm(packageInfo, command, args)
-
-const callScriptList = (packageInfoList, command, args) => (
-  packageInfoList.reduce((result, packageInfo) => callScript(packageInfo, command, args) || result, 0)
-)
 
 module.exports = {
   requireIfExist,
