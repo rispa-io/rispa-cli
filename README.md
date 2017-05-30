@@ -69,6 +69,14 @@ ris add
 
 It will display available plugins, press `space` to select plugin to installation, finally press `enter` to install selected plugins.
 
+If you want add plugin via git url, run:
+
+```sh
+ris add git:https://github.com/rispa-io/rispa-core.git
+```
+
+It will add plugin with name `rispa-core` via git url in current run project.
+
 ### `ris update`
 
 To update installed plugins, run inside project directory:

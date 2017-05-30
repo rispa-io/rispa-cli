@@ -79,6 +79,26 @@ describe('add plugins', () => {
     )
   })
 
+  it('should success add plugin by url', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
+    mockCore.setMockModules({
+      [projectConfigPath]: projectConfig,
+    })
+
+    const clonePluginName = 'plugin-name'
+    const cloneUrl = `https://test.com/${clonePluginName}.git`
+
+    await expect(addPlugins(`git:${cloneUrl}`))
+      .rejects.toBe(1)
+
+    expect(consoleLog).toBeCalledWith(`Install plugin with name: ${clonePluginName}`)
+  })
+
   it('should success add plugins, but plugins already installed', async () => {
     const consoleLog = jest.fn()
 
@@ -136,6 +156,23 @@ describe('add plugins', () => {
     pluginsNames.forEach(pluginName =>
       expect(consoleLog).toBeCalledWith(`Install plugin with name: ${pluginName}`)
     )
+  })
+
+  it('should failed add plugin by url - invalid url', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
+    mockCore.setMockModules({
+      [projectConfigPath]: projectConfig,
+    })
+
+    const cloneUrl = 'https://test.com/plugin-name'
+
+    await expect(addPlugins(`git:${cloneUrl}`))
+      .rejects.toHaveProperty('message', `Invalid plugin git url: ${cloneUrl}`)
   })
 
   it('should failed add plugins - plugins not found', async () => {
