@@ -9,7 +9,15 @@ const {
 const githubApi = require('../githubApi')
 const { installPlugins } = require('../plugin')
 
-const PROJECT_PATH = process.cwd()
+const extractPluginNameFromUrl = cloneUrl => {
+  const parts = cloneUrl.split('/')
+  return parts[parts.length - 1].replace(/\.git$/, '')
+}
+
+const extractCloneUrl = pluginName => (
+  pluginName && pluginName.startsWith('git:') ?
+    pluginName.replace(/^git:/, '') : null
+)
 
 const selectPlugins = plugins => prompt([{
   type: 'checkbox',
@@ -27,17 +35,20 @@ const findPluginsForInstall = (plugins, installedPluginsNames) => {
   return selectPlugins(pluginsForChoice)
 }
 
-const addPlugin = async (...pluginsNames) => {
-  const configuration = readConfiguration(PROJECT_PATH)
-  if (!configuration) {
-    handleError('Can\'t find rispa project config')
+const addPluginsByUrl = (clonePluginUrl, installedPluginsNames, pluginsPath) => {
+  if (!clonePluginUrl.endsWith('.git')) {
+    handleError(`Invalid plugin git url: ${clonePluginUrl}`)
   }
 
-  const {
-    plugins: installedPluginsNames = [],
-    pluginsPath = './packages',
-  } = configuration
+  const pluginInfo = {
+    name: extractPluginNameFromUrl(clonePluginUrl),
+    clone_url: clonePluginUrl,
+  }
 
+  return installPlugins([pluginInfo.name], [pluginInfo], installedPluginsNames, pluginsPath)
+}
+
+const addOfficialPlugins = async (pluginsNames, installedPluginsNames, pluginsPath) => {
   const { data: { items: plugins } } = await githubApi.plugins()
 
   if (pluginsNames.length === 0) {
@@ -51,14 +62,39 @@ const addPlugin = async (...pluginsNames) => {
     }
   }
 
-  installPlugins(pluginsNames, plugins, installedPluginsNames, path.resolve(PROJECT_PATH, pluginsPath))
+  return installPlugins(pluginsNames, plugins, installedPluginsNames, pluginsPath)
+}
 
-  configuration.plugins = installedPluginsNames.concat(pluginsNames)
+const addPlugins = async (...pluginsNames) => {
+  const projectPath = process.cwd()
+  const configuration = readConfiguration(projectPath)
+  const resolve = relPath => path.resolve(projectPath, relPath)
+
+  if (!configuration) {
+    handleError('Can\'t find rispa project config')
+  }
+
+  const {
+    plugins: installedPluginsNames = [],
+    pluginsPath: relPluginsPath = './packages',
+  } = configuration
+  const pluginsPath = resolve(relPluginsPath)
+
+  const clonePluginUrl = extractCloneUrl(pluginsNames[0])
+  if (clonePluginUrl) {
+    const results = addPluginsByUrl(clonePluginUrl, installedPluginsNames, pluginsPath)
+    installedPluginsNames.push(...results)
+  } else {
+    const results = await addOfficialPlugins(pluginsNames, installedPluginsNames, pluginsPath)
+    installedPluginsNames.push(...results)
+  }
+
+  configuration.plugins = installedPluginsNames
     .filter((pluginName, idx, currentPlugins) => currentPlugins.indexOf(pluginName) === idx)
 
-  saveConfiguration(configuration, PROJECT_PATH)
+  saveConfiguration(configuration, projectPath)
 
   process.exit(1)
 }
 
-module.exports = addPlugin
+module.exports = addPlugins
