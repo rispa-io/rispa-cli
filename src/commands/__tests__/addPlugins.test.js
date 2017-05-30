@@ -14,6 +14,7 @@ const addPlugins = require.requireActual('../addPlugins')
 
 describe('add plugins', () => {
   let originalExit
+  let originalConsoleLog
 
   const pluginsNames = ['rispa-core', 'rispa-eslint-config']
   const pluginsPath = '/sample/path'
@@ -29,6 +30,8 @@ describe('add plugins', () => {
 
   beforeAll(() => {
     originalExit = process.exit
+    originalConsoleLog = console.log
+
     Object.defineProperty(process, 'exit', {
       value: code => {
         throw code
@@ -41,26 +44,48 @@ describe('add plugins', () => {
     mockGithubApi.setMockPlugins(plugins)
   })
 
+  afterEach(() => {
+    Object.defineProperty(console, 'log', {
+      value: originalConsoleLog,
+    })
+  })
+
   afterAll(() => {
     Object.defineProperty(process, 'exit', {
       value: originalExit,
     })
 
-    mockInquirer.setMockAnswers({})
-    mockCore.setMockModules({})
-    mockGithubApi.setMockPlugins([])
+    Object.defineProperty(console, 'log', {
+      value: originalConsoleLog,
+    })
   })
 
   it('should success add plugins', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
     mockCore.setMockModules({
       [projectConfigPath]: projectConfig,
     })
 
     await expect(addPlugins(...pluginsNames))
       .rejects.toBe(1)
+
+    pluginsNames.forEach(pluginName =>
+      expect(consoleLog).toBeCalledWith(`Install plugin with name: ${pluginName}`)
+    )
   })
 
   it('should success add plugins, but plugins already installed', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
     mockCore.setMockModules({
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
@@ -69,24 +94,48 @@ describe('add plugins', () => {
 
     await expect(addPlugins(...pluginsNames))
       .rejects.toBe(1)
+
+    pluginsNames.forEach(pluginName =>
+      expect(consoleLog).toBeCalledWith(`Already installed plugin with name: ${pluginName}`)
+    )
   })
 
   it('should success add plugins with select', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
     mockCore.setMockModules({
       [projectConfigPath]: projectConfig,
     })
 
     await expect(addPlugins())
       .rejects.toBe(1)
+
+    pluginsNames.forEach(pluginName =>
+      expect(consoleLog).toBeCalledWith(`Install plugin with name: ${pluginName}`)
+    )
   })
 
   it('should success add plugins with select and empty config', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
     mockCore.setMockModules({
       [projectConfigPath]: {},
     })
 
     await expect(addPlugins())
       .rejects.toBe(1)
+
+    pluginsNames.forEach(pluginName =>
+      expect(consoleLog).toBeCalledWith(`Install plugin with name: ${pluginName}`)
+    )
   })
 
   it('should failed add plugins - plugins not found', async () => {

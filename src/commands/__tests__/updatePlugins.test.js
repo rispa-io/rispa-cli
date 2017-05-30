@@ -14,6 +14,7 @@ const updatePlugins = require.requireActual('../updatePlugins')
 
 describe('update plugins', () => {
   let originalExit
+  let originalConsoleLog
 
   const pluginsNames = ['rispa-core', 'rispa-eslint-config']
   const pluginsPath = '/sample/path'
@@ -29,6 +30,8 @@ describe('update plugins', () => {
 
   beforeAll(() => {
     originalExit = process.exit
+    originalConsoleLog = console.log
+
     Object.defineProperty(process, 'exit', {
       value: code => {
         throw code
@@ -41,9 +44,19 @@ describe('update plugins', () => {
     mockGithubApi.setMockPlugins(plugins)
   })
 
+  afterEach(() => {
+    Object.defineProperty(console, 'log', {
+      value: originalConsoleLog,
+    })
+  })
+
   afterAll(() => {
     Object.defineProperty(process, 'exit', {
       value: originalExit,
+    })
+
+    Object.defineProperty(console, 'log', {
+      value: originalConsoleLog,
     })
 
     mockFs.setMockFiles([])
@@ -53,6 +66,12 @@ describe('update plugins', () => {
   })
 
   it('should success update plugins', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
     mockCore.setMockModules({
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
@@ -62,6 +81,10 @@ describe('update plugins', () => {
 
     await expect(updatePlugins())
       .rejects.toBe(1)
+
+    pluginsNames.forEach(pluginName =>
+      expect(consoleLog).toBeCalledWith(`Update plugin with name: ${pluginName}`)
+    )
   })
 
   it('should failed update plugins - project config not found', async () => {

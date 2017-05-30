@@ -14,7 +14,7 @@ const removePlugin = plugin => {
     console.log(`Remove plugin with name: ${plugin.name}`)
     return true
   } catch ({ message }) {
-    console.error(`Can't remove plugin with name: ${plugin.name}`, message)
+    console.log(`Can't remove plugin with name: ${plugin.name}`, message)
     return false
   }
 }
