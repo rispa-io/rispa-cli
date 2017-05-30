@@ -45,7 +45,7 @@ const runInSinglePackage = async (packageName, packages, command, args) => {
 
   if (!packageInfo) {
     if (packageName) {
-      console.log(`Can't find package with name: ${packageName}.\n`)
+      console.log(`Can't find package with name: ${packageName}.`)
     }
 
     const { packageName: newPackageName } = await selectPackage(packages)
@@ -55,7 +55,7 @@ const runInSinglePackage = async (packageName, packages, command, args) => {
 
     callScriptInSinglePackage(packageInfo, newCommand, args)
   } else if (packageInfo.commands.indexOf(command) === -1) {
-    console.log(`Can't find command "${command}" in package with name: ${packageName}.\n`)
+    console.log(`Can't find command "${command}" in package with name: ${packageName}.`)
 
     const { command: newCommand } = await selectCommand(packageInfo.commands)
 

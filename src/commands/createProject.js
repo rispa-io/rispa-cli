@@ -4,7 +4,7 @@ const spawn = require('cross-spawn')
 const { prompt } = require('inquirer')
 const configureGenerators = require('@rispa/generator')
 
-const { handleError } = require('../core')
+const { handleError, requireIfExist } = require('../core')
 const githubApi = require('../githubApi')
 const { installPlugins } = require('../plugin')
 const { saveConfiguration } = require('../project')
@@ -22,7 +22,18 @@ const selectInstallPlugins = plugins => prompt([{
   choices: plugins,
 }])
 
-const installProjectDeps = projectPath => (
+const installProjectDepsYarn = projectPath => (
+  spawn.sync(
+    'yarn',
+    ['install'],
+    {
+      cwd: projectPath,
+      stdio: 'inherit',
+    }
+  ).status
+)
+
+const installProjectDepsNpm = projectPath => (
   spawn.sync(
     'npm',
     ['install'],
@@ -33,7 +44,13 @@ const installProjectDeps = projectPath => (
   ).status
 )
 
-const lernaBootstrapProject = projectPath => (
+const installProjectDeps = (projectPath, npmClient) => (
+  npmClient === 'npm' ?
+    installProjectDepsNpm(projectPath) :
+    installProjectDepsYarn(projectPath)
+)
+
+const lernaBootstrapProjectNpm = projectPath => (
   spawn.sync(
     'npm',
     ['run', 'bs'],
@@ -44,9 +61,28 @@ const lernaBootstrapProject = projectPath => (
   ).status
 )
 
-const generateProject = async (projectName, installPluginsNames, plugins) => {
-  const projectPath = path.resolve(process.cwd(), `./${projectName}`)
-  const pluginsPath = `${projectPath}/packages`
+const lernaBootstrapProjectYarn = projectPath => (
+  spawn.sync(
+    'yarn',
+    ['bs'],
+    {
+      cwd: projectPath,
+      stdio: 'inherit',
+    }
+  ).status
+)
+
+const lernaBootstrapProject = (projectPath, npmClient) => (
+  npmClient === 'npm' ?
+    lernaBootstrapProjectNpm(projectPath) :
+    lernaBootstrapProjectYarn(projectPath)
+)
+
+const generateProject = async (projectName, distPath, installPluginsNames, plugins) => {
+  const projectPath = path.resolve(distPath, `./${projectName}`)
+  const resolve = relPath => path.resolve(projectPath, relPath)
+
+  const pluginsPath = resolve('./packages')
   const generators = configureGenerators(projectPath)
 
   await generators.getGenerator('project').runActions()
@@ -60,15 +96,17 @@ const generateProject = async (projectName, installPluginsNames, plugins) => {
     pluginsPath: './packages',
   }, projectPath)
 
-  installProjectDeps(projectPath)
+  const { npmClient } = requireIfExist(resolve('./lerna.json'))
 
-  lernaBootstrapProject(projectPath)
+  installProjectDeps(projectPath, npmClient)
+
+  lernaBootstrapProject(projectPath, npmClient)
 
   console.log(`Project "${projectName}" successfully generated!`)
 }
 
 const performProjectName = projectName => (
-  projectName.replace(/\s+/g, '-').toLowerCase()
+  projectName.replace(/\s+/g, '-')
 )
 
 const create = async (...args) => {
@@ -80,11 +118,13 @@ const create = async (...args) => {
 
     projectName = performProjectName(projectName)
 
+    const distPath = process.cwd()
+
     const { data: { items: plugins } } = await githubApi.plugins()
 
     const { installPluginsNames } = await selectInstallPlugins(plugins)
 
-    await generateProject(projectName, installPluginsNames, plugins)
+    await generateProject(projectName, distPath, installPluginsNames, plugins)
   } catch (e) {
     handleError(e)
   }

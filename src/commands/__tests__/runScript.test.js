@@ -9,6 +9,7 @@ const run = require.requireActual('../runScript')
 
 describe('run script', () => {
   let originalExit
+  let originalConsoleLog
 
   const basePath = '/sample/path'
   const packageName = 'core'
@@ -25,6 +26,8 @@ describe('run script', () => {
 
   beforeAll(() => {
     originalExit = process.exit
+    originalConsoleLog = console.log
+
     Object.defineProperty(process, 'exit', {
       value: code => {
         throw code
@@ -32,9 +35,19 @@ describe('run script', () => {
     })
   })
 
+  afterEach(() => {
+    Object.defineProperty(console, 'log', {
+      value: originalConsoleLog,
+    })
+  })
+
   afterAll(() => {
     Object.defineProperty(process, 'exit', {
       value: originalExit,
+    })
+
+    Object.defineProperty(console, 'log', {
+      value: originalConsoleLog,
     })
 
     mockPackages.setMockPackages({})
@@ -63,14 +76,24 @@ describe('run script', () => {
   })
 
   it('should success run script in single package with select package & command with not empty command', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
     mockPackages.setMockPackages(packages)
     require('inquirer').setMockAnswers({
       command: 'start',
       packageName,
     })
 
-    await expect(run('invalid', ''))
+    const invalidPackageName = 'invalid'
+
+    await expect(run(invalidPackageName, ''))
       .rejects.toBe(0)
+
+    expect(consoleLog).toBeCalledWith(`Can't find package with name: ${invalidPackageName}.`)
   })
 
   it('should success run script in single package with select package & command', async () => {
@@ -85,6 +108,12 @@ describe('run script', () => {
   })
 
   it('should success run script in single package with select command', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
     mockPackages.setMockPackages(packages)
     require('inquirer').setMockAnswers({
       command: 'start',
@@ -92,6 +121,8 @@ describe('run script', () => {
 
     await expect(run(packageName, ''))
       .rejects.toBe(0)
+
+    expect(consoleLog).toBeCalledWith(`Can't find command "" in package with name: ${packageName}.`)
   })
 
   it('should failed run script in all packages - cant find command', async () => {

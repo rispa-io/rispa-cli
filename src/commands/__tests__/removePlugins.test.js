@@ -10,6 +10,7 @@ const removePlugins = require.requireActual('../removePlugins')
 
 describe('remove plugins', () => {
   let originalExit
+  let originalConsoleLog
 
   const pluginsNames = ['rispa-core', 'rispa-eslint-config']
   const pluginsPath = '/sample/path'
@@ -28,9 +29,19 @@ describe('remove plugins', () => {
     })
   })
 
+  afterEach(() => {
+    Object.defineProperty(console, 'log', {
+      value: originalConsoleLog,
+    })
+  })
+
   afterAll(() => {
     Object.defineProperty(process, 'exit', {
       value: originalExit,
+    })
+
+    Object.defineProperty(console, 'log', {
+      value: originalConsoleLog,
     })
 
     mockFs.setMockFiles([])
@@ -38,6 +49,12 @@ describe('remove plugins', () => {
   })
 
   it('should success remove plugin', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
     mockCore.setMockModules({
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
@@ -46,6 +63,10 @@ describe('remove plugins', () => {
 
     await expect(removePlugins(...pluginsNames))
       .rejects.toBe(1)
+
+    pluginsNames.forEach(pluginName =>
+      expect(consoleLog).toBeCalledWith(`Remove plugin with name: ${pluginName}`)
+    )
   })
 
   it('should failed update plugins - project config not found', async () => {
@@ -56,6 +77,12 @@ describe('remove plugins', () => {
   })
 
   it('should failed update plugins - cant remove plugin', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
     mockCore.setMockModules({
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
@@ -66,5 +93,9 @@ describe('remove plugins', () => {
 
     await expect(removePlugins(...pluginsNames))
       .rejects.toBe(1)
+
+    pluginsNames.forEach(pluginName =>
+      expect(consoleLog).toBeCalledWith(`Can't remove plugin with name: ${pluginName}`, '')
+    )
   })
 })

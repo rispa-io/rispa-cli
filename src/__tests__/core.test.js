@@ -62,6 +62,13 @@ describe('call script', () => {
 
 describe('handle error', () => {
   let originalExit
+  let originalConsoleError
+
+  afterEach(() => {
+    Object.defineProperty(console, 'error', {
+      value: originalConsoleError,
+    })
+  })
 
   beforeAll(() => {
     originalExit = process.exit
@@ -74,11 +81,25 @@ describe('handle error', () => {
     Object.defineProperty(process, 'exit', {
       value: originalExit,
     })
+
+    Object.defineProperty(console, 'error', {
+      value: originalConsoleError,
+    })
   })
 
   it('should handle error', () => {
+    const consoleError = jest.fn()
+
+    Object.defineProperty(console, 'error', {
+      value: consoleError,
+    })
+
+    const error = 'error'
+
     expect(() => {
-      handleError('error')
+      handleError(error)
     }).toThrow(Error)
+
+    expect(consoleError).toBeCalledWith(error)
   })
 })
