@@ -1,3 +1,5 @@
+const path = require('path')
+
 jest.resetAllMocks()
 jest.mock('fs-extra')
 jest.mock('../core')
@@ -21,8 +23,9 @@ describe('project configuration', () => {
   })
 
   it('should success read project configuration', () => {
+    const configPath = path.resolve('/path/.rispa.json')
     mockCore.setMockModules({
-      '/path/.rispa.json': configuration,
+      [configPath]: configuration,
     })
     expect(readConfiguration('/path')).toEqual(configuration)
   })
