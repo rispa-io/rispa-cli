@@ -1,3 +1,5 @@
+const path = require('path')
+
 jest.resetAllMocks()
 jest.mock('inquirer')
 jest.mock('node-plop')
@@ -22,7 +24,7 @@ describe('add plugins', () => {
     name: pluginName,
     clone_url: 'url',
   }))
-  const projectConfigPath = `${process.cwd()}/.rispa.json`
+  const projectConfigPath = path.resolve(process.cwd(), './.rispa.json')
   const projectConfig = {
     plugins: [],
     pluginsPath,

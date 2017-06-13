@@ -1,3 +1,5 @@
+const path = require('path')
+
 jest.resetAllMocks()
 jest.mock('cross-spawn')
 jest.mock('fs-extra')
@@ -26,8 +28,12 @@ describe('scan packages', () => {
     if (idx % 2) {
       packageInfo.alias = packageName.replace('@rispa/', '')
       packageInfo.commands = ['start']
-      packageInfo.activatorPath = `${basePath}/${packageName}/.rispa/activator.js`
-      packageInfo.generatorsPath = `${basePath}/${packageName}/.rispa/generators/index.js`
+      packageInfo.activatorPath = path.resolve(
+        `${basePath}/${packageName}`, './.rispa/activator.js'
+      )
+      packageInfo.generatorsPath = path.resolve(
+        `${basePath}/${packageName}`, './.rispa/generators/index.js'
+      )
     } else {
       packageInfo.alias = undefined
       packageInfo.commands = []
@@ -58,8 +64,8 @@ describe('scan packages', () => {
     })
 
     mockFs.setMockFiles([
-      `${packagesPaths[1]}/.rispa/activator.js`,
-      `${packagesPaths[1]}/.rispa/generators/index.js`,
+      path.resolve(packagesPaths[1], './.rispa/activator.js'),
+      path.resolve(packagesPaths[1], './.rispa/generators/index.js'),
     ])
 
     mockCore.setMockModules(
@@ -134,14 +140,18 @@ describe('scan packages with lerna.json', () => {
   beforeAll(() => {
     mockGlob.setMockPaths({})
 
+    const activatorsPath = path.resolve(basePath, './build/activators.json')
+    const lernaConfigPath = path.resolve(basePath, './lerna.json')
+    const packagesPath = path.resolve(basePath, './packages/*')
+
     mockCore.setMockModules({
-      [`${basePath}/build/activators.json`]: {
+      [activatorsPath]: {
         paths: {
-          [`${basePath}/packages/*`]: [],
+          [packagesPath]: [],
         },
         packages: {},
       },
-      [`${basePath}/lerna.json`]: {
+      [lernaConfigPath]: {
         packages: ['packages/*'],
       },
     })
