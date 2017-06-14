@@ -18,6 +18,7 @@ const runCommand = args => {
     remove: () => require('../src/commands/removePlugins'),
     g: () => require('../src/commands/generate'),
     commit: () => require('../src/commands/commit'),
+    numerate: () => require('../src/commands/numerate'),
   }
 
   const commandName = args[0] || ''

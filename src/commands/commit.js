@@ -36,7 +36,9 @@ const getChanges = path => {
 
 const getPackages = () => {
   const packages = scanPackages()
-  return Object.keys(packages).map(name => packages[name])
+  return Object.keys(packages)
+    .map(name => packages[name])
+    .filter((item, index, arr) => arr.indexOf(item) === index)
 }
 
 const logChanges = (pluginName, changes) => {
