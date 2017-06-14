@@ -1,3 +1,5 @@
+const path = require('path')
+
 jest.resetAllMocks()
 jest.mock('inquirer')
 jest.mock('fs-extra')
@@ -22,7 +24,7 @@ describe('update plugins', () => {
     name: pluginName,
     clone_url: 'url',
   }))
-  const projectConfigPath = `${process.cwd()}/.rispa.json`
+  const projectConfigPath = path.resolve(process.cwd(), './.rispa.json')
   const projectConfig = {
     plugins: [],
     pluginsPath,
@@ -77,7 +79,9 @@ describe('update plugins', () => {
         plugins: pluginsNames,
       }),
     })
-    mockFs.setMockFiles(pluginsNames.map(pluginName => `${pluginsPath}/${pluginName}/.git`))
+    mockFs.setMockFiles(pluginsNames.map(pluginName =>
+      `${path.resolve(pluginsPath)}/${pluginName}/.git`
+    ))
 
     await expect(updatePlugins())
       .rejects.toBe(1)

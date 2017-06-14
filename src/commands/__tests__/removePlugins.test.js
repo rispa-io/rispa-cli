@@ -1,3 +1,5 @@
+const path = require('path')
+
 jest.resetAllMocks()
 jest.mock('fs-extra')
 jest.mock('cross-spawn')
@@ -14,7 +16,7 @@ describe('remove plugins', () => {
 
   const pluginsNames = ['rispa-core', 'rispa-eslint-config']
   const pluginsPath = '/sample/path'
-  const projectConfigPath = `${process.cwd()}/.rispa.json`
+  const projectConfigPath = path.resolve(process.cwd(), './.rispa.json')
   const projectConfig = {
     plugins: [],
     pluginsPath,
