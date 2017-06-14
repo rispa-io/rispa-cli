@@ -15,6 +15,12 @@ const enterProjectName = () => prompt([{
   message: 'Enter project name:',
 }])
 
+const enterRemoteUrl = () => prompt([{
+  type: 'input',
+  name: 'remoteUrl',
+  message: 'Enter remote url for project (optional):',
+}])
+
 const selectInstallPlugins = plugins => prompt([{
   type: 'checkbox',
   message: 'Select install plugins:',
@@ -44,12 +50,6 @@ const installProjectDepsNpm = projectPath => (
   ).status
 )
 
-const installProjectDeps = (projectPath, npmClient) => (
-  npmClient === 'npm' ?
-    installProjectDepsNpm(projectPath) :
-    installProjectDepsYarn(projectPath)
-)
-
 const lernaBootstrapProjectNpm = projectPath => (
   spawn.sync(
     'npm',
@@ -72,59 +72,90 @@ const lernaBootstrapProjectYarn = projectPath => (
   ).status
 )
 
-const lernaBootstrapProject = (projectPath, npmClient) => (
-  npmClient === 'npm' ?
-    lernaBootstrapProjectNpm(projectPath) :
-    lernaBootstrapProjectYarn(projectPath)
-)
+const gitInitAndCommit = (projectPath, remoteUrl) => {
+  const options = { cwd: projectPath, stdio: 'inherit' }
+  spawn.sync('git', ['init'], options)
+  if (remoteUrl) {
+    spawn.sync('git', ['remote', 'add', 'origin', remoteUrl], options)
+  }
+  spawn.sync('git', ['add', '.'], options)
+  spawn.sync('git', ['commit', '-m', 'Initial commit'], options)
+}
 
-const generateProject = async (projectName, distPath, installPluginsNames, plugins) => {
-  const projectPath = path.resolve(distPath, `./${projectName}`)
-  const resolve = relPath => path.resolve(projectPath, relPath)
-
-  const pluginsPath = resolve('./packages')
+const generateProjectStructure = async projectPath => {
   const generators = configureGenerators(projectPath)
-
   await generators.getGenerator('project').runActions()
+}
+
+const generatePlugins = async (pluginsPath, mode) => {
+  const { data: { items: plugins } } = await githubApi.plugins()
+  const { installPluginsNames } = await selectInstallPlugins(plugins)
 
   fs.ensureDirSync(pluginsPath)
 
-  installPlugins(installPluginsNames, plugins, [], pluginsPath)
+  if (mode === 'dev') {
+    installPlugins(installPluginsNames, plugins, [], pluginsPath)
+  } else {
+    installPlugins(installPluginsNames, plugins, [], pluginsPath)
+  }
 
-  saveConfiguration({
-    plugins: installPluginsNames,
-    pluginsPath: './packages',
-  }, projectPath)
+  return installPluginsNames
+}
 
-  const { npmClient } = requireIfExist(resolve('./lerna.json'))
-
-  installProjectDeps(projectPath, npmClient)
-
-  lernaBootstrapProject(projectPath, npmClient)
-
-  console.log(`Project "${projectName}" successfully generated!`)
+const bootstrapProjectDeps = projectPath => {
+  const { npmClient } = requireIfExist(path.resolve(projectPath, './lerna.json'))
+  if (npmClient === 'npm') {
+    installProjectDepsNpm(projectPath)
+    lernaBootstrapProjectNpm(projectPath)
+  } else {
+    installProjectDepsYarn(projectPath)
+    lernaBootstrapProjectYarn(projectPath)
+  }
 }
 
 const performProjectName = projectName => (
   projectName.replace(/\s+/g, '-')
 )
 
+const parseParams = args =>
+  args.reduce((params, arg) => {
+    const paramMatch = /^--([^=]+)=(.*)/.exec(arg)
+    if (paramMatch) {
+      params[paramMatch[1]] = paramMatch[2]
+    } else {
+      params.name = arg
+    }
+    return params
+  }, {})
+
 const create = async (...args) => {
   try {
-    let projectName = args[0]
-    if (!projectName) {
-      projectName = (await enterProjectName()).projectName
-    }
-
-    projectName = performProjectName(projectName)
-
     const distPath = process.cwd()
+    const { name, mode } = parseParams(args)
 
-    const { data: { items: plugins } } = await githubApi.plugins()
+    const projectName = performProjectName(
+      name || (await enterProjectName()).projectName
+    )
+    const remoteUrl = (await enterRemoteUrl()).remoteUrl
 
-    const { installPluginsNames } = await selectInstallPlugins(plugins)
+    const projectPath = path.resolve(distPath, `./${projectName}`)
+    const pluginsPath = path.resolve(projectPath, './packages')
 
-    await generateProject(projectName, distPath, installPluginsNames, plugins)
+    await generateProjectStructure(projectPath)
+
+    const plugins = await generatePlugins(pluginsPath, mode)
+
+    bootstrapProjectDeps(projectPath)
+
+    saveConfiguration({
+      plugins,
+      pluginsPath,
+      mode,
+    }, projectPath)
+
+    gitInitAndCommit(projectPath, remoteUrl)
+
+    console.log(`Project "${projectName}" successfully generated!`)
   } catch (e) {
     handleError(e)
   }
@@ -133,3 +164,4 @@ const create = async (...args) => {
 }
 
 module.exports = create
+
