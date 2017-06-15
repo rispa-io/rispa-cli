@@ -118,7 +118,7 @@ describe('add plugins', () => {
       .rejects.toBe(1)
 
     pluginsNames.forEach(pluginName =>
-      expect(consoleLog).toBeCalledWith(`Already installed plugin with name: ${pluginName}`)
+      expect(consoleLog).toBeCalledWith(`Plugin '${pluginName}' already installed`)
     )
   })
 
@@ -128,6 +128,8 @@ describe('add plugins', () => {
     Object.defineProperty(console, 'log', {
       value: consoleLog,
     })
+
+    console.log(projectConfig)
 
     mockCore.setMockModules({
       [projectConfigPath]: projectConfig,

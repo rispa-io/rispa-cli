@@ -5,11 +5,14 @@ jest.mock('fs-extra')
 jest.mock('cross-spawn')
 jest.mock('../../core', () => require.requireActual('../../__mocks__/core'))
 jest.mock('../../githubApi')
+jest.mock('../../plugin')
 
 const mockInquirer = require.requireMock('inquirer')
 const mockFs = require.requireMock('fs-extra')
 const mockCore = require.requireMock('../../core')
 const mockCrossSpawn = require.requireMock('cross-spawn')
+const mockGithubApi = require.requireMock('../../githubApi')
+const { installPlugins } = require('../../plugin')
 
 const path = require.requireActual('path')
 
@@ -24,6 +27,10 @@ describe('create project', () => {
   const projectPath = path.resolve(distPath, `./${projectName}`)
   const lernaJsonPath = path.resolve(projectPath, './lerna.json')
   const pluginsNames = ['rispa-core', 'rispa-eslint-config']
+  const plugins = pluginsNames.map(pluginName => ({
+    name: pluginName,
+    clone_url: 'url',
+  }))
   const successMessage = `Project "${projectName}" successfully generated!`
   const crossSpawnOptions = { cwd: projectPath, stdio: 'inherit' }
 
@@ -47,6 +54,7 @@ describe('create project', () => {
   afterEach(() => {
     mockFs.setMockEnsureDirCallback()
     mockCrossSpawn.sync.mockClear()
+    installPlugins.mockClear()
   })
 
   afterAll(() => {
@@ -203,6 +211,27 @@ describe('create project', () => {
       'git', ['remote', 'add', 'origin', '/remote'], crossSpawnOptions
     )
 
+    expect(consoleLog).toBeCalledWith(successMessage)
+  })
+
+  it('should create project with plugins installed', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
+    mockCore.setMockModules({
+      [lernaJsonPath]: {
+        npmClient: 'yarn',
+      },
+    })
+    mockGithubApi.setMockPlugins(plugins)
+
+    await expect(createProject())
+      .rejects.toBe(1)
+
+    expect(installPlugins.mock.calls[0][0]).toEqual(plugins)
     expect(consoleLog).toBeCalledWith(successMessage)
   })
 })

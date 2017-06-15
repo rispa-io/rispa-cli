@@ -93,13 +93,15 @@ const generatePlugins = async (pluginsPath, mode) => {
 
   fs.ensureDirSync(pluginsPath)
 
-  if (mode === 'dev') {
-    installPlugins(installPluginsNames, plugins, [], pluginsPath)
-  } else {
-    installPlugins(installPluginsNames, plugins, [], pluginsPath)
-  }
+  const pluginsToInstall = plugins.filter(
+    ({ name }) => installPluginsNames.indexOf(name) !== -1
+  )
 
-  return installPluginsNames
+  console.log(pluginsToInstall)
+
+  installPlugins(pluginsToInstall, pluginsPath, mode)
+
+  return pluginsToInstall
 }
 
 const bootstrapProjectDeps = projectPath => {
@@ -148,9 +150,13 @@ const create = async (...args) => {
     bootstrapProjectDeps(projectPath)
 
     saveConfiguration({
-      plugins,
-      pluginsPath,
       mode,
+      pluginsPath: './packages',
+      plugins: plugins.map(plugin => plugin.name),
+      remotes: plugins.reduce((remotes, plugin) => {
+        remotes[plugin.name] = plugin.clone_url
+        return remotes
+      }, {}),
     }, projectPath)
 
     gitInitAndCommit(projectPath, remoteUrl)

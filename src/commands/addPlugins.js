@@ -9,16 +9,6 @@ const {
 const githubApi = require('../githubApi')
 const { installPlugins } = require('../plugin')
 
-const extractPluginNameFromUrl = cloneUrl => {
-  const parts = cloneUrl.split('/')
-  return parts[parts.length - 1].replace(/\.git$/, '')
-}
-
-const extractCloneUrl = pluginName => (
-  pluginName && pluginName.startsWith('git:') ?
-    pluginName.replace(/^git:/, '') : null
-)
-
 const selectPlugins = plugins => prompt([{
   type: 'checkbox',
   message: 'Select install plugins:',
@@ -26,73 +16,110 @@ const selectPlugins = plugins => prompt([{
   choices: plugins,
 }])
 
-const findPluginsForInstall = (plugins, installedPluginsNames) => {
-  const pluginsForChoice = plugins.filter(({ name }) => installedPluginsNames.indexOf(name) === -1)
+const updateConfiguration = (configuration, plugins, projectPath) => {
+  const newPlugins = Array.from(configuration.plugins || [])
+  const newRemotes = Object.assign({}, configuration.remotes || {})
+  plugins.forEach(plugin => {
+    newPlugins.push(plugin.name)
+    newRemotes[plugin.name] = plugin.clone_url
+  })
+  saveConfiguration(Object.assign({}, configuration, {
+    remotes: newRemotes,
+    plugins: newPlugins,
+  }), projectPath)
+}
+
+const selectAvailablePlugins = async installedPluginsNames => {
+  const { data: { items: plugins } } = await githubApi.plugins()
+
+  const pluginsForChoice = plugins.filter(
+    ({ name }) => installedPluginsNames.indexOf(name) === -1
+  )
   if (pluginsForChoice.length === 0) {
     handleError('Can\'t find plugins for install')
   }
 
-  return selectPlugins(pluginsForChoice)
+  const { installPluginsNames } = await selectPlugins(pluginsForChoice)
+
+  return plugins.filter(({ name }) => installPluginsNames.indexOf(name) !== -1)
 }
 
-const addPluginsByUrl = (clonePluginUrl, installedPluginsNames, pluginsPath) => {
+const getPluginsFromAvailableList = async pluginsNames => {
+  const { data: { items: plugins } } = await githubApi.plugins()
+
+  const notValidPluginsNames = []
+  const pluginsToInstall = pluginsNames.map(pluginName => {
+    const plugin = plugins.filter(({ name }) => name === pluginName)[0]
+    if (!plugin) {
+      notValidPluginsNames.push(pluginsNames)
+    }
+    return plugin
+  })
+
+  if (notValidPluginsNames.length > 0) {
+    handleError(`Can't find plugins with names:\n - ${notValidPluginsNames.join(', ')}`)
+  }
+
+  return pluginsToInstall
+}
+
+const extractPluginNameFromUrl = cloneUrl => {
+  const parts = cloneUrl.split('/')
+  return parts[parts.length - 1].replace(/\.git$/, '')
+}
+
+const getPluginsByUrl = clonePluginUrl => {
   if (!clonePluginUrl.endsWith('.git')) {
     handleError(`Invalid plugin git url: ${clonePluginUrl}`)
   }
 
-  const pluginInfo = {
+  return [{
     name: extractPluginNameFromUrl(clonePluginUrl),
     clone_url: clonePluginUrl,
-  }
-
-  return installPlugins([pluginInfo.name], [pluginInfo], installedPluginsNames, pluginsPath)
+  }]
 }
 
-const addOfficialPlugins = async (pluginsNames, installedPluginsNames, pluginsPath) => {
-  const { data: { items: plugins } } = await githubApi.plugins()
-
-  if (pluginsNames.length === 0) {
-    const { installPluginsNames } = await findPluginsForInstall(plugins, installedPluginsNames)
-
-    pluginsNames.push(...installPluginsNames)
-  } else {
-    const notValidPluginsNames = pluginsNames.filter(pluginName => !plugins.some(({ name }) => name === pluginName))
-    if (notValidPluginsNames.length > 0) {
-      handleError(`Can't find plugins with names:\n - ${notValidPluginsNames.join(', ')}`)
-    }
-  }
-
-  return installPlugins(pluginsNames, plugins, installedPluginsNames, pluginsPath)
-}
+const extractCloneUrl = pluginName => (
+  pluginName && pluginName.startsWith('git:') ?
+    pluginName.replace(/^git:/, '') : null
+)
 
 const addPlugins = async (...pluginsNames) => {
   const projectPath = process.cwd()
   const configuration = readConfiguration(projectPath)
-  const resolve = relPath => path.resolve(projectPath, relPath)
 
   if (!configuration) {
     handleError('Can\'t find rispa project config')
   }
 
   const {
+    mode,
     plugins: installedPluginsNames = [],
     pluginsPath: relPluginsPath = './packages',
   } = configuration
-  const pluginsPath = resolve(relPluginsPath)
+  const pluginsPath = path.resolve(projectPath, relPluginsPath)
 
-  const clonePluginUrl = extractCloneUrl(pluginsNames[0])
-  if (clonePluginUrl) {
-    const results = addPluginsByUrl(clonePluginUrl, installedPluginsNames, pluginsPath)
-    installedPluginsNames.push(...results)
+  let pluginsToInstall
+
+  if (pluginsNames.length) {
+    const clonePluginUrl = extractCloneUrl(pluginsNames[0])
+    pluginsToInstall = (clonePluginUrl
+      ? getPluginsByUrl(clonePluginUrl)
+      : await getPluginsFromAvailableList(pluginsNames)
+    ).filter(({ name }) => {
+      if (installedPluginsNames.indexOf(name) !== -1) {
+        console.log(`Plugin '${name}' already installed`)
+        return false
+      }
+      return true
+    })
   } else {
-    const results = await addOfficialPlugins(pluginsNames, installedPluginsNames, pluginsPath)
-    installedPluginsNames.push(...results)
+    pluginsToInstall = await selectAvailablePlugins(installedPluginsNames)
   }
 
-  configuration.plugins = installedPluginsNames
-    .filter((pluginName, idx, currentPlugins) => currentPlugins.indexOf(pluginName) === idx)
+  installPlugins(pluginsToInstall, pluginsPath, mode)
 
-  saveConfiguration(configuration, projectPath)
+  updateConfiguration(configuration, pluginsToInstall, projectPath)
 
   process.exit(1)
 }

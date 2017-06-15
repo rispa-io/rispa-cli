@@ -6,6 +6,11 @@ const { installPlugins } = require.requireActual('../plugin')
 describe('manipulation with plugins', () => {
   let originalConsoleLog
 
+  const plugins = [
+    { name: 'rispa-core', clone_url: '/rispa-core-url' },
+    { name: 'rispa-server', clone_url: '/rispa-server-url' },
+  ]
+
   beforeAll(() => {
     originalConsoleLog = console.log
   })
@@ -29,15 +34,22 @@ describe('manipulation with plugins', () => {
       value: consoleLog,
     })
 
-    const installPluginsNames = ['core', 'eslint-config']
-    const plugins = installPluginsNames.map(name => ({
-      name, clone_url: 'url',
-    }))
-    const installedPluginsNames = ['core']
+    installPlugins(plugins, '/path')
 
-    expect(installPlugins(installPluginsNames, plugins, installedPluginsNames, 'path')).toHaveLength(1)
+    expect(consoleLog).toBeCalledWith('Install plugin with name: rispa-core')
+    expect(consoleLog).toBeCalledWith('Install plugin with name: rispa-server')
+  })
 
-    expect(consoleLog).toBeCalledWith('Already installed plugin with name: core')
-    expect(consoleLog).toBeCalledWith('Install plugin with name: eslint-config')
+  it('should success install plugins in dev mode', () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
+    installPlugins(plugins, '/path', 'dev')
+
+    expect(consoleLog).toBeCalledWith('Install plugin with name: rispa-core')
+    expect(consoleLog).toBeCalledWith('Install plugin with name: rispa-server')
   })
 })

@@ -1,18 +1,15 @@
 const { cloneRepository } = require('./git')
 
-const installPlugins = (pluginsNames, plugins, installedPluginsNames, pluginsPath) => (
-  plugins
-    .filter(({ name }) => pluginsNames.indexOf(name) !== -1)
-    .filter(({ name, clone_url: cloneUrl }) => {
-      if (installedPluginsNames.indexOf(name) === -1) {
-        console.log(`Install plugin with name: ${name}`)
-        cloneRepository(cloneUrl, pluginsPath)
-        return true
-      }
+const installPlugins = (plugins, pluginsPath, mode) => (
+  plugins.forEach(({ name, clone_url: cloneUrl }) => {
+    console.log(`Install plugin with name: ${name}`)
 
-      console.log(`Already installed plugin with name: ${name}`)
-      return false
-    })
+    if (mode === 'dev') {
+      cloneRepository(cloneUrl, pluginsPath) // TODO use subtree
+    } else {
+      cloneRepository(cloneUrl, pluginsPath)
+    }
+  })
 )
 
 module.exports = {
