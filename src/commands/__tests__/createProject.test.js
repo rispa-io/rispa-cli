@@ -5,14 +5,12 @@ jest.mock('fs-extra')
 jest.mock('cross-spawn')
 jest.mock('../../core', () => require.requireActual('../../__mocks__/core'))
 jest.mock('../../githubApi')
-jest.mock('../../plugin')
 
 const mockInquirer = require.requireMock('inquirer')
 const mockFs = require.requireMock('fs-extra')
 const mockCore = require.requireMock('../../core')
 const mockCrossSpawn = require.requireMock('cross-spawn')
 const mockGithubApi = require.requireMock('../../githubApi')
-const { installPlugins } = require('../../plugin')
 
 const path = require.requireActual('path')
 
@@ -46,15 +44,15 @@ describe('create project', () => {
 
     mockInquirer.setMockAnswers({
       projectName,
-      installPluginsNames: pluginsNames,
+      plugins,
       remoteUrl: '',
     })
+    mockGithubApi.setMockPlugins(plugins)
   })
 
   afterEach(() => {
     mockFs.setMockEnsureDirCallback()
     mockCrossSpawn.sync.mockClear()
-    installPlugins.mockClear()
   })
 
   afterAll(() => {
@@ -161,7 +159,12 @@ describe('create project', () => {
     expect(mockCrossSpawn.sync).toBeCalledWith('git', ['init'], crossSpawnOptions)
     expect(mockCrossSpawn.sync).toBeCalledWith('git', ['add', '.'], crossSpawnOptions)
     expect(mockCrossSpawn.sync).toBeCalledWith(
-      'git', ['commit', '-m', 'Initial commit'], crossSpawnOptions
+      'git', ['commit', '-m', `Create project '${projectName}'`], crossSpawnOptions
+    )
+    expect(mockCrossSpawn.sync).toBeCalledWith(
+      'git',
+      ['commit', '-m', 'Bootstrap deps and install plugins'],
+      crossSpawnOptions
     )
 
     expect(consoleLog).toBeCalledWith(successMessage)
@@ -195,7 +198,7 @@ describe('create project', () => {
 
     mockInquirer.setMockAnswers({
       projectName,
-      installPluginsNames: pluginsNames,
+      plugins,
       remoteUrl: '/remote',
     })
     mockCore.setMockModules({
@@ -231,7 +234,12 @@ describe('create project', () => {
     await expect(createProject())
       .rejects.toBe(1)
 
-    expect(installPlugins.mock.calls[0][0]).toEqual(plugins)
+    expect(consoleLog).toBeCalledWith(
+      `Install plugin with name: ${pluginsNames[0]}`
+    )
+    expect(consoleLog).toBeCalledWith(
+      `Install plugin with name: ${pluginsNames[1]}`
+    )
     expect(consoleLog).toBeCalledWith(successMessage)
   })
 })

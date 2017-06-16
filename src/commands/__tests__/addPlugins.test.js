@@ -41,7 +41,7 @@ describe('add plugins', () => {
     })
 
     mockInquirer.setMockAnswers({
-      installPluginsNames: pluginsNames,
+      plugins,
     })
     mockGithubApi.setMockPlugins(plugins)
   })

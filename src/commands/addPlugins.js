@@ -1,20 +1,8 @@
 const path = require('path')
-const { prompt } = require('inquirer')
-
 const { handleError } = require('../core')
-const {
-  readConfiguration,
-  saveConfiguration,
- } = require('../project')
 const githubApi = require('../githubApi')
-const { installPlugins } = require('../plugin')
-
-const selectPlugins = plugins => prompt([{
-  type: 'checkbox',
-  message: 'Select install plugins:',
-  name: 'installPluginsNames',
-  choices: plugins,
-}])
+const { readConfiguration, saveConfiguration } = require('../project')
+const { installPlugins, selectPluginsToInstall } = require('../plugin')
 
 const updateConfiguration = (configuration, plugins, projectPath) => {
   const newPlugins = Array.from(configuration.plugins || [])
@@ -27,21 +15,6 @@ const updateConfiguration = (configuration, plugins, projectPath) => {
     remotes: newRemotes,
     plugins: newPlugins,
   }), projectPath)
-}
-
-const selectAvailablePlugins = async installedPluginsNames => {
-  const { data: { items: plugins } } = await githubApi.plugins()
-
-  const pluginsForChoice = plugins.filter(
-    ({ name }) => installedPluginsNames.indexOf(name) === -1
-  )
-  if (pluginsForChoice.length === 0) {
-    handleError('Can\'t find plugins for install')
-  }
-
-  const { installPluginsNames } = await selectPlugins(pluginsForChoice)
-
-  return plugins.filter(({ name }) => installPluginsNames.indexOf(name) !== -1)
 }
 
 const getPluginsFromAvailableList = async pluginsNames => {
@@ -114,10 +87,10 @@ const addPlugins = async (...pluginsNames) => {
       return true
     })
   } else {
-    pluginsToInstall = await selectAvailablePlugins(installedPluginsNames)
+    pluginsToInstall = await selectPluginsToInstall(installedPluginsNames)
   }
 
-  installPlugins(pluginsToInstall, pluginsPath, mode)
+  installPlugins(pluginsToInstall, projectPath, pluginsPath, mode)
 
   updateConfiguration(configuration, pluginsToInstall, projectPath)
 

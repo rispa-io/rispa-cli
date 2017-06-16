@@ -1,13 +1,12 @@
-const fs = require('fs-extra')
 const path = require('path')
 const spawn = require('cross-spawn')
 const { prompt } = require('inquirer')
 const configureGenerators = require('@rispa/generator')
 
 const { handleError, requireIfExist } = require('../core')
-const githubApi = require('../githubApi')
-const { installPlugins } = require('../plugin')
+const { installPlugins, selectPluginsToInstall } = require('../plugin')
 const { saveConfiguration } = require('../project')
+const { init: gitInit, commit: gitCommit } = require('../git')
 
 const enterProjectName = () => prompt([{
   type: 'input',
@@ -19,13 +18,6 @@ const enterRemoteUrl = () => prompt([{
   type: 'input',
   name: 'remoteUrl',
   message: 'Enter remote url for project (optional):',
-}])
-
-const selectInstallPlugins = plugins => prompt([{
-  type: 'checkbox',
-  message: 'Select install plugins:',
-  name: 'installPluginsNames',
-  choices: plugins,
 }])
 
 const installProjectDepsYarn = projectPath => (
@@ -72,36 +64,9 @@ const lernaBootstrapProjectYarn = projectPath => (
   ).status
 )
 
-const gitInitAndCommit = (projectPath, remoteUrl) => {
-  const options = { cwd: projectPath, stdio: 'inherit' }
-  spawn.sync('git', ['init'], options)
-  if (remoteUrl) {
-    spawn.sync('git', ['remote', 'add', 'origin', remoteUrl], options)
-  }
-  spawn.sync('git', ['add', '.'], options)
-  spawn.sync('git', ['commit', '-m', 'Initial commit'], options)
-}
-
 const generateProjectStructure = async projectPath => {
   const generators = configureGenerators(projectPath)
   await generators.getGenerator('project').runActions()
-}
-
-const generatePlugins = async (pluginsPath, mode) => {
-  const { data: { items: plugins } } = await githubApi.plugins()
-  const { installPluginsNames } = await selectInstallPlugins(plugins)
-
-  fs.ensureDirSync(pluginsPath)
-
-  const pluginsToInstall = plugins.filter(
-    ({ name }) => installPluginsNames.indexOf(name) !== -1
-  )
-
-  console.log(pluginsToInstall)
-
-  installPlugins(pluginsToInstall, pluginsPath, mode)
-
-  return pluginsToInstall
 }
 
 const bootstrapProjectDeps = projectPath => {
@@ -145,7 +110,12 @@ const create = async (...args) => {
 
     await generateProjectStructure(projectPath)
 
-    const plugins = await generatePlugins(pluginsPath, mode)
+    gitInit(projectPath, remoteUrl)
+    gitCommit(projectPath, `Create project '${projectName}'`)
+
+    const plugins = await selectPluginsToInstall()
+
+    installPlugins(plugins, projectPath, pluginsPath, mode)
 
     bootstrapProjectDeps(projectPath)
 
@@ -159,7 +129,7 @@ const create = async (...args) => {
       }, {}),
     }, projectPath)
 
-    gitInitAndCommit(projectPath, remoteUrl)
+    gitCommit(projectPath, 'Bootstrap deps and install plugins')
 
     console.log(`Project "${projectName}" successfully generated!`)
   } catch (e) {
