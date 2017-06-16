@@ -15,11 +15,15 @@ describe('remove plugins', () => {
   let originalConsoleLog
 
   const pluginsNames = ['rispa-core', 'rispa-eslint-config']
-  const pluginsPath = '/sample/path'
+  const pluginsPath = './plugins'
   const projectConfigPath = path.resolve(process.cwd(), './.rispa.json')
   const projectConfig = {
     plugins: [],
     pluginsPath,
+  }
+  const remotes = {
+    'rispa-core': '/rispa-core-remote',
+    'rispa-eslint-config': '/rispa-eslint-config-remote',
   }
 
   beforeAll(() => {
@@ -60,6 +64,32 @@ describe('remove plugins', () => {
     mockCore.setMockModules({
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
+        pluginsPath,
+        remotes,
+      }),
+    })
+
+    await expect(removePlugins(...pluginsNames))
+      .rejects.toBe(1)
+
+    pluginsNames.forEach(pluginName =>
+      expect(consoleLog).toBeCalledWith(`Remove plugin with name: ${pluginName}`)
+    )
+  })
+
+  it('should success remove plugin in dev mode', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
+    mockCore.setMockModules({
+      [projectConfigPath]: Object.assign({}, projectConfig, {
+        mode: 'dev',
+        plugins: pluginsNames,
+        pluginsPath,
+        remotes,
       }),
     })
 
@@ -88,6 +118,7 @@ describe('remove plugins', () => {
     mockCore.setMockModules({
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
+        pluginsPath,
       }),
     })
 

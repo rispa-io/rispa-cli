@@ -34,6 +34,14 @@ const addRemote = (path, remoteName, remoteUrl) => {
   )
 }
 
+const removeRemote = (path, remoteName) => {
+  spawn.sync(
+    'git',
+    ['remote', 'rm', remoteName],
+    defaultSpawnOptions(path)
+  )
+}
+
 const addSubtree = (path, prefix, remoteName, remoteUrl) => {
   addRemote(path, remoteName, remoteUrl)
   spawn.sync(
@@ -74,4 +82,5 @@ module.exports = {
   updateSubtree,
   init,
   commit,
+  removeRemote,
 }

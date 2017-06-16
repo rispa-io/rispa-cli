@@ -1,12 +1,8 @@
 const path = require('path')
 const fs = require('fs-extra')
-
-const {
-  readConfiguration, saveConfiguration,
-} = require('../project')
+const { readConfiguration, saveConfiguration } = require('../project')
 const { handleError } = require('../core')
-
-const PROJECT_PATH = process.cwd()
+const { removeRemote } = require('../git')
 
 const removePlugin = plugin => {
   try {
@@ -19,18 +15,25 @@ const removePlugin = plugin => {
   }
 }
 
+const configurationIsValid = configuration =>
+  configuration && configuration.plugins && configuration.pluginsPath
+
 const removePlugins = async (...pluginsNames) => {
-  const configuration = readConfiguration(PROJECT_PATH)
-  if (!configuration || !configuration.plugins || !configuration.pluginsPath) {
+  const projectPath = process.cwd()
+  const configuration = readConfiguration(projectPath)
+  if (!configurationIsValid(configuration)) {
     handleError('Can\'t find rispa project config')
   }
 
-  const installedPlugins = configuration.plugins
-
-  const pluginsPath = path.resolve(PROJECT_PATH, configuration.pluginsPath)
+  const {
+    plugins,
+    remotes = {},
+    mode,
+  } = configuration
+  const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
 
   const removedPluginsNames = pluginsNames
-    .filter(name => installedPlugins.indexOf(name) !== -1)
+    .filter(name => plugins.indexOf(name) !== -1)
     .map(name => ({
       name,
       path: `${pluginsPath}/${name}`,
@@ -38,9 +41,23 @@ const removePlugins = async (...pluginsNames) => {
     .filter(removePlugin)
     .map(({ name }) => name)
 
-  configuration.plugins = installedPlugins.filter(pluginName => removedPluginsNames.indexOf(pluginName) === -1)
+  if (mode !== 'dev') {
+    removedPluginsNames.forEach(plugin => {
+      removeRemote(projectPath, plugin)
+    })
+  }
 
-  saveConfiguration(configuration, PROJECT_PATH)
+  const lastPlugins = plugins.filter(
+    pluginName => removedPluginsNames.indexOf(pluginName) === -1
+  )
+
+  saveConfiguration(Object.assign({}, configuration, {
+    plugins: lastPlugins,
+    remotes: lastPlugins.reduce((newRemotes, plugin) => {
+      newRemotes[plugin] = remotes[plugin]
+      return newRemotes
+    }, {}),
+  }), projectPath)
 
   process.exit(1)
 }
