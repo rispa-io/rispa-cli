@@ -3,6 +3,7 @@ const { handleError } = require('../core')
 const githubApi = require('../githubApi')
 const { readConfiguration, saveConfiguration } = require('../project')
 const { installPlugins, selectPluginsToInstall } = require('../plugin')
+const { commit: gitCommit } = require('../git')
 
 const updateConfiguration = (configuration, plugins, projectPath) => {
   const newPlugins = Array.from(configuration.plugins || [])
@@ -93,6 +94,10 @@ const addPlugins = async (...pluginsNames) => {
   installPlugins(pluginsToInstall, projectPath, pluginsPath, mode)
 
   updateConfiguration(configuration, pluginsToInstall, projectPath)
+
+  gitCommit(projectPath,
+    `Add plugins: ${pluginsToInstall.map(plugin => plugin.name).join(', ')}`
+  )
 
   process.exit(1)
 }

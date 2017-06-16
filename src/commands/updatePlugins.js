@@ -1,40 +1,67 @@
 /* eslint-disable no-console, import/no-dynamic-require, global-require */
-
 const path = require('path')
 const fs = require('fs-extra')
-
-const {
-  readConfiguration, saveConfiguration,
-} = require('../project')
 const { handleError } = require('../core')
-const { pullRepository } = require('../git')
+const { readConfiguration, saveConfiguration } = require('../project')
+const { pullRepository, updateSubtree } = require('../git')
 
-const updatePlugin = plugin => {
-  console.log(`Update plugin with name: ${plugin.name}`)
-  pullRepository(plugin.path)
+const updatePluginRepository = (pluginsPath, pluginName) => {
+  const pluginPath = `${pluginsPath}/${pluginName}`
+  if (!fs.existsSync(`${pluginPath}/.git`)) {
+    return false
+  }
+
+  console.log(`Update plugin repository with name: ${pluginName}`)
+  pullRepository(pluginPath)
+
+  return true
 }
+
+const updatePluginSubtree = (remotes, projectPath, pluginsPath, pluginName) => {
+  const remoteUrl = remotes[pluginName]
+  const pluginsRelPath = path.relative(projectPath, pluginsPath)
+  const prefix = `${pluginsRelPath}/${pluginName}`
+
+  console.log(`Update plugin subtree with name: ${pluginName}`)
+  updateSubtree(projectPath, prefix, pluginName, remoteUrl)
+
+  return true
+}
+
+const configurationIsValid = configuration =>
+  configuration && configuration.plugins && configuration.pluginsPath
 
 const updatePlugins = async (projectPath = process.cwd()) => {
   const configuration = readConfiguration(projectPath)
-  if (!configuration || !configuration.plugins || !configuration.pluginsPath) {
+
+  if (!configurationIsValid(configuration)) {
     handleError('Can\'t find rispa project config')
   }
 
+  if (!configuration.plugins.length) {
+    handleError('No plugins to update')
+  }
+
+  const {
+    plugins,
+    remotes = {},
+    mode,
+  } = configuration
   const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
 
-  const plugins = configuration.plugins
-    .filter((pluginName, idx, pluginsNames) => pluginsNames.indexOf(pluginName) === idx)
-    .map(pluginName => ({
-      name: pluginName,
-      path: `${pluginsPath}/${pluginName}`,
-    }))
-    .filter(({ path: pluginPath }) => fs.existsSync(`${pluginPath}/.git`))
+  const update = mode === 'dev'
+    ? updatePluginRepository.bind(null, pluginsPath)
+    : updatePluginSubtree.bind(null, remotes, projectPath, pluginsPath)
 
-  plugins.forEach(updatePlugin)
+  const updatedPlugins = plugins.filter(update)
 
-  configuration.plugins = plugins.map(({ name }) => name)
-
-  saveConfiguration(configuration, projectPath)
+  saveConfiguration(Object.assign({}, configuration, {
+    plugins: updatedPlugins,
+    remotes: updatedPlugins.reduce((newRemotes, plugin) => {
+      newRemotes[plugin] = remotes[plugin]
+      return newRemotes
+    }, {}),
+  }), projectPath)
 
   process.exit(1)
 }

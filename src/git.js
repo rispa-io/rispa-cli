@@ -26,15 +26,28 @@ const resetRepository = path => (
   ).status
 )
 
-const addSubtree = (path, prefix, remoteName, remoteUrl) => {
+const addRemote = (path, remoteName, remoteUrl) => {
   spawn.sync(
     'git',
     ['remote', 'add', remoteName, remoteUrl],
     defaultSpawnOptions(path)
   )
+}
+
+const addSubtree = (path, prefix, remoteName, remoteUrl) => {
+  addRemote(path, remoteName, remoteUrl)
   spawn.sync(
     'git',
     ['subtree', 'add', `--prefix=${prefix}`, remoteName, 'master'],
+    defaultSpawnOptions(path)
+  )
+}
+
+const updateSubtree = (path, prefix, remoteName, remoteUrl) => {
+  addRemote(path, remoteName, remoteUrl)
+  spawn.sync(
+    'git',
+    ['subtree', 'pull', `--prefix=${prefix}`, remoteName, 'master'],
     defaultSpawnOptions(path)
   )
 }
@@ -43,7 +56,7 @@ const init = (path, remoteUrl) => {
   const options = defaultSpawnOptions(path)
   spawn.sync('git', ['init'], options)
   if (remoteUrl) {
-    spawn.sync('git', ['remote', 'add', 'origin', remoteUrl], options)
+    addRemote(path, 'origin', remoteUrl)
   }
 }
 
@@ -58,6 +71,7 @@ module.exports = {
   pullRepository,
   resetRepository,
   addSubtree,
+  updateSubtree,
   init,
   commit,
 }

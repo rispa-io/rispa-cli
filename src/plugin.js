@@ -35,11 +35,11 @@ const installPlugins = (plugins, projectPath, pluginsPath, mode) => {
     console.log(`Install plugin with name: ${name}`)
 
     if (mode === 'dev') {
+      cloneRepository(cloneUrl, pluginsPath)
+    } else {
       const pluginsRelPath = path.relative(projectPath, pluginsPath)
       const prefix = `${pluginsRelPath}/${name}`
       addSubtree(projectPath, prefix, name, cloneUrl)
-    } else {
-      cloneRepository(cloneUrl, pluginsPath)
     }
   })
 }

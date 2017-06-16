@@ -34,7 +34,7 @@ describe('manipulation with plugins', () => {
       value: consoleLog,
     })
 
-    installPlugins(plugins, '/path')
+    installPlugins(plugins, '/path', './plugins')
 
     expect(consoleLog).toBeCalledWith('Install plugin with name: rispa-core')
     expect(consoleLog).toBeCalledWith('Install plugin with name: rispa-server')
@@ -47,7 +47,7 @@ describe('manipulation with plugins', () => {
       value: consoleLog,
     })
 
-    installPlugins(plugins, '/path', 'dev')
+    installPlugins(plugins, '/path', './plugins', 'dev')
 
     expect(consoleLog).toBeCalledWith('Install plugin with name: rispa-core')
     expect(consoleLog).toBeCalledWith('Install plugin with name: rispa-server')
