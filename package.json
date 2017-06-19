@@ -31,7 +31,8 @@
     "cross-spawn": "^5.1.0",
     "fs-extra": "^3.0.1",
     "glob": "^7.1.2",
-    "inquirer": "^3.0.6"
+    "inquirer": "^3.0.6",
+    "sudo-block": "^1.2.0"
   },
   "devDependencies": {
     "@rispa/eslint-config": "^1.0.1",
