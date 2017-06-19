@@ -1,16 +1,12 @@
 const path = require('path')
 
 jest.resetAllMocks()
-jest.mock('inquirer')
 jest.mock('fs-extra')
 jest.mock('cross-spawn')
 jest.mock('../../core')
-jest.mock('../../githubApi')
 
 const mockFs = require.requireMock('fs-extra')
-const mockInquirer = require.requireMock('inquirer')
 const mockCore = require.requireMock('../../core')
-const mockGithubApi = require.requireMock('../../githubApi')
 
 const updatePlugins = require.requireActual('../updatePlugins')
 
@@ -19,15 +15,15 @@ describe('update plugins', () => {
   let originalConsoleLog
 
   const pluginsNames = ['rispa-core', 'rispa-eslint-config']
-  const pluginsPath = '/sample/path'
-  const plugins = pluginsNames.map(pluginName => ({
-    name: pluginName,
-    clone_url: 'url',
-  }))
+  const pluginsPath = './plugins'
   const projectConfigPath = path.resolve(process.cwd(), './.rispa.json')
   const projectConfig = {
     plugins: [],
     pluginsPath,
+  }
+  const remotes = {
+    'rispa-core': '/rispa-core-remote',
+    'rispa-eslint-config': '/rispa-eslint-config-remote',
   }
 
   beforeAll(() => {
@@ -39,11 +35,6 @@ describe('update plugins', () => {
         throw code
       },
     })
-
-    mockInquirer.setMockAnswers({
-      installPluginsNames: pluginsNames,
-    })
-    mockGithubApi.setMockPlugins(plugins)
   })
 
   afterEach(() => {
@@ -62,9 +53,7 @@ describe('update plugins', () => {
     })
 
     mockFs.setMockFiles([])
-    mockInquirer.setMockAnswers({})
     mockCore.setMockModules({})
-    mockGithubApi.setMockPlugins([])
   })
 
   it('should success update plugins', async () => {
@@ -77,17 +66,44 @@ describe('update plugins', () => {
     mockCore.setMockModules({
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
+        pluginsPath,
+        remotes,
       }),
     })
-    mockFs.setMockFiles(pluginsNames.map(pluginName =>
-      `${path.resolve(pluginsPath)}/${pluginName}/.git`
-    ))
 
     await expect(updatePlugins())
       .rejects.toBe(1)
 
     pluginsNames.forEach(pluginName =>
-      expect(consoleLog).toBeCalledWith(`Update plugin with name: ${pluginName}`)
+      expect(consoleLog).toBeCalledWith(
+        `Update plugin subtree with name: ${pluginName}`
+      )
+    )
+  })
+
+  it('should success update plugins in dev mode', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
+    mockCore.setMockModules({
+      [projectConfigPath]: Object.assign({}, projectConfig, {
+        mode: 'dev',
+        plugins: pluginsNames,
+        pluginsPath,
+      }),
+    })
+    mockFs.setMockFiles([
+      `${path.resolve(pluginsPath)}/${pluginsNames[0]}/.git`,
+    ])
+
+    await expect(updatePlugins())
+      .rejects.toBe(1)
+
+    expect(consoleLog).toBeCalledWith(
+      `Update plugin repository with name: ${pluginsNames[0]}`
     )
   })
 
