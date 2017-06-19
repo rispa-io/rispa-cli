@@ -113,16 +113,4 @@ describe('update plugins', () => {
     await expect(updatePlugins())
       .rejects.toHaveProperty('message', 'Can\'t find rispa project config')
   })
-
-  it('should failed update plugins - no plugins to update', async () => {
-    mockCore.setMockModules({
-      [projectConfigPath]: Object.assign({}, projectConfig, {
-        plugins: [],
-        pluginsPath,
-      }),
-    })
-
-    await expect(updatePlugins())
-      .rejects.toHaveProperty('message', 'No plugins to update')
-  })
 })

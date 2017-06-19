@@ -38,10 +38,6 @@ const updatePlugins = async (projectPath = process.cwd()) => {
     handleError('Can\'t find rispa project config')
   }
 
-  if (!configuration.plugins.length) {
-    handleError('No plugins to update')
-  }
-
   const {
     plugins,
     remotes = {},
