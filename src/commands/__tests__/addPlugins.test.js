@@ -11,6 +11,7 @@ jest.mock('../../githubApi')
 const mockInquirer = require.requireMock('inquirer')
 const mockCore = require.requireMock('../../core')
 const mockGithubApi = require.requireMock('../../githubApi')
+const mockCrossSpawn = require.requireMock('cross-spawn')
 
 const addPlugins = require.requireActual('../addPlugins')
 
@@ -41,7 +42,7 @@ describe('add plugins', () => {
     })
 
     mockInquirer.setMockAnswers({
-      installPluginsNames: pluginsNames,
+      plugins,
     })
     mockGithubApi.setMockPlugins(plugins)
   })
@@ -118,7 +119,7 @@ describe('add plugins', () => {
       .rejects.toBe(1)
 
     pluginsNames.forEach(pluginName =>
-      expect(consoleLog).toBeCalledWith(`Already installed plugin with name: ${pluginName}`)
+      expect(consoleLog).toBeCalledWith(`Plugin '${pluginName}' already installed`)
     )
   })
 
@@ -203,5 +204,15 @@ describe('add plugins', () => {
 
     await expect(addPlugins())
       .rejects.toHaveProperty('message', 'Can\'t find rispa project config')
+  })
+
+  it('should failed add plugins - working tree has modifications', async () => {
+    mockCore.setMockModules({
+      [projectConfigPath]: projectConfig,
+    })
+    mockCrossSpawn.setMockOutput([null, new Buffer('M test.js')])
+
+    await expect(addPlugins())
+      .rejects.toHaveProperty('message', 'Working tree has modifications. Cannot add plugins')
   })
 })

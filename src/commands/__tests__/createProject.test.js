@@ -9,6 +9,8 @@ jest.mock('../../githubApi')
 const mockInquirer = require.requireMock('inquirer')
 const mockFs = require.requireMock('fs-extra')
 const mockCore = require.requireMock('../../core')
+const mockCrossSpawn = require.requireMock('cross-spawn')
+const mockGithubApi = require.requireMock('../../githubApi')
 
 const path = require.requireActual('path')
 
@@ -23,6 +25,12 @@ describe('create project', () => {
   const projectPath = path.resolve(distPath, `./${projectName}`)
   const lernaJsonPath = path.resolve(projectPath, './lerna.json')
   const pluginsNames = ['rispa-core', 'rispa-eslint-config']
+  const plugins = pluginsNames.map(pluginName => ({
+    name: pluginName,
+    clone_url: 'url',
+  }))
+  const successMessage = `Project "${projectName}" successfully generated!`
+  const crossSpawnOptions = { cwd: projectPath, stdio: 'inherit' }
 
   beforeAll(() => {
     originalExit = process.exit
@@ -36,8 +44,15 @@ describe('create project', () => {
 
     mockInquirer.setMockAnswers({
       projectName,
-      installPluginsNames: pluginsNames,
+      plugins,
+      remoteUrl: '',
     })
+    mockGithubApi.setMockPlugins(plugins)
+  })
+
+  afterEach(() => {
+    mockFs.setMockEnsureDirCallback()
+    mockCrossSpawn.sync.mockClear()
   })
 
   afterAll(() => {
@@ -68,7 +83,7 @@ describe('create project', () => {
     await expect(createProject())
       .rejects.toBe(1)
 
-    expect(consoleLog).toBeCalledWith(`Project "${projectName}" successfully generated!`)
+    expect(consoleLog).toBeCalledWith(successMessage)
   })
 
   it('should success create project with npm', async () => {
@@ -87,7 +102,7 @@ describe('create project', () => {
     await expect(createProject())
       .rejects.toBe(1)
 
-    expect(consoleLog).toBeCalledWith(`Project "${projectName}" successfully generated!`)
+    expect(consoleLog).toBeCalledWith(successMessage)
   })
 
   it('should success create project with name param', async () => {
@@ -106,7 +121,7 @@ describe('create project', () => {
     await expect(createProject(projectName))
       .rejects.toBe(1)
 
-    expect(consoleLog).toBeCalledWith(`Project "${projectName}" successfully generated!`)
+    expect(consoleLog).toBeCalledWith(successMessage)
   })
 
   it('should failed create project', async () => {
@@ -121,5 +136,110 @@ describe('create project', () => {
 
     await expect(createProject())
       .rejects.toHaveProperty('message', message)
+  })
+
+  it('should create project and add initial commit', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
+    mockCore.setMockModules({
+      [lernaJsonPath]: {
+        npmClient: 'yarn',
+      },
+    })
+
+    await expect(createProject(projectName, '--mode=dev'))
+      .rejects.toBe(1)
+
+    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['install'], crossSpawnOptions)
+    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['bs'], crossSpawnOptions)
+    expect(mockCrossSpawn.sync).toBeCalledWith('git', ['init'], crossSpawnOptions)
+    expect(mockCrossSpawn.sync).toBeCalledWith('git', ['add', '.'], crossSpawnOptions)
+    expect(mockCrossSpawn.sync).toBeCalledWith(
+      'git', ['commit', '-m', `Create project '${projectName}'`], crossSpawnOptions
+    )
+    expect(mockCrossSpawn.sync).toBeCalledWith(
+      'git',
+      ['commit', '-m', 'Bootstrap deps and install plugins'],
+      crossSpawnOptions
+    )
+
+    expect(consoleLog).toBeCalledWith(successMessage)
+  })
+
+  it('should create project in dev mode', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
+    mockCore.setMockModules({
+      [lernaJsonPath]: {
+        npmClient: 'yarn',
+      },
+    })
+
+    await expect(createProject(projectName, '--mode=dev'))
+      .rejects.toBe(1)
+
+    expect(consoleLog).toBeCalledWith(successMessage)
+  })
+
+  it('should create project with remoteUrl specified', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
+    mockInquirer.setMockAnswers({
+      projectName,
+      plugins,
+      remoteUrl: '/remote',
+    })
+    mockCore.setMockModules({
+      [lernaJsonPath]: {
+        npmClient: 'yarn',
+      },
+    })
+
+    await expect(createProject(projectName))
+      .rejects.toBe(1)
+
+    expect(mockCrossSpawn.sync).toBeCalledWith(
+      'git', ['remote', 'add', 'origin', '/remote'], crossSpawnOptions
+    )
+
+    expect(consoleLog).toBeCalledWith(successMessage)
+  })
+
+  it('should create project with plugins installed', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
+    mockCore.setMockModules({
+      [lernaJsonPath]: {
+        npmClient: 'yarn',
+      },
+    })
+    mockGithubApi.setMockPlugins(plugins)
+
+    await expect(createProject())
+      .rejects.toBe(1)
+
+    expect(consoleLog).toBeCalledWith(
+      `Install plugin with name: ${pluginsNames[0]}`
+    )
+    expect(consoleLog).toBeCalledWith(
+      `Install plugin with name: ${pluginsNames[1]}`
+    )
+    expect(consoleLog).toBeCalledWith(successMessage)
   })
 })
