@@ -5,12 +5,12 @@ let mockAnswers = {
 
 inquirer.setMockAnswers = newMockAnswers => { mockAnswers = newMockAnswers }
 
-inquirer.prompt = questions => (
+inquirer.prompt = jest.fn(questions => (
   Promise.resolve(questions.reduce((answers, { name }) => (
     Object.assign(answers, {
       [name]: mockAnswers[name],
     })
   ), {}))
-)
+))
 
 module.exports = inquirer
