@@ -74,6 +74,19 @@ const commit = (path, message) => {
   spawn.sync('git', ['commit', '-m', message], options)
 }
 
+const getChanges = path => {
+  const result = spawn.sync(
+    'git',
+    ['status', '--porcelain'],
+    {
+      cwd: path,
+      stdio: 'pipe',
+    }
+  )
+
+  return result.status !== 1 && String(result.output[1])
+}
+
 module.exports = {
   cloneRepository,
   pullRepository,
@@ -83,4 +96,5 @@ module.exports = {
   init,
   commit,
   removeRemote,
+  getChanges,
 }

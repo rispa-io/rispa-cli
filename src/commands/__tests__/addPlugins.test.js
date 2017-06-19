@@ -11,6 +11,7 @@ jest.mock('../../githubApi')
 const mockInquirer = require.requireMock('inquirer')
 const mockCore = require.requireMock('../../core')
 const mockGithubApi = require.requireMock('../../githubApi')
+const mockCrossSpawn = require.requireMock('cross-spawn')
 
 const addPlugins = require.requireActual('../addPlugins')
 
@@ -129,8 +130,6 @@ describe('add plugins', () => {
       value: consoleLog,
     })
 
-    console.log(projectConfig)
-
     mockCore.setMockModules({
       [projectConfigPath]: projectConfig,
     })
@@ -205,5 +204,15 @@ describe('add plugins', () => {
 
     await expect(addPlugins())
       .rejects.toHaveProperty('message', 'Can\'t find rispa project config')
+  })
+
+  it('should failed add plugins - working tree has modifications', async () => {
+    mockCore.setMockModules({
+      [projectConfigPath]: projectConfig,
+    })
+    mockCrossSpawn.setMockOutput([null, new Buffer('M test.js')])
+
+    await expect(addPlugins())
+      .rejects.toHaveProperty('message', 'Working tree has modifications. Cannot add plugins')
   })
 })

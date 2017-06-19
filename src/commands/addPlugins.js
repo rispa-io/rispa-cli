@@ -3,7 +3,7 @@ const { handleError } = require('../core')
 const githubApi = require('../githubApi')
 const { readConfiguration, saveConfiguration } = require('../project')
 const { installPlugins, selectPluginsToInstall } = require('../plugin')
-const { commit: gitCommit } = require('../git')
+const { commit: gitCommit, getChanges: gitGetChanges } = require('../git')
 
 const updateConfiguration = (configuration, plugins, projectPath) => {
   const newPlugins = Array.from(configuration.plugins || [])
@@ -58,23 +58,8 @@ const extractCloneUrl = pluginName => (
     pluginName.replace(/^git:/, '') : null
 )
 
-const addPlugins = async (...pluginsNames) => {
-  const projectPath = process.cwd()
-  const configuration = readConfiguration(projectPath)
-
-  if (!configuration) {
-    handleError('Can\'t find rispa project config')
-  }
-
-  const {
-    mode,
-    plugins: installedPluginsNames = [],
-    pluginsPath: relPluginsPath = './packages',
-  } = configuration
-  const pluginsPath = path.resolve(projectPath, relPluginsPath)
-
+const getPluginsToInstall = async (pluginsNames, installedPluginsNames) => {
   let pluginsToInstall
-
   if (pluginsNames.length) {
     const clonePluginUrl = extractCloneUrl(pluginsNames[0])
     pluginsToInstall = (clonePluginUrl
@@ -90,6 +75,32 @@ const addPlugins = async (...pluginsNames) => {
   } else {
     pluginsToInstall = await selectPluginsToInstall(installedPluginsNames)
   }
+  return pluginsToInstall
+}
+
+const addPlugins = async (...pluginsNames) => {
+  const projectPath = process.cwd()
+  const configuration = readConfiguration(projectPath)
+
+  if (!configuration) {
+    handleError('Can\'t find rispa project config')
+  }
+
+  const {
+    mode,
+    plugins: installedPluginsNames = [],
+    pluginsPath: relPluginsPath = './packages',
+  } = configuration
+  const pluginsPath = path.resolve(projectPath, relPluginsPath)
+
+  if (gitGetChanges(projectPath)) {
+    handleError('Working tree has modifications. Cannot add plugins')
+  }
+
+  const pluginsToInstall = await getPluginsToInstall(
+    pluginsNames,
+    installedPluginsNames
+  )
 
   installPlugins(pluginsToInstall, projectPath, pluginsPath, mode)
 
