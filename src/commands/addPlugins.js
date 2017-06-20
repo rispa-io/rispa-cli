@@ -5,6 +5,7 @@ const githubApi = require('../githubApi')
 const { readConfiguration, saveConfiguration } = require('../project')
 const { installPlugins, selectPluginsToInstall } = require('../plugin')
 const { commit: gitCommit, getChanges: gitGetChanges } = require('../git')
+const { removeCache: removePluginsCache } = require('../packages')
 
 const lernaBootstrapProjectNpm = projectPath => (
   spawn.sync(
@@ -143,6 +144,8 @@ const addPlugins = async (...pluginsNames) => {
   gitCommit(projectPath,
     `Add plugins: ${pluginsToInstall.map(plugin => plugin.name).join(', ')}`
   )
+
+  removePluginsCache(projectPath)
 
   process.exit(1)
 }
