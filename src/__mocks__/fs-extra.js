@@ -2,7 +2,7 @@ const fs = jest.genMockFromModule('fs-extra')
 
 let mockFiles = []
 let mockEnsureDirCallback
-let mockRemoveCallback
+let mockRemoveCallback = {}
 
 fs.writeFileSync = (path, data) => {
   if (typeof path !== 'string' || typeof data !== 'string') {
@@ -18,15 +18,16 @@ fs.ensureDirSync = () => {
 
 fs.existsSync = filePath => mockFiles.indexOf(filePath) !== -1
 
-fs.removeSync = () => {
-  if (mockRemoveCallback) {
-    mockRemoveCallback()
+fs.removeSync = path => {
+  console.error({ path })
+  if (mockRemoveCallback[path]) {
+    mockRemoveCallback[path]()
   }
 }
 
 fs.setMockEnsureDirCallback = cb => { mockEnsureDirCallback = cb }
 
-fs.setMockRemoveCallback = cb => { mockRemoveCallback = cb }
+fs.setMockRemoveCallback = newMockRemoveCallback => { mockRemoveCallback = newMockRemoveCallback }
 
 fs.setMockFiles = newMockFiles => {
   mockFiles = newMockFiles
