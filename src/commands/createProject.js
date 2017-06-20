@@ -64,9 +64,9 @@ const lernaBootstrapProjectYarn = projectPath => (
   ).status
 )
 
-const generateProjectStructure = async projectPath => {
+const generateProjectStructure = async (projectPath, projectName) => {
   const generators = configureGenerators(projectPath)
-  await generators.getGenerator('project').runActions()
+  await generators.getGenerator('project').runActions({ projectName })
 }
 
 const bootstrapProjectDeps = projectPath => {
@@ -108,7 +108,7 @@ const create = async (...args) => {
     const projectPath = path.resolve(distPath, `./${projectName}`)
     const pluginsPath = path.resolve(projectPath, './packages')
 
-    await generateProjectStructure(projectPath)
+    await generateProjectStructure(projectPath, projectName)
 
     gitInit(projectPath, remoteUrl)
     gitCommit(projectPath, `Create project '${projectName}'`)
