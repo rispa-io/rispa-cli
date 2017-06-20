@@ -7,7 +7,7 @@ const promptPlugins = choices => prompt([{
   choices,
 }])
 
-const selectPluginsTask = async ctx => {
+const selectPluginsTask = ctx => {
   const { excludePluginsNames = [] } = ctx
   const pluginsForSelect = ctx.plugins
     .filter(plugin => excludePluginsNames.indexOf(plugin.name) === -1)

@@ -9,7 +9,7 @@ const performProjectName = projectName => (
 
 const readConfiguration = projectPath => {
   const configurationPath = path.resolve(projectPath, CONFIGURATION_PATH)
-  return fs.readJsonSync(configurationPath)
+  return fs.readJsonSync(configurationPath, { throws: false })
 }
 
 const saveConfiguration = (configuration, projectPath) => {

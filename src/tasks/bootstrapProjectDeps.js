@@ -1,28 +1,6 @@
 const spawn = require('cross-spawn')
 const { checkUseYarnLerna } = require('../utils/useYarn')
 
-const installProjectDepsYarn = projectPath => (
-  spawn.sync(
-    'yarn',
-    ['install'],
-    {
-      cwd: projectPath,
-      stdio: 'inherit',
-    }
-  ).status
-)
-
-const installProjectDepsNpm = projectPath => (
-  spawn.sync(
-    'npm',
-    ['install'],
-    {
-      cwd: projectPath,
-      stdio: 'inherit',
-    }
-  ).status
-)
-
 const lernaBootstrapProjectNpm = projectPath => (
   spawn.sync(
     'npm',
@@ -52,10 +30,8 @@ const bootstrapProjectDepsTask = ctx => {
   }
 
   if (ctx.yarn) {
-    installProjectDepsYarn(projectPath)
     lernaBootstrapProjectYarn(projectPath)
   } else {
-    installProjectDepsNpm(projectPath)
     lernaBootstrapProjectNpm(projectPath)
   }
 }

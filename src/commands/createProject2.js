@@ -9,8 +9,9 @@ const { init: gitInit, commit: gitCommit } = require('../utils/git')
 const selectPlugins = require('../tasks/selectPlugins')
 const fetchPlugins = require('../tasks/fetchPlugins')
 const createInstallPlugin = require('../tasks/installPlugin')
+const installProjectDeps = require('../tasks/installProjectDeps')
 const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
-const { saveConfiguration } = require('../utils/project')
+const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
 
 class CreateProjectCommand extends Command {
   constructor([projectName, remoteUrl]) {
@@ -27,7 +28,6 @@ class CreateProjectCommand extends Command {
     this.generateProjectStructure = this.generateProjectStructure.bind(this)
     this.gitInit = this.gitInit.bind(this)
     this.installPlugins = this.installPlugins.bind(this)
-    this.createConfiguration = this.createConfiguration.bind(this)
   }
 
   enterProjectName() {
@@ -66,31 +66,22 @@ class CreateProjectCommand extends Command {
   }
 
   installPlugins(ctx) {
-    const { pluginsForInstall } = this.state
+    const { pluginsToInstall } = this.state
 
-    ctx.pluginsPath = path.resolve(ctx.projectPath, './packages')
+    ctx.configuration = {
+      mode: ctx.mode,
+      pluginsPath: './packages',
+      plugins: [],
+      remotes: {},
+    }
 
-    fs.ensureDirSync(ctx.pluginsPath)
+    fs.ensureDirSync(ctx.configuration.pluginsPath)
 
     return new Listr(
-      pluginsForInstall.map(({ name, clone_url: cloneUrl }) =>
+      pluginsToInstall.map(({ name, cloneUrl }) =>
         createInstallPlugin(name, cloneUrl)
       ), { exitOnError: false }
     )
-  }
-
-  createConfiguration({ mode, pluginsPath, projectPath }) {
-    const { pluginsForInstall } = this.state
-
-    saveConfiguration({
-      mode,
-      pluginsPath: path.relative(projectPath, pluginsPath),
-      plugins: pluginsForInstall.map(plugin => plugin.name),
-      remotes: pluginsForInstall.reduce((remotes, plugin) => {
-        remotes[plugin.name] = plugin.clone_url
-        return remotes
-      }, {}),
-    }, projectPath)
   }
 
   init() {
@@ -116,7 +107,7 @@ class CreateProjectCommand extends Command {
         title: 'Select plugins to install',
         task: selectPlugins.task,
         after: ctx => {
-          this.state.pluginsForInstall = ctx.selectedPlugins
+          this.state.pluginsToInstall = ctx.selectedPlugins
           delete ctx.selectedPlugins
         },
       },
@@ -124,10 +115,11 @@ class CreateProjectCommand extends Command {
         title: 'Install plugins',
         task: this.installPlugins,
       },
+      installProjectDeps,
       bootstrapProjectDeps,
       {
         title: 'Create configuration',
-        task: this.createConfiguration,
+        task: saveProjectConfiguration.task,
       },
       {
         title: 'Git commit',
