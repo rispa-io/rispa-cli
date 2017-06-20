@@ -1,6 +1,6 @@
 {
   "name": "@rispa/cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Rispa CLI - entry point to project generator",
   "main": "/bin/ris.js",
   "bin": {
