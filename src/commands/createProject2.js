@@ -10,6 +10,7 @@ const selectPlugins = require('../tasks/selectPlugins')
 const fetchPlugins = require('../tasks/fetchPlugins')
 const createInstallPlugin = require('../tasks/installPlugin')
 const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
+const { saveConfiguration } = require('../utils/project')
 
 class CreateProjectCommand extends Command {
   constructor([projectName, remoteUrl]) {
@@ -26,6 +27,7 @@ class CreateProjectCommand extends Command {
     this.generateProjectStructure = this.generateProjectStructure.bind(this)
     this.gitInit = this.gitInit.bind(this)
     this.installPlugins = this.installPlugins.bind(this)
+    this.createConfiguration = this.createConfiguration.bind(this)
   }
 
   enterProjectName() {
@@ -77,6 +79,20 @@ class CreateProjectCommand extends Command {
     )
   }
 
+  createConfiguration({ mode, pluginsPath, projectPath }) {
+    const { pluginsForInstall } = this.state
+
+    saveConfiguration({
+      mode,
+      pluginsPath: path.relative(projectPath, pluginsPath),
+      plugins: pluginsForInstall.map(plugin => plugin.name),
+      remotes: pluginsForInstall.reduce((remotes, plugin) => {
+        remotes[plugin.name] = plugin.clone_url
+        return remotes
+      }, {}),
+    }, projectPath)
+  }
+
   init() {
     const { projectName, remoteUrl } = this.state
     this.add([
@@ -109,6 +125,10 @@ class CreateProjectCommand extends Command {
         task: this.installPlugins,
       },
       bootstrapProjectDeps,
+      {
+        title: 'Create configuration',
+        task: this.createConfiguration,
+      },
       {
         title: 'Git commit',
         task: ({ projectPath }) => gitCommit(projectPath, 'Bootstrap deps and install plugins'),

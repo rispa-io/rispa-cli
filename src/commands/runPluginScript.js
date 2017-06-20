@@ -86,7 +86,11 @@ class RunPluginScriptCommand extends Command {
 
   init() {
     const { pluginName, scriptName } = this.state
-    this.add(scanPluginsTask)
+    this.add(Object.assign({}, scanPluginsTask, {
+      before: ctx => {
+        ctx.projectPath = ctx.cwd
+      },
+    }))
     this.add([{
       title: 'Select plugin',
       enabled: () => !pluginName,

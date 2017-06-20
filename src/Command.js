@@ -10,10 +10,7 @@ const createTaskWrapper = ({ before, after, task }) => (context, wrapper) => {
   const result = task(context, wrapper)
 
   if (isPromise(result)) {
-    return result.then(() => {
-      after(context, wrapper)
-      return Promise.resolve()
-    })
+    return result.then(() => after && after(context, wrapper))
   }
 
   after(context, wrapper)
