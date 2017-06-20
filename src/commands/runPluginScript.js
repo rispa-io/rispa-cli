@@ -90,6 +90,11 @@ class RunPluginScriptCommand extends Command {
       before: ctx => {
         ctx.projectPath = ctx.cwd
       },
+      after: ({ plugins }) => {
+        if (Object.keys(plugins).length === 0) {
+          throw new Error('Can\'t find plugins')
+        }
+      },
     }))
     this.add([{
       title: 'Select plugin',
