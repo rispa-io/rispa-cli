@@ -42,28 +42,6 @@ const installProjectDepsNpm = projectPath => (
   ).status
 )
 
-const lernaBootstrapProjectNpm = projectPath => (
-  spawn.sync(
-    'npm',
-    ['run', 'bs'],
-    {
-      cwd: projectPath,
-      stdio: 'inherit',
-    }
-  ).status
-)
-
-const lernaBootstrapProjectYarn = projectPath => (
-  spawn.sync(
-    'yarn',
-    ['bs'],
-    {
-      cwd: projectPath,
-      stdio: 'inherit',
-    }
-  ).status
-)
-
 const generateProjectStructure = async (projectPath, projectName) => {
   const generators = configureGenerators(projectPath)
   await generators.getGenerator('project').runActions({ projectName })
