@@ -42,28 +42,6 @@ const installProjectDepsNpm = projectPath => (
   ).status
 )
 
-const lernaBootstrapProjectNpm = projectPath => (
-  spawn.sync(
-    'npm',
-    ['run', 'bs'],
-    {
-      cwd: projectPath,
-      stdio: 'inherit',
-    }
-  ).status
-)
-
-const lernaBootstrapProjectYarn = projectPath => (
-  spawn.sync(
-    'yarn',
-    ['bs'],
-    {
-      cwd: projectPath,
-      stdio: 'inherit',
-    }
-  ).status
-)
-
 const generateProjectStructure = async projectPath => {
   const generators = configureGenerators(projectPath)
   await generators.getGenerator('project').runActions()
@@ -73,10 +51,8 @@ const bootstrapProjectDeps = projectPath => {
   const { npmClient } = requireIfExist(path.resolve(projectPath, './lerna.json'))
   if (npmClient === 'npm') {
     installProjectDepsNpm(projectPath)
-    lernaBootstrapProjectNpm(projectPath)
   } else {
     installProjectDepsYarn(projectPath)
-    lernaBootstrapProjectYarn(projectPath)
   }
 }
 
