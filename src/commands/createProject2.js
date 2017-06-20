@@ -56,7 +56,7 @@ class CreateProjectCommand extends Command {
     ctx.projectPath = path.resolve(ctx.cwd, `./${projectName}`)
 
     const generators = configureGenerators(ctx.projectPath)
-    return generators.getGenerator('project').runActions()
+    return generators.getGenerator('project').runActions({ projectName })
   }
 
   gitInit({ projectPath }) {

@@ -1,10 +1,9 @@
 const githubApi = require('../utils/githubApi')
 
-const fetchPluginsTask = async ctx => {
-  const { data: { items: plugins } } = await githubApi.plugins()
-
-  ctx.plugins = plugins
-}
+const fetchPluginsTask = ctx => githubApi.plugins()
+  .then(({ data: { items: plugins } }) => {
+    ctx.plugins = plugins
+  })
 
 const fetchPlugins = {
   title: 'Fetch plugins',

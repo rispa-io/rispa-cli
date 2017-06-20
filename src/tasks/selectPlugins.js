@@ -16,8 +16,9 @@ const selectPluginsTask = async ctx => {
       value: plugin,
     }))
 
-  const { plugins } = await promptPlugins(pluginsForSelect)
-  ctx.selectedPlugins = plugins
+  return promptPlugins(pluginsForSelect).then(({ plugins }) => {
+    ctx.selectedPlugins = plugins
+  })
 }
 
 const selectPlugins = {

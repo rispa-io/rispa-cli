@@ -62,7 +62,7 @@ const scanPluginsByPath = pluginsPath => (
   }, {})
 )
 
-const scanPluginsTask = async ctx => {
+const scanPluginsTask = ctx => {
   const { projectPath } = ctx
   const pluginsCache = readPluginsCache(projectPath)
   const pluginsPaths = readPluginsPaths(projectPath)
