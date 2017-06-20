@@ -52,29 +52,29 @@ class RunPluginScriptCommand extends Command {
     ctx.plugins = [currentPlugin]
   }
 
-  async selectPlugin(ctx) {
-    const { pluginName } = await prompt([{
+  selectPlugin(ctx) {
+    return prompt([{
       type: 'list',
       name: 'pluginName',
       message: 'Select available plugin:',
       paginated: true,
       choices: [...new Set(Object.keys(ctx.plugins).map(key => ctx.plugins[key].name))],
-    }])
-
-    this.state.pluginName = pluginName
+    }]).then(({ pluginName }) => {
+      this.state.pluginName = pluginName
+    })
   }
 
-  async selectScript(ctx) {
+  selectScript(ctx) {
     const { pluginName } = this.state
-    const { scriptName } = await prompt([{
+    return prompt([{
       type: 'list',
       name: 'scriptName',
       message: 'Select available script:',
       paginated: true,
       choices: ctx.plugins[pluginName].scripts,
-    }])
-
-    this.state.scriptName = scriptName
+    }]).then(({ scriptName }) => {
+      this.state.scriptName = scriptName
+    })
   }
 
   runScripts({ plugins }) {

@@ -28,24 +28,24 @@ class CreateProjectCommand extends Command {
     this.installPlugins = this.installPlugins.bind(this)
   }
 
-  async enterProjectName() {
-    const { projectName } = await prompt([{
+  enterProjectName() {
+    return prompt([{
       type: 'input',
       name: 'projectName',
       message: 'Enter project name:',
-    }])
-
-    this.state.projectName = performProjectName(projectName)
+    }]).then(({ projectName }) => {
+      this.state.projectName = performProjectName(projectName)
+    })
   }
 
-  async enterRemoteUrl() {
-    const { remoteUrl } = await prompt([{
+  enterRemoteUrl() {
+    return prompt([{
       type: 'input',
       name: 'remoteUrl',
       message: 'Enter remote url for project (optional):',
-    }])
-
-    this.state.remoteUrl = remoteUrl
+    }]).then(({ remoteUrl }) => {
+      this.state.remoteUrl = remoteUrl
+    })
   }
 
   generateProjectStructure(ctx) {
