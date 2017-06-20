@@ -15,9 +15,9 @@
     eslint-plugin-jsx-a11y "^4.0.0"
     eslint-plugin-react "^6.10.3"
 
-"@rispa/generator@https://github.com/rispa-io/rispa-generator.git":
+"@rispa/generator@1.0.0":
   version "1.0.0"
-  resolved "https://github.com/rispa-io/rispa-generator.git#87e32268647500022ab5d45fc711e61d5041d431"
+  resolved "https://registry.yarnpkg.com/@rispa/generator/-/generator-1.0.0.tgz#0da0449005769e13985ed8f5b765347058e6f462"
   dependencies:
     node-plop "^0.6.0"
 
