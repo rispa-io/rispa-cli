@@ -1,0 +1,10 @@
+.idea
+.gitignore
+coverage
+__mocks__
+__tests__
+.travis.yml
+.npmignore
+.eslintignore
+.eslintrc.js
+rispa-cli-*
