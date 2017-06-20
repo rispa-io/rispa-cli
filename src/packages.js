@@ -4,6 +4,8 @@ const path = require('path')
 
 const { requireIfExist } = require('./core')
 
+const removeCache = projectPath => fs.removeSync(path.resolve(projectPath, './build/activators.json'))
+
 const saveCache = (packagesByPaths, packages, activatorsCachePath) => {
   const activatorsCacheDirPath = path.dirname(activatorsCachePath)
 
@@ -108,5 +110,5 @@ const scanPackages = (projectPath = process.cwd()) => {
 }
 
 module.exports = {
-  scanPackages, saveCache, packageInfoByPath, findPackagesByPathFromCache, findPackagesByPath,
+  scanPackages, removeCache, saveCache, packageInfoByPath, findPackagesByPathFromCache, findPackagesByPath,
 }

@@ -3,6 +3,7 @@ const fs = require('fs-extra')
 const { readConfiguration, saveConfiguration } = require('../project')
 const { handleError } = require('../core')
 const { removeRemote } = require('../git')
+const { removeCache: removePluginsCache } = require('../packages')
 
 const removePlugin = plugin => {
   try {
@@ -16,7 +17,7 @@ const removePlugin = plugin => {
 }
 
 const configurationIsValid = configuration =>
-  configuration && configuration.plugins && configuration.pluginsPath
+configuration && configuration.plugins && configuration.pluginsPath
 
 const removePlugins = async (...pluginsNames) => {
   const projectPath = process.cwd()
@@ -58,6 +59,8 @@ const removePlugins = async (...pluginsNames) => {
       return newRemotes
     }, {}),
   }), projectPath)
+
+  removePluginsCache(projectPath)
 
   process.exit(1)
 }
