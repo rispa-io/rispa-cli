@@ -1,9 +1,41 @@
 const path = require('path')
-const { handleError } = require('../core')
+const spawn = require('cross-spawn')
+const { handleError, requireIfExist } = require('../core')
 const githubApi = require('../githubApi')
 const { readConfiguration, saveConfiguration } = require('../project')
 const { installPlugins, selectPluginsToInstall } = require('../plugin')
 const { commit: gitCommit, getChanges: gitGetChanges } = require('../git')
+
+const lernaBootstrapProjectNpm = projectPath => (
+  spawn.sync(
+    'npm',
+    ['run', 'bs'],
+    {
+      cwd: projectPath,
+      stdio: 'inherit',
+    }
+  ).status
+)
+
+const lernaBootstrapProjectYarn = projectPath => (
+  spawn.sync(
+    'yarn',
+    ['bs'],
+    {
+      cwd: projectPath,
+      stdio: 'inherit',
+    }
+  ).status
+)
+
+const bootstrapPluginsDeps = projectPath => {
+  const { npmClient } = requireIfExist(path.resolve(projectPath, './lerna.json'))
+  if (npmClient === 'npm') {
+    lernaBootstrapProjectNpm(projectPath)
+  } else {
+    lernaBootstrapProjectYarn(projectPath)
+  }
+}
 
 const updateConfiguration = (configuration, plugins, projectPath) => {
   const newPlugins = Array.from(configuration.plugins || [])
@@ -105,6 +137,8 @@ const addPlugins = async (...pluginsNames) => {
   installPlugins(pluginsToInstall, projectPath, pluginsPath, mode)
 
   updateConfiguration(configuration, pluginsToInstall, projectPath)
+
+  bootstrapPluginsDeps(projectPath)
 
   gitCommit(projectPath,
     `Add plugins: ${pluginsToInstall.map(plugin => plugin.name).join(', ')}`

@@ -73,10 +73,8 @@ const bootstrapProjectDeps = projectPath => {
   const { npmClient } = requireIfExist(path.resolve(projectPath, './lerna.json'))
   if (npmClient === 'npm') {
     installProjectDepsNpm(projectPath)
-    lernaBootstrapProjectNpm(projectPath)
   } else {
     installProjectDepsYarn(projectPath)
-    lernaBootstrapProjectYarn(projectPath)
   }
 }
 
