@@ -17,12 +17,14 @@ const RunPluginScriptCommand = require('../src/commands/runPluginScript')
 const CreateProjectCommand = require('../src/commands/createProject2')
 const AddPluginsCommand = require('../src/commands/addPlugins2')
 const RemovePluginsCommand = require('../src/commands/removePlugins2')
+const UpdatePluginsCommand = require('../src/commands/updatePlugins2')
 
 const commands = [
   RunPluginScriptCommand,
   CreateProjectCommand,
   AddPluginsCommand,
   RemovePluginsCommand,
+  UpdatePluginsCommand,
 ]
 
 const parseParams = args => {
