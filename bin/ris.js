@@ -16,11 +16,13 @@ const LOCAL_VERSION_PATH = path.resolve(CWD, './node_modules/.bin/ris')
 const RunPluginScriptCommand = require('../src/commands/runPluginScript')
 const CreateProjectCommand = require('../src/commands/createProject2')
 const AddPluginsCommand = require('../src/commands/addPlugins2')
+const RemovePluginsCommand = require('../src/commands/removePlugins2')
 
 const commands = [
   RunPluginScriptCommand,
   CreateProjectCommand,
   AddPluginsCommand,
+  RemovePluginsCommand,
 ]
 
 const parseParams = args => {

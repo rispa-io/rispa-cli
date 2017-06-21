@@ -3,21 +3,27 @@ const { prompt } = require('inquirer')
 const promptPlugins = choices => prompt([{
   type: 'checkbox',
   message: 'Select plugins:',
-  name: 'plugins',
+  name: 'selectedPlugins',
   choices,
 }])
 
 const selectPluginsTask = ctx => {
   const { excludePluginsNames = [] } = ctx
-  const pluginsForSelect = ctx.plugins
-    .filter(plugin => excludePluginsNames.indexOf(plugin.name) === -1)
+  const plugins = ctx.plugins || ctx.configuration.plugins
+
+  const pluginsForSelect = plugins
     .map(plugin => ({
-      name: plugin.name,
+      name: typeof plugin === 'object' ? plugin.name : plugin,
       value: plugin,
     }))
+    .filter(plugin => excludePluginsNames.indexOf(plugin.name) === -1)
 
-  return promptPlugins(pluginsForSelect).then(({ plugins }) => {
-    ctx.selectedPlugins = plugins
+  if (pluginsForSelect.length === 0) {
+    throw new Error('Can\'t find plugins for select')
+  }
+
+  return promptPlugins(pluginsForSelect).then(({ selectedPlugins }) => {
+    ctx.selectedPlugins = selectedPlugins
   })
 }
 

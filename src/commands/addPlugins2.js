@@ -8,6 +8,7 @@ const gitCheckChanges = require('../tasks/gitCheckChange')
 const selectPlugins = require('../tasks/selectPlugins')
 const fetchPlugins = require('../tasks/fetchPlugins')
 const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
+const cleanCache = require('../tasks/cleanCache')
 
 const extractPluginNameFromUrl = cloneUrl => {
   const parts = cloneUrl.split('/')
@@ -88,6 +89,7 @@ class AddPluginsCommand extends Command {
       },
       bootstrapProjectDeps,
       saveProjectConfiguration,
+      cleanCache,
     ])
   }
 }

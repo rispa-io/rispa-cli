@@ -9,7 +9,7 @@ const readPluginsPaths = projectPath => {
   }
 
   const pluginsPaths = lernaPackages.reduce((paths, pluginsPath) => {
-    paths.push(pluginsPath)
+    paths.push(path.resolve(projectPath, `./${pluginsPath}`))
     return paths
   }, [`${projectPath}/node_modules/*`])
 
