@@ -7,7 +7,7 @@ const createCommitAndPushPluginChanges = require('../tasks/commitAndPushPluginCh
 const createCommitAndPushChanges = require('../tasks/commitAndPushChanges')
 const { checkDevMode } = require('../utils/tasks')
 
-class RemovePluginsCommand extends Command {
+class CommitCommand extends Command {
   constructor() {
     super({})
 
@@ -75,7 +75,7 @@ class RemovePluginsCommand extends Command {
   }
 }
 
-RemovePluginsCommand.commandName = 'commit'
-RemovePluginsCommand.commandDescription = 'Commit changes'
+CommitCommand.commandName = 'commit'
+CommitCommand.commandDescription = 'Commit changes'
 
-module.exports = RemovePluginsCommand
+module.exports = CommitCommand
