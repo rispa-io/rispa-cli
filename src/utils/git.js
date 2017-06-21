@@ -70,9 +70,13 @@ const init = (path, remoteUrl) => {
 
 const commit = (path, message) => {
   const options = defaultSpawnOptions(path)
-  spawn.sync('git', ['add', '.'], options)
-  spawn.sync('git', ['commit', '-m', message], options)
+  return spawn.sync('git', ['add', '.'], options).status === 0
+    && spawn.sync('git', ['commit', '-m', message], options).status === 0
 }
+
+const push = path => (
+  spawn.sync('git', ['push'], defaultSpawnOptions(path)).status === 0
+)
 
 const getChanges = path => {
   const result = spawn.sync(
@@ -84,8 +88,53 @@ const getChanges = path => {
     }
   )
 
-  return result.status !== 1 && String(result.output[1])
+  return result.status === 0 && String(result.output[1])
 }
+
+const getLastTagDescription = path => (
+  spawn.sync(
+    'git',
+    ['describe', '--tags', '--long', '--match', 'v*'],
+    {
+      cwd: path,
+      stdio: 'pipe',
+    }
+  )
+)
+
+const tagInfo = path => {
+  const result = getLastTagDescription(path)
+  const tagDescription = result.status !== 1 && String(result.output[1])
+  if (!tagDescription) {
+    return null
+  }
+
+  const parts = /v((\d+).(\d+).(\d+))-(\d+)-\w+/.exec(tagDescription)
+  if (!parts) {
+    return null
+  }
+
+  const [version, major, minor, patch, newCommitsCount] = parts.slice(1)
+  return {
+    version,
+    versionParts: {
+      major,
+      minor,
+      patch,
+    },
+    newCommitsCount,
+  }
+}
+
+const addTag = (path, tag) => {
+  const spawnOptions = {
+    cwd: path,
+    stdio: 'inherit',
+  }
+  spawn.sync('git', ['tag', tag], spawnOptions)
+  spawn.sync('git', ['push', '--tags'], spawnOptions)
+}
+
 
 module.exports = {
   cloneRepository,
@@ -95,6 +144,9 @@ module.exports = {
   updateSubtree,
   init,
   commit,
+  push,
   removeRemote,
   getChanges,
+  tagInfo,
+  addTag,
 }

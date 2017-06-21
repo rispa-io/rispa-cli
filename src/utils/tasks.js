@@ -29,11 +29,14 @@ const improveTask = task => {
 
 const extendsTask = (task, options) => Object.assign({}, task, options)
 
-const skipDevMode = ctx => (ctx.mode || ctx.configuration.mode) === 'dev' && 'Development mode'
+const checkDevMode = ctx => (ctx.mode || (ctx.configuration && ctx.configuration.mode)) === 'dev'
+
+const skipDevMode = ctx => checkDevMode(ctx) && 'Development mode'
 
 module.exports = {
   createTaskWrapper,
   improveTask,
   extendsTask,
+  checkDevMode,
   skipDevMode,
 }

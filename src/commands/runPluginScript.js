@@ -1,7 +1,7 @@
 const Listr = require('listr')
 const { prompt } = require('inquirer')
 const Command = require('../Command')
-const scanPluginsTask = require('../tasks/scanPlugins')
+const scanPlugins = require('../tasks/scanPlugins')
 const createRunPackageScriptTask = require('../tasks/runPluginScript')
 const { extendsTask } = require('../utils/tasks')
 
@@ -54,12 +54,21 @@ class RunPluginScriptCommand extends Command {
   }
 
   selectPlugin(ctx) {
+    const plugins = Object.values(ctx.plugins)
+      .filter(plugin => plugin.scripts && plugin.scripts.length)
+      .map(plugin => plugin.name)
+      .filter((pluginName, idx, array) => array.indexOf(pluginName) === idx)
+
+    if (plugins.length === 0) {
+      throw new Error('Can\'t find plugins with scripts')
+    }
+
     return prompt([{
       type: 'list',
       name: 'pluginName',
       message: 'Select available plugin:',
       paginated: true,
-      choices: [...new Set(Object.keys(ctx.plugins).map(key => ctx.plugins[key].name))],
+      choices: plugins,
     }]).then(({ pluginName }) => {
       this.state.pluginName = pluginName
     })
@@ -67,12 +76,14 @@ class RunPluginScriptCommand extends Command {
 
   selectScript(ctx) {
     const { pluginName } = this.state
+    const scripts = ctx.plugins[pluginName].scripts
+
     return prompt([{
       type: 'list',
       name: 'scriptName',
       message: 'Select available script:',
       paginated: true,
-      choices: ctx.plugins[pluginName].scripts,
+      choices: scripts,
     }]).then(({ scriptName }) => {
       this.state.scriptName = scriptName
     })
@@ -88,13 +99,17 @@ class RunPluginScriptCommand extends Command {
   init() {
     const { pluginName, scriptName } = this.state
     this.add([
-      extendsTask(scanPluginsTask, {
+      extendsTask(scanPlugins, {
         before: ctx => {
           ctx.projectPath = ctx.cwd
         },
         after: ({ plugins }) => {
           if (Object.keys(plugins).length === 0) {
             throw new Error('Can\'t find plugins')
+          }
+
+          if (!plugins[pluginName]) {
+            throw new Error('Can\'t find plugin')
           }
         },
       }),
