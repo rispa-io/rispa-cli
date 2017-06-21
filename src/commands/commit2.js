@@ -45,7 +45,7 @@ class CommitCommand extends Command {
   commitPluginsChanges() {
     const { pluginsChanges } = this.state
 
-    return new Listr(pluginsChanges.map(createCommitAndPushPluginChanges))
+    return new Listr(pluginsChanges.map(createCommitAndPushPluginChanges), { exitOnError: false })
   }
 
   commitProjectChanges({ projectPath }) {
@@ -64,11 +64,12 @@ class CommitCommand extends Command {
       {
         title: 'Commit plugins changes',
         enabled: checkDevMode,
+        skip: () => this.state.pluginsChanges.length === 0 && 'Can\'t find plugins changes',
         task: this.commitPluginsChanges,
       },
       {
         title: 'Commit project changes',
-        skip: () => !this.state.projectChanges,
+        skip: () => !this.state.projectChanges && 'Can\'t find project changes',
         task: this.commitProjectChanges,
       },
     ])

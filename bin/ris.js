@@ -20,6 +20,7 @@ const RemovePluginsCommand = require('../src/commands/removePlugins2')
 const UpdatePluginsCommand = require('../src/commands/updatePlugins2')
 const GenerateCommand = require('../src/commands/generate2')
 const CommitCommand = require('../src/commands/commit2')
+const NumerateCommand = require('../src/commands/numerate2')
 
 const commands = [
   RunPluginScriptCommand,
@@ -29,6 +30,7 @@ const commands = [
   UpdatePluginsCommand,
   GenerateCommand,
   CommitCommand,
+  NumerateCommand,
 ]
 
 const parseArgs = args => {

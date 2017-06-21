@@ -131,10 +131,10 @@ const addTag = (path, tag) => {
     cwd: path,
     stdio: 'inherit',
   }
-  spawn.sync('git', ['tag', tag], spawnOptions)
-  spawn.sync('git', ['push', '--tags'], spawnOptions)
-}
 
+  return spawn.sync('git', ['tag', tag], spawnOptions).status === 0
+    && spawn.sync('git', ['push', '--tags'], spawnOptions).status === 0
+}
 
 module.exports = {
   cloneRepository,

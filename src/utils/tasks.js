@@ -27,7 +27,7 @@ const improveTask = task => {
   return task
 }
 
-const extendsTask = (task, options) => Object.assign({}, task, options)
+const extendsTask = (task, options) => improveTask(Object.assign({}, task, options))
 
 const checkDevMode = ctx => (ctx.mode || (ctx.configuration && ctx.configuration.mode)) === 'dev'
 
