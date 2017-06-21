@@ -155,7 +155,6 @@ describe('create project', () => {
       .rejects.toBe(1)
 
     expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['install'], crossSpawnOptions)
-    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['bs'], crossSpawnOptions)
     expect(mockCrossSpawn.sync).toBeCalledWith('git', ['init'], crossSpawnOptions)
     expect(mockCrossSpawn.sync).toBeCalledWith('git', ['add', '.'], crossSpawnOptions)
     expect(mockCrossSpawn.sync).toBeCalledWith(

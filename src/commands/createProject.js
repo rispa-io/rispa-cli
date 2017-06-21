@@ -42,41 +42,17 @@ const installProjectDepsNpm = projectPath => (
   ).status
 )
 
-const lernaBootstrapProjectNpm = projectPath => (
-  spawn.sync(
-    'npm',
-    ['run', 'bs'],
-    {
-      cwd: projectPath,
-      stdio: 'inherit',
-    }
-  ).status
-)
-
-const lernaBootstrapProjectYarn = projectPath => (
-  spawn.sync(
-    'yarn',
-    ['bs'],
-    {
-      cwd: projectPath,
-      stdio: 'inherit',
-    }
-  ).status
-)
-
-const generateProjectStructure = async projectPath => {
+const generateProjectStructure = async (projectPath, projectName) => {
   const generators = configureGenerators(projectPath)
-  await generators.getGenerator('project').runActions()
+  await generators.getGenerator('project').runActions({ projectName })
 }
 
 const bootstrapProjectDeps = projectPath => {
   const { npmClient } = requireIfExist(path.resolve(projectPath, './lerna.json'))
   if (npmClient === 'npm') {
     installProjectDepsNpm(projectPath)
-    lernaBootstrapProjectNpm(projectPath)
   } else {
     installProjectDepsYarn(projectPath)
-    lernaBootstrapProjectYarn(projectPath)
   }
 }
 
@@ -108,7 +84,7 @@ const create = async (...args) => {
     const projectPath = path.resolve(distPath, `./${projectName}`)
     const pluginsPath = path.resolve(projectPath, './packages')
 
-    await generateProjectStructure(projectPath)
+    await generateProjectStructure(projectPath, projectName)
 
     gitInit(projectPath, remoteUrl)
     gitCommit(projectPath, `Create project '${projectName}'`)

@@ -30,6 +30,7 @@ describe('add plugins', () => {
     plugins: [],
     pluginsPath,
   }
+  const lernaJsonPath = path.resolve(process.cwd(), './lerna.json')
 
   beforeAll(() => {
     originalExit = process.exit
@@ -63,7 +64,7 @@ describe('add plugins', () => {
     })
   })
 
-  it('should success add plugins', async () => {
+  it('should success add plugins and bootstrap with yarn', async () => {
     const consoleLog = jest.fn()
 
     Object.defineProperty(console, 'log', {
@@ -72,6 +73,31 @@ describe('add plugins', () => {
 
     mockCore.setMockModules({
       [projectConfigPath]: projectConfig,
+      [lernaJsonPath]: {
+        npmClient: 'yarn',
+      },
+    })
+
+    await expect(addPlugins(...pluginsNames))
+      .rejects.toBe(1)
+
+    pluginsNames.forEach(pluginName =>
+      expect(consoleLog).toBeCalledWith(`Install plugin with name: ${pluginName}`)
+    )
+  })
+
+  it('should success add plugins and bootstrap with npm', async () => {
+    const consoleLog = jest.fn()
+
+    Object.defineProperty(console, 'log', {
+      value: consoleLog,
+    })
+
+    mockCore.setMockModules({
+      [projectConfigPath]: projectConfig,
+      [lernaJsonPath]: {
+        npmClient: 'npm',
+      },
     })
 
     await expect(addPlugins(...pluginsNames))
@@ -91,6 +117,9 @@ describe('add plugins', () => {
 
     mockCore.setMockModules({
       [projectConfigPath]: projectConfig,
+      [lernaJsonPath]: {
+        npmClient: 'yarn',
+      },
     })
 
     const clonePluginName = 'plugin-name'
@@ -113,6 +142,9 @@ describe('add plugins', () => {
       [projectConfigPath]: Object.assign({}, projectConfig, {
         plugins: pluginsNames,
       }),
+      [lernaJsonPath]: {
+        npmClient: 'yarn',
+      },
     })
 
     await expect(addPlugins(...pluginsNames))
@@ -132,6 +164,9 @@ describe('add plugins', () => {
 
     mockCore.setMockModules({
       [projectConfigPath]: projectConfig,
+      [lernaJsonPath]: {
+        npmClient: 'yarn',
+      },
     })
 
     await expect(addPlugins())
@@ -151,6 +186,9 @@ describe('add plugins', () => {
 
     mockCore.setMockModules({
       [projectConfigPath]: {},
+      [lernaJsonPath]: {
+        npmClient: 'yarn',
+      },
     })
 
     await expect(addPlugins())

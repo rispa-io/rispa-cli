@@ -8,6 +8,7 @@ coverage/
 .DS_Store
 .nyc_output/
 .happypack/
+rispa-cli-*
 
 webpack-assets.json
 webpack-stats.json

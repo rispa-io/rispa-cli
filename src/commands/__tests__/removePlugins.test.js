@@ -122,7 +122,13 @@ describe('remove plugins', () => {
       }),
     })
 
-    mockFs.setMockRemoveCallback(() => { throw new Error() })
+    const removeMocks = pluginsNames.reduce((result, pluginName) => Object.assign(result, {
+      [path.resolve(process.cwd(), `${pluginsPath}/${pluginName}`)]: () => {
+        throw new Error()
+      },
+    }), {})
+
+    mockFs.setMockRemoveCallback(removeMocks)
 
     await expect(removePlugins(...pluginsNames))
       .rejects.toBe(1)
