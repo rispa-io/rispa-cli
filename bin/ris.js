@@ -18,6 +18,7 @@ const CreateProjectCommand = require('../src/commands/createProject2')
 const AddPluginsCommand = require('../src/commands/addPlugins2')
 const RemovePluginsCommand = require('../src/commands/removePlugins2')
 const UpdatePluginsCommand = require('../src/commands/updatePlugins2')
+const GenerateCommand = require('../src/commands/generate2')
 
 const commands = [
   RunPluginScriptCommand,
@@ -25,9 +26,10 @@ const commands = [
   AddPluginsCommand,
   RemovePluginsCommand,
   UpdatePluginsCommand,
+  GenerateCommand,
 ]
 
-const parseParams = args => {
+const parseArgs = args => {
   const paramRegExp = /^--([^=]+)=(.*)/
   const argv = args.filter(arg => !paramRegExp.test(arg))
 
@@ -65,7 +67,7 @@ const runCommand = ([firstArg = '', ...args]) => {
     args.unshift(firstArg)
   }
 
-  const [argv, params] = parseParams(args)
+  const [argv, params] = parseArgs(args)
 
   const command = new Command(argv)
   command.init()
