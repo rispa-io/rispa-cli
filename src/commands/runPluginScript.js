@@ -3,6 +3,7 @@ const { prompt } = require('inquirer')
 const Command = require('../Command')
 const scanPluginsTask = require('../tasks/scanPlugins')
 const createRunPackageScriptTask = require('../tasks/runPluginScript')
+const { extendsTask } = require('../utils/tasks')
 
 class RunPluginScriptCommand extends Command {
   constructor([pluginName, scriptName, ...args]) {
@@ -86,31 +87,36 @@ class RunPluginScriptCommand extends Command {
 
   init() {
     const { pluginName, scriptName } = this.state
-    this.add(Object.assign({}, scanPluginsTask, {
-      before: ctx => {
-        ctx.projectPath = ctx.cwd
+    this.add([
+      extendsTask(scanPluginsTask, {
+        before: ctx => {
+          ctx.projectPath = ctx.cwd
+        },
+        after: ({ plugins }) => {
+          if (Object.keys(plugins).length === 0) {
+            throw new Error('Can\'t find plugins')
+          }
+        },
+      }),
+      {
+        title: 'Select plugin',
+        enabled: () => !pluginName,
+        task: this.selectPlugin,
       },
-      after: ({ plugins }) => {
-        if (Object.keys(plugins).length === 0) {
-          throw new Error('Can\'t find plugins')
-        }
+      {
+        title: 'Select script',
+        enabled: () => pluginName !== 'all' && !scriptName,
+        task: this.selectScript,
       },
-    }))
-    this.add([{
-      title: 'Select plugin',
-      enabled: () => !pluginName,
-      task: this.selectPlugin,
-    }, {
-      title: 'Select script',
-      enabled: () => pluginName !== 'all' && !scriptName,
-      task: this.selectScript,
-    }, {
-      title: 'Checking',
-      task: this.checking,
-    }, {
-      title: 'Run scripts',
-      task: this.runScripts,
-    }])
+      {
+        title: 'Checking',
+        task: this.checking,
+      },
+      {
+        title: 'Run scripts',
+        task: this.runScripts,
+      },
+    ])
   }
 }
 

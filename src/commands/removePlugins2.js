@@ -5,6 +5,9 @@ const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
 const cleanCache = require('../tasks/cleanCache')
 const createRemovePlugin = require('../tasks/removePlugin')
 const selectPlugins = require('../tasks/selectPlugins')
+const { extendsTask, skipDevMode } = require('../utils/tasks')
+const gitCheckChanges = require('../tasks/gitCheckChanges')
+const { commit: gitCommit } = require('../utils/git')
 
 class RemovePluginsCommand extends Command {
   constructor([...pluginsToRemove]) {
@@ -37,6 +40,14 @@ class RemovePluginsCommand extends Command {
     const { pluginsToRemove } = this.state
     this.add([
       readProjectConfiguration,
+      extendsTask(gitCheckChanges, {
+        skip: skipDevMode,
+        after: ({ hasChanges }) => {
+          if (hasChanges) {
+            throw new Error('Working tree has modifications. Cannot remove plugins')
+          }
+        },
+      }),
       {
         title: 'Select plugins to remove',
         task: selectPlugins.task,
@@ -51,6 +62,13 @@ class RemovePluginsCommand extends Command {
         task: this.removePlugins,
       },
       saveProjectConfiguration,
+      {
+        title: 'Git commit',
+        skip: ctx => (ctx.removedPlugins && !ctx.removedPlugins.length && 'Plugins not removed') || skipDevMode(ctx),
+        task: ({ projectPath, removedPlugins }) => {
+          gitCommit(projectPath, `Remove plugins: ${removedPlugins.join(', ')}`)
+        },
+      },
       cleanCache,
     ])
   }

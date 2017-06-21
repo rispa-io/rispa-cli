@@ -1,5 +1,6 @@
 const path = require('path')
 const { addSubtree, cloneRepository } = require('../utils/git')
+const { improveTask } = require('../utils/tasks')
 
 const checkCloneUrl = cloneUrl => {
   if (!cloneUrl.endsWith('.git')) {
@@ -7,13 +8,18 @@ const checkCloneUrl = cloneUrl => {
   }
 }
 
-const createInstallPlugin = (name, cloneUrl) => ({
+const createInstallPlugin = (name, cloneUrl) => improveTask({
   title: `Install plugin with name '${name}'`,
-  task: ctx => {
+  before: ctx => {
     if (!ctx.configuration) {
       throw new Error('Can\'t find project configuration')
     }
 
+    if (!ctx.installedPlugins) {
+      ctx.installedPlugins = []
+    }
+  },
+  task: ctx => {
     const { projectPath } = ctx
     const pluginsPath = path.resolve(projectPath, ctx.configuration.pluginsPath)
     const mode = ctx.mode || ctx.configuration.mode
@@ -28,6 +34,7 @@ const createInstallPlugin = (name, cloneUrl) => ({
       addSubtree(projectPath, prefix, name, cloneUrl)
     }
 
+    ctx.installedPlugins.push(name)
     ctx.configuration.plugins.push(name)
     ctx.configuration.remotes[name] = cloneUrl
   },

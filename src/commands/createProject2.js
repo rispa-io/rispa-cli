@@ -91,14 +91,17 @@ class CreateProjectCommand extends Command {
         title: 'Enter project name',
         enabled: () => !projectName,
         task: this.enterProjectName,
-      }, {
+      },
+      {
         title: 'Enter remote url',
         enabled: () => !remoteUrl,
         task: this.enterRemoteUrl,
-      }, {
+      },
+      {
         title: 'Generate project structure',
         task: this.generateProjectStructure,
-      }, {
+      },
+      {
         title: 'Git init',
         task: this.gitInit,
       },

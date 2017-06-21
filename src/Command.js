@@ -1,29 +1,5 @@
 const Listr = require('listr')
-
-const isPromise = obj => !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function'
-
-const createTaskWrapper = ({ before, after, task }) => (context, wrapper) => {
-  if (before) {
-    before(context, wrapper)
-  }
-
-  const result = task(context, wrapper)
-
-  if (isPromise(result)) {
-    return result.then(() => after && after(context, wrapper))
-  }
-
-  after(context, wrapper)
-  return result
-}
-
-const improveTask = task => {
-  if (task.after || task.before) {
-    task.task = createTaskWrapper(task)
-  }
-
-  return task
-}
+const { improveTask } = require('./utils/tasks')
 
 class Command extends Listr {
   constructor(options) {
