@@ -19,7 +19,6 @@ fs.ensureDirSync = () => {
 fs.existsSync = filePath => mockFiles.indexOf(filePath) !== -1
 
 fs.removeSync = path => {
-  console.error({ path })
   if (mockRemoveCallback[path]) {
     mockRemoveCallback[path]()
   }

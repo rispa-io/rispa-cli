@@ -1,7 +1,6 @@
 const path = require('path')
 const fs = require('fs-extra')
-
-const CONFIGURATION_PATH = './rispa.json'
+const { CONFIGURATION_PATH } = require('../constants')
 
 const performProjectName = projectName => (
   projectName.replace(/\s+/g, '-')

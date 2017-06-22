@@ -1,7 +1,6 @@
 const path = require('path')
 const fs = require('fs-extra')
-
-const CACHE_PATH = './build/plugins.json'
+const { PLUGINS_CACHE_PATH } = require('../constants')
 
 const createPluginsCache = () => ({
   paths: {},
@@ -9,7 +8,7 @@ const createPluginsCache = () => ({
 })
 
 const savePluginsCache = (pluginsByPaths, packages, projectPath) => {
-  const pluginsCachePath = path.resolve(projectPath, CACHE_PATH)
+  const pluginsCachePath = path.resolve(projectPath, PLUGINS_CACHE_PATH)
   const pluginsCacheDirPath = path.dirname(pluginsCachePath)
 
   fs.ensureDirSync(pluginsCacheDirPath)
@@ -33,14 +32,14 @@ const savePluginsCache = (pluginsByPaths, packages, projectPath) => {
 }
 
 const readPluginsCache = projectPath => {
-  const pluginsCachePath = path.resolve(projectPath, CACHE_PATH)
+  const pluginsCachePath = path.resolve(projectPath, PLUGINS_CACHE_PATH)
   const pluginsCache = fs.readJsonSync(pluginsCachePath, { throws: false })
 
   return pluginsCache || createPluginsCache()
 }
 
 const removePluginsCache = projectPath => {
-  const pluginsCachePath = path.resolve(projectPath, CACHE_PATH)
+  const pluginsCachePath = path.resolve(projectPath, PLUGINS_CACHE_PATH)
   fs.removeSync(pluginsCachePath)
 }
 

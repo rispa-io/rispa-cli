@@ -30,8 +30,8 @@ class GenerateCommand extends Command {
     }
 
     const generatorsPaths = Object.values(ctx.plugins)
-      .map(({ generator }) => generator)
-      .filter((generator, idx, values) => generator && values.indexOf(generator) === idx)
+      .map(({ generators }) => generators)
+      .filter((generatorsPath, idx, values) => generatorsPath && values.indexOf(generatorsPath) === idx)
 
     const generators = configureGenerators(plugin.path, generatorsPaths)
 

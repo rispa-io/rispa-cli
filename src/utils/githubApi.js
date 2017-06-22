@@ -1,14 +1,13 @@
 const axios = require('axios')
-
-const BASE_URL = 'https://api.github.com'
+const { GITHUB_SEARCH_PLUGINS_QUERY } = require('../constants')
 
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: 'https://api.github.com',
   timeout: 10000,
 })
 
 module.exports = {
   plugins() {
-    return api.get('/search/repositories?q=user:rispa-io+topic:rispa-plugin')
+    return api.get(`/search/repositories?${GITHUB_SEARCH_PLUGINS_QUERY}`)
   },
 }

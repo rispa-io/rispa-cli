@@ -2,9 +2,10 @@ const figures = require('figures')
 const chalk = require('chalk')
 const cliCursor = require('cli-cursor')
 const format = require('date-fns/format')
+const { LOG_TIME_FORMAT } = require('../constants')
 
 const log = output => {
-  const timestamp = format(new Date(), 'HH:mm:ss')
+  const timestamp = format(new Date(), LOG_TIME_FORMAT)
 
   console.log(`${chalk.green(`[${timestamp}]`)} ${output}`)
 }

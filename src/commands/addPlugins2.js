@@ -11,6 +11,7 @@ const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
 const cleanCache = require('../tasks/cleanCache')
 const { extendsTask, skipDevMode } = require('../utils/tasks')
 const { commit: gitCommit } = require('../utils/git')
+const { PLUGIN_GIT_PREFIX } = require('../constants')
 
 const extractPluginNameFromUrl = cloneUrl => {
   const parts = cloneUrl.split('/')
@@ -18,7 +19,7 @@ const extractPluginNameFromUrl = cloneUrl => {
 }
 
 const findPlugin = (plugins, plugin) => {
-  if (plugin.startsWith('git:')) {
+  if (plugin.startsWith(PLUGIN_GIT_PREFIX)) {
     return {
       name: extractPluginNameFromUrl(plugin),
       cloneUrl: plugin,

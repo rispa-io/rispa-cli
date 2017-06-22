@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const { pullRepository, updateSubtree } = require('../utils/git')
 const { improveTask } = require('../utils/tasks')
+const { DEV_MODE } = require('../constants')
 
 const updatePluginRepository = pluginPath => {
   if (!fs.existsSync(path.resolve(pluginPath, './.git'))) {
@@ -37,7 +38,7 @@ const createUpdatePlugin = name => improveTask({
     const mode = ctx.mode || ctx.configuration.mode
     const pluginPath = path.resolve(pluginsPath, `./${name}`)
 
-    if (mode === 'dev') {
+    if (mode === DEV_MODE) {
       updatePluginRepository(pluginPath)
     } else {
       updatePluginSubtree(ctx.configuration.remotes, projectPath, pluginsPath, name)

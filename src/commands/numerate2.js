@@ -6,6 +6,7 @@ const createUpdatePluginTagVersion = require('../tasks/updatePluginTagVersion')
 const createUpdateTagVersion = require('../tasks/updateTagVersion')
 const { checkDevMode } = require('../utils/tasks')
 const { tagInfo: gitTagInfo } = require('../utils/git')
+const { DEV_MODE } = require('../constants')
 
 class NumerateCommand extends Command {
   constructor() {
@@ -25,7 +26,7 @@ class NumerateCommand extends Command {
     const mode = ctx.mode || ctx.configuration.mode
     const { projectPath, configuration } = ctx
 
-    if (mode === 'dev') {
+    if (mode === DEV_MODE) {
       const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
 
       this.state.pluginsTags = configuration.plugins

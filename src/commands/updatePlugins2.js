@@ -8,6 +8,7 @@ const selectPlugins = require('../tasks/selectPlugins')
 const { extendsTask, skipDevMode } = require('../utils/tasks')
 const gitCheckChanges = require('../tasks/gitCheckChanges')
 const { commit: gitCommit } = require('../utils/git')
+const { ALL_PLUGINS } = require('../constants')
 
 class RemovePluginsCommand extends Command {
   constructor([...pluginsToUpdate]) {
@@ -61,7 +62,7 @@ class RemovePluginsCommand extends Command {
         title: 'Update plugins',
         task: this.updatePlugins,
         before: ctx => {
-          if (pluginsToUpdate[0] === 'all') {
+          if (pluginsToUpdate[0] === ALL_PLUGINS) {
             this.state.pluginsToUpdate = ctx.configuration.plugins || []
           }
         },

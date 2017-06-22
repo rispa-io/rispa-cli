@@ -1,4 +1,5 @@
 const { isPromise } = require('./promise')
+const { DEV_MODE } = require('../constants')
 
 const createTaskWrapper = ({ before, after, task }) => (context, wrapper) => {
   if (before) {
@@ -29,7 +30,7 @@ const improveTask = task => {
 
 const extendsTask = (task, options) => improveTask(Object.assign({}, task, options))
 
-const checkDevMode = ctx => (ctx.mode || (ctx.configuration && ctx.configuration.mode)) === 'dev'
+const checkDevMode = ctx => (ctx.mode || (ctx.configuration && ctx.configuration.mode)) === DEV_MODE
 
 const skipDevMode = ctx => checkDevMode(ctx) && 'Development mode'
 

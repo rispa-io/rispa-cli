@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const { removeRemote } = require('../utils/git')
 const { improveTask } = require('../utils/tasks')
+const { DEV_MODE } = require('../constants')
 
 const createRemovePlugin = name => improveTask({
   title: `Remove plugin with name ${chalk.cyan(name)}`,
@@ -23,7 +24,7 @@ const createRemovePlugin = name => improveTask({
 
     fs.removeSync(pluginPath)
 
-    if (mode !== 'dev') {
+    if (mode !== DEV_MODE) {
       removeRemote(projectPath, name)
     }
 

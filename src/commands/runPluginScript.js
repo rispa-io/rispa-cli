@@ -4,6 +4,7 @@ const Command = require('../Command')
 const scanPlugins = require('../tasks/scanPlugins')
 const createRunPackageScriptTask = require('../tasks/runPluginScript')
 const { extendsTask } = require('../utils/tasks')
+const { ALL_PLUGINS } = require('../constants')
 
 class RunPluginScriptCommand extends Command {
   constructor([pluginName, scriptName, ...args]) {
@@ -22,7 +23,7 @@ class RunPluginScriptCommand extends Command {
   }
 
   checking(ctx) {
-    if (this.state.pluginName === 'all') {
+    if (this.state.pluginName === ALL_PLUGINS) {
       this.checkingAll(ctx)
     } else {
       this.checkingSingle(ctx)
@@ -108,7 +109,7 @@ class RunPluginScriptCommand extends Command {
             throw new Error('Can\'t find plugins')
           }
 
-          if (pluginName && pluginName !== 'all' && !plugins[pluginName]) {
+          if (pluginName && pluginName !== ALL_PLUGINS && !plugins[pluginName]) {
             throw new Error('Can\'t find plugin')
           }
         },
@@ -120,7 +121,7 @@ class RunPluginScriptCommand extends Command {
       },
       {
         title: 'Select script',
-        enabled: () => pluginName !== 'all' && !scriptName,
+        enabled: () => pluginName !== ALL_PLUGINS && !scriptName,
         task: this.selectScript,
       },
       {
