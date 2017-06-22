@@ -1,3 +1,4 @@
+const chalk = require('chalk')
 const path = require('path')
 const fs = require('fs-extra')
 const { pullRepository, updateSubtree } = require('../utils/git')
@@ -19,8 +20,8 @@ const updatePluginSubtree = (remotes, projectPath, pluginsPath, pluginName) => {
   updateSubtree(projectPath, prefix, pluginName, remoteUrl)
 }
 
-const createRemovePlugin = name => improveTask({
-  title: `Update plugin with name '${name}'`,
+const createUpdatePlugin = name => improveTask({
+  title: `Update plugin with name ${chalk.cyan(name)}`,
   before: ctx => {
     if (!ctx.configuration) {
       throw new Error('Can\'t find project configuration')
@@ -46,4 +47,4 @@ const createRemovePlugin = name => improveTask({
   },
 })
 
-module.exports = createRemovePlugin
+module.exports = createUpdatePlugin

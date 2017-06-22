@@ -1,10 +1,11 @@
+const chalk = require('chalk')
 const path = require('path')
 const fs = require('fs-extra')
 const { removeRemote } = require('../utils/git')
 const { improveTask } = require('../utils/tasks')
 
 const createRemovePlugin = name => improveTask({
-  title: `Remove plugin with name '${name}'`,
+  title: `Remove plugin with name ${chalk.cyan(name)}`,
   before: ctx => {
     if (!ctx.configuration) {
       throw new Error('Can\'t find project configuration')

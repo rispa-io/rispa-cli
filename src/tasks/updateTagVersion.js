@@ -1,3 +1,4 @@
+const chalk = require('chalk')
 const { prompt } = require('inquirer')
 const { addTag: gitAddTag } = require('../utils/git')
 
@@ -5,7 +6,7 @@ const selectNextVersion = versions => prompt([{
   type: 'list',
   name: 'nextVersion',
   choices: [{
-    name: 'Cancel',
+    name: 'Cancel select',
     value: false,
   }].concat(
     Object.keys(versions).map(versionName => ({
@@ -19,7 +20,7 @@ const selectNextVersion = versions => prompt([{
 const createUpdateTagVersion = (path, { newCommitsCount, version, versionParts }) => ({
   title: 'Update tag version',
   task: () => {
-    console.log(`${newCommitsCount} new commit(s) after ${version}`)
+    console.log(chalk.dim(`${chalk.bold.blue(newCommitsCount)} new commit(s) after ${chalk.bold.green(version)}`))
 
     const { major, minor, patch } = versionParts
     const versions = {

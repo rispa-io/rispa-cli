@@ -1,10 +1,11 @@
 const Listr = require('listr')
 const { improveTask } = require('./utils/tasks')
+const ListrRender = require('./utils/ListrRender')
 
 class Command extends Listr {
   constructor(options) {
     super(Object.assign({
-      renderer: 'verbose',
+      renderer: ListrRender,
     }), options)
   }
 

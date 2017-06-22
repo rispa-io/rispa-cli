@@ -55,6 +55,10 @@ class CreateProjectCommand extends Command {
 
     ctx.projectPath = path.resolve(ctx.cwd, `./${projectName}`)
 
+    if (fs.existsSync(ctx.projectPath)) {
+      throw new Error(`The directory '${projectName}' already exist.\nTry using a new project name.`)
+    }
+
     const generators = configureGenerators(ctx.projectPath)
     return generators.getGenerator('project').runActions({ projectName })
   }
@@ -119,7 +123,6 @@ class CreateProjectCommand extends Command {
         task: this.installPlugins,
       },
       installProjectDeps,
-      bootstrapProjectDeps,
       {
         title: 'Create configuration',
         task: saveProjectConfiguration.task,

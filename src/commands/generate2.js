@@ -1,3 +1,4 @@
+const chalk = require('chalk')
 const { prompt } = require('inquirer')
 const configureGenerators = require('@rispa/generator')
 const Command = require('../Command')
@@ -25,13 +26,12 @@ class GenerateCommand extends Command {
     const plugin = ctx.plugins[pluginName]
 
     if (!plugin) {
-      throw new Error(`Can't find plugin with name '${pluginName}'`)
+      throw new Error(`Can't find plugin with name ${chalk.cyan(pluginName)}`)
     }
 
     const generatorsPaths = Object.values(ctx.plugins)
-      .map(({ generatorsPath }) => generatorsPath)
-      .filter(generatorsPath => generatorsPath)
-      .filter((generatorsPath, idx, values) => values.indexOf(generatorsPath) === idx)
+      .map(({ generator }) => generator)
+      .filter((generator, idx, values) => generator && values.indexOf(generator) === idx)
 
     const generators = configureGenerators(plugin.path, generatorsPaths)
 
@@ -71,7 +71,7 @@ class GenerateCommand extends Command {
     const { generators } = ctx
 
     if (!generators.containsGenerator(generatorName)) {
-      throw new Error(`Can't find generator with name '${generatorName}'`)
+      throw new Error(`Can't find generator with name ${chalk.cyan(generatorName)}`)
     }
 
     return generators.getGenerator(generatorName)
@@ -84,13 +84,13 @@ class GenerateCommand extends Command {
       readProjectConfiguration,
       scanPlugins,
       {
-        title: 'Init generators',
-        task: this.initGenerators,
-      },
-      {
         title: 'Select plugin',
         enabled: () => !pluginName,
         task: this.selectPlugin,
+      },
+      {
+        title: 'Init generators',
+        task: this.initGenerators,
       },
       {
         title: 'Select generator',

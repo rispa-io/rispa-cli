@@ -108,7 +108,7 @@ class RunPluginScriptCommand extends Command {
             throw new Error('Can\'t find plugins')
           }
 
-          if (!plugins[pluginName]) {
+          if (pluginName && pluginName !== 'all' && !plugins[pluginName]) {
             throw new Error('Can\'t find plugin')
           }
         },

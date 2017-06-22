@@ -1,8 +1,9 @@
+const chalk = require('chalk')
 const { checkUseYarn } = require('../utils/useYarn')
 const { createCallPluginScript } = require('../utils/packageScript')
 
 const createRunPluginScriptTask = (name, path, scriptName, args) => ({
-  title: `Run plugin '${name}' script '${scriptName}'`,
+  title: `Run plugin ${chalk.cyan(name)} script ${chalk.cyan(scriptName)}`,
   task: ctx => {
     if (!('yarn' in ctx)) {
       ctx.yarn = checkUseYarn(path)
