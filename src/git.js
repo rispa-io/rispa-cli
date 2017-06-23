@@ -46,7 +46,7 @@ const addSubtree = (path, prefix, remoteName, remoteUrl) => {
   addRemote(path, remoteName, remoteUrl)
   spawn.sync(
     'git',
-    ['subtree', 'add', `--prefix=${prefix}`, remoteName, 'master'],
+    ['subtree', 'add', `--prefix=${prefix}`, remoteName, 'stable'],
     defaultSpawnOptions(path)
   )
 }
@@ -55,7 +55,7 @@ const updateSubtree = (path, prefix, remoteName, remoteUrl) => {
   addRemote(path, remoteName, remoteUrl)
   spawn.sync(
     'git',
-    ['subtree', 'pull', `--prefix=${prefix}`, remoteName, 'master'],
+    ['subtree', 'pull', `--prefix=${prefix}`, remoteName, 'stable'],
     defaultSpawnOptions(path)
   )
 }
