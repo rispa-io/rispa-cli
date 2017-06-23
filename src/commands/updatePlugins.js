@@ -1,65 +1,86 @@
-/* eslint-disable no-console, import/no-dynamic-require, global-require */
-const path = require('path')
-const fs = require('fs-extra')
-const { handleError } = require('../core')
-const { readConfiguration, saveConfiguration } = require('../project')
-const { pullRepository, updateSubtree } = require('../git')
+const Listr = require('listr')
+const Command = require('../Command')
+const readProjectConfiguration = require('../tasks/readProjectConfiguration')
+const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
+const cleanCache = require('../tasks/cleanCache')
+const createUpdatePlugin = require('../tasks/updatePlugin')
+const selectPlugins = require('../tasks/selectPlugins')
+const { extendsTask, skipDevMode } = require('../utils/tasks')
+const gitCheckChanges = require('../tasks/gitCheckChanges')
+const { commit: gitCommit } = require('../utils/git')
+const { ALL_PLUGINS } = require('../constants')
 
-const updatePluginRepository = (pluginsPath, pluginName) => {
-  const pluginPath = `${pluginsPath}/${pluginName}`
-  if (!fs.existsSync(`${pluginPath}/.git`)) {
-    return false
+class RemovePluginsCommand extends Command {
+  constructor([...pluginsToUpdate]) {
+    super({})
+
+    this.state = {
+      pluginsToUpdate,
+    }
+
+    this.updatePlugins = this.updatePlugins.bind(this)
   }
 
-  console.log(`Update plugin repository with name: ${pluginName}`)
-  pullRepository(pluginPath)
+  updatePlugins(ctx) {
+    const { pluginsToUpdate } = this.state
+    const { configuration: { plugins } } = ctx
 
-  return true
-}
+    const invalidPlugins = pluginsToUpdate.filter(plugin => plugins.indexOf(plugin) === -1)
+    if (invalidPlugins.length) {
+      throw new Error(`Can't find plugins with names:\n - ${invalidPlugins.join(', ')}`)
+    }
 
-const updatePluginSubtree = (remotes, projectPath, pluginsPath, pluginName) => {
-  const remoteUrl = remotes[pluginName]
-  const pluginsRelPath = path.relative(projectPath, pluginsPath)
-  const prefix = `${pluginsRelPath}/${pluginName}`
-
-  console.log(`Update plugin subtree with name: ${pluginName}`)
-  updateSubtree(projectPath, prefix, pluginName, remoteUrl)
-
-  return true
-}
-
-const configurationIsValid = configuration =>
-  configuration && configuration.plugins && configuration.pluginsPath
-
-const updatePlugins = async (projectPath = process.cwd()) => {
-  const configuration = readConfiguration(projectPath)
-
-  if (!configurationIsValid(configuration)) {
-    handleError('Can\'t find rispa project config')
+    return new Listr(
+      pluginsToUpdate.map(plugin =>
+        createUpdatePlugin(plugin)
+      ), { exitOnError: false }
+    )
   }
 
-  const {
-    plugins,
-    remotes = {},
-    mode,
-  } = configuration
-  const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
-
-  const update = mode === 'dev'
-    ? updatePluginRepository.bind(null, pluginsPath)
-    : updatePluginSubtree.bind(null, remotes, projectPath, pluginsPath)
-
-  const updatedPlugins = plugins.filter(update)
-
-  saveConfiguration(Object.assign({}, configuration, {
-    plugins: updatedPlugins,
-    remotes: updatedPlugins.reduce((newRemotes, plugin) => {
-      newRemotes[plugin] = remotes[plugin]
-      return newRemotes
-    }, {}),
-  }), projectPath)
-
-  process.exit(1)
+  init() {
+    const { pluginsToUpdate } = this.state
+    this.add([
+      readProjectConfiguration,
+      extendsTask(gitCheckChanges, {
+        skip: skipDevMode,
+        after: ({ hasChanges }) => {
+          if (hasChanges) {
+            throw new Error('Working tree has modifications. Cannot update plugins')
+          }
+        },
+      }),
+      {
+        title: 'Select plugins to update',
+        task: selectPlugins.task,
+        enabled: () => pluginsToUpdate.length === 0,
+        after: ctx => {
+          this.state.pluginsToUpdate = ctx.selectedPlugins
+          delete ctx.selectedPlugins
+        },
+      },
+      {
+        title: 'Update plugins',
+        task: this.updatePlugins,
+        before: ctx => {
+          if (pluginsToUpdate[0] === ALL_PLUGINS) {
+            this.state.pluginsToUpdate = ctx.configuration.plugins || []
+          }
+        },
+      },
+      saveProjectConfiguration,
+      {
+        title: 'Git commit',
+        skip: ctx => (ctx.updatedPlugins && !ctx.updatedPlugins.length && 'Plugins not updated') || skipDevMode(ctx),
+        task: ({ projectPath, updatedPlugins }) => {
+          gitCommit(projectPath, `Remove plugins: ${updatedPlugins.join(', ')}`)
+        },
+      },
+      cleanCache,
+    ])
+  }
 }
 
-module.exports = updatePlugins
+RemovePluginsCommand.commandName = 'update'
+RemovePluginsCommand.commandDescription = 'Update plugins'
+
+module.exports = RemovePluginsCommand

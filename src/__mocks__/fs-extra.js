@@ -1,6 +1,7 @@
 const fs = jest.genMockFromModule('fs-extra')
 
 let mockFiles = []
+let mockJson = {}
 let mockEnsureDirCallback
 let mockRemoveCallback = {}
 
@@ -24,9 +25,19 @@ fs.removeSync = path => {
   }
 }
 
-fs.setMockEnsureDirCallback = cb => { mockEnsureDirCallback = cb }
+fs.readJsonSync = path => mockJson[path]
 
-fs.setMockRemoveCallback = newMockRemoveCallback => { mockRemoveCallback = newMockRemoveCallback }
+fs.setMockJson = val => {
+  mockJson = val
+}
+
+fs.setMockEnsureDirCallback = cb => {
+  mockEnsureDirCallback = cb
+}
+
+fs.setMockRemoveCallback = newMockRemoveCallback => {
+  mockRemoveCallback = newMockRemoveCallback
+}
 
 fs.setMockFiles = newMockFiles => {
   mockFiles = newMockFiles

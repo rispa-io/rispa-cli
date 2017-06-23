@@ -1,42 +1,111 @@
+const chalk = require('chalk')
+const { prompt } = require('inquirer')
 const configureGenerators = require('@rispa/generator')
+const Command = require('../Command')
+const readProjectConfiguration = require('../tasks/readProjectConfiguration')
+const scanPlugins = require('../tasks/scanPlugins')
 
-const { handleError } = require('../core')
-const { scanPackages } = require('../packages')
+class GenerateCommand extends Command {
+  constructor([pluginName, generatorName, args]) {
+    super({})
 
-const argsToParams = args => (args
-  .filter(arg => arg.indexOf('=') !== -1)
-  .reduce((params, arg) => {
-    const idxDelimiter = arg.indexOf('=')
-    params[arg.slice(0, idxDelimiter)] = args.slice(idxDelimiter)
-    return params
-  }, {})
-)
+    this.state = {
+      pluginName,
+      generatorName,
+      args,
+    }
 
-const generate = async (packageName, generatorName, ...args) => {
-  const projectPath = process.cwd()
-
-  const packages = scanPackages(projectPath)
-
-  const packageInfo = packages[packageName]
-
-  if (!packageInfo) {
-    handleError(`Can't find plugin with name: ${packageName}`)
+    this.initGenerators = this.initGenerators.bind(this)
+    this.selectPlugin = this.selectPlugin.bind(this)
+    this.selectGenerator = this.selectGenerator.bind(this)
+    this.runGenerator = this.runGenerator.bind(this)
   }
 
-  const generatorsPaths = Object.values(packages)
-    .map(({ generatorsPath }) => generatorsPath)
-    .filter(generatorsPath => generatorsPath)
-    .filter((generatorsPath, idx, values) => values.indexOf(generatorsPath) === idx)
+  initGenerators(ctx) {
+    const { pluginName } = this.state
+    const plugin = ctx.plugins[pluginName]
 
-  const generators = configureGenerators(packageInfo.path, generatorsPaths)
+    if (!plugin) {
+      throw new Error(`Can't find plugin with name ${chalk.cyan(pluginName)}`)
+    }
 
-  if (!generators.containsGenerator(generatorName)) {
-    handleError(`Can't find generator with name: ${generatorName}`)
+    const generatorsPaths = Object.values(ctx.plugins)
+      .map(({ generators }) => generators)
+      .filter((generatorsPath, idx, values) => generatorsPath && values.indexOf(generatorsPath) === idx)
+
+    const generators = configureGenerators(plugin.path, generatorsPaths)
+
+    if (generators.getGeneratorList().length === 0) {
+      throw new Error('Can\'t find generators')
+    }
+
+    ctx.generators = generators
   }
 
-  await generators.getGenerator(generatorName).runActions(argsToParams(args))
+  selectPlugin(ctx) {
+    return prompt([{
+      type: 'list',
+      name: 'pluginName',
+      message: 'Select plugin:',
+      paginated: true,
+      choices: [...new Set(Object.keys(ctx.plugins).map(key => ctx.plugins[key].name))],
+    }]).then(({ pluginName }) => {
+      this.state.pluginName = pluginName
+    })
+  }
 
-  process.exit(1)
+  selectGenerator({ generators }) {
+    return prompt([{
+      type: 'list',
+      name: 'generatorName',
+      message: 'Select generator:',
+      paginated: true,
+      choices: generators.getGeneratorList(),
+    }]).then(({ generatorName }) => {
+      this.state.generatorName = generatorName
+    })
+  }
+
+  runGenerator(ctx) {
+    const { generatorName, args } = this.state
+    const { generators } = ctx
+
+    if (!generators.containsGenerator(generatorName)) {
+      throw new Error(`Can't find generator with name ${chalk.cyan(generatorName)}`)
+    }
+
+    return generators.getGenerator(generatorName)
+      .runActions(Object.assign({}, ctx, { args }))
+  }
+
+  init() {
+    const { pluginName, generatorName } = this.state
+    this.add([
+      readProjectConfiguration,
+      scanPlugins,
+      {
+        title: 'Select plugin',
+        enabled: () => !pluginName,
+        task: this.selectPlugin,
+      },
+      {
+        title: 'Init generators',
+        task: this.initGenerators,
+      },
+      {
+        title: 'Select generator',
+        enabled: () => !generatorName,
+        task: this.selectGenerator,
+      },
+      {
+        title: 'Run generator',
+        task: this.runGenerator,
+      },
+    ])
+  }
 }
 
-module.exports = generate
+GenerateCommand.commandName = 'g'
+GenerateCommand.commandDescription = 'Run generator'
+
+module.exports = GenerateCommand

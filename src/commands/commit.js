@@ -1,87 +1,82 @@
-const spawn = require('cross-spawn')
-const { scanPackages } = require('../packages')
-const { prompt } = require('inquirer')
+const path = require('path')
+const Listr = require('listr')
+const Command = require('../Command')
+const readProjectConfiguration = require('../tasks/readProjectConfiguration')
+const { getChanges: gitGetChanges } = require('../utils/git')
+const createCommitAndPushPluginChanges = require('../tasks/commitAndPushPluginChanges')
+const createCommitAndPushChanges = require('../tasks/commitAndPushChanges')
+const { checkDevMode } = require('../utils/tasks')
 
-const gitStatus = path => (
-  spawn.sync(
-    'git',
-    ['status', '--porcelain'],
-    {
-      cwd: path,
-      stdio: 'pipe',
+class CommitCommand extends Command {
+  constructor() {
+    super({})
+
+    this.state = {
+      pluginsChanges: [],
+      projectChanges: null,
     }
-  )
-)
 
-const gitCommitAndPush = (path, message) => {
-  const spawnOptions = {
-    cwd: path,
-    stdio: 'inherit',
+    this.getChanges = this.getChanges.bind(this)
+    this.commitPluginsChanges = this.commitPluginsChanges.bind(this)
+    this.commitProjectChanges = this.commitProjectChanges.bind(this)
   }
-  spawn.sync('git', ['add', '.'], spawnOptions)
-  spawn.sync('git', ['commit', '-m', message], spawnOptions)
-  spawn.sync('git', ['push'], spawnOptions)
-}
 
-const enterCommitMessage = () => prompt([{
-  type: 'input',
-  name: 'commitMessage',
-  message: 'Enter commit message (leave empty to skip):',
-}])
+  getChanges(ctx) {
+    const mode = ctx.mode || ctx.configuration.mode
+    const { projectPath, configuration } = ctx
 
-const getChanges = path => {
-  const result = gitStatus(path)
-  return result.status !== 1 && String(result.output[1])
-}
+    if (mode === 'dev') {
+      const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
 
-const getPackages = () => {
-  const packages = scanPackages()
-  return Object.keys(packages)
-    .map(name => packages[name])
-    .filter((item, index, arr) => arr.indexOf(item) === index)
-}
-
-const logChanges = (pluginName, changes) => {
-  console.log(`Changes for plugin '${pluginName}':`)
-  console.log(changes)
-}
-
-const processChanges = async ({ name, path, changes }) => {
-  logChanges(name, changes)
-  const commitMessage = (await enterCommitMessage()).commitMessage
-  if (commitMessage) {
-    gitCommitAndPush(path, commitMessage)
-  }
-}
-
-const processQueue = async (queue, func) => {
-  const next = queue.pop()
-  if (next) {
-    await func(next)
-    await processQueue(queue, func)
-  }
-}
-
-const command = async () => {
-  const packages = getPackages()
-
-  const queue = []
-  packages.forEach(({ name, path }) => {
-    const changes = getChanges(path)
-    if (changes) {
-      queue.push({
-        name,
-        path,
-        changes,
-      })
+      this.state.pluginsChanges = configuration.plugins
+        .map(pluginName => ({
+          name: pluginName,
+          path: path.resolve(pluginsPath, `./${pluginName}`),
+        }))
+        .map(plugin => Object.assign(plugin, {
+          changes: gitGetChanges(plugin.path),
+        }))
+        .filter(plugin => !!plugin.changes)
     }
-  })
 
-  if (queue.length) {
-    await processQueue(queue, processChanges)
-  } else {
-    console.log('Nothing to commit')
+    this.state.projectChanges = gitGetChanges(projectPath)
+  }
+
+  commitPluginsChanges() {
+    const { pluginsChanges } = this.state
+
+    return new Listr(pluginsChanges.map(createCommitAndPushPluginChanges), { exitOnError: false })
+  }
+
+  commitProjectChanges({ projectPath }) {
+    const { projectChanges } = this.state
+
+    return createCommitAndPushChanges(projectPath, projectChanges).task()
+  }
+
+  init() {
+    this.add([
+      readProjectConfiguration,
+      {
+        title: 'Get changes',
+        task: this.getChanges,
+      },
+      {
+        title: 'Commit plugins changes',
+        enabled: checkDevMode,
+        skip: () => this.state.pluginsChanges.length === 0 && 'Can\'t find plugins changes',
+        task: this.commitPluginsChanges,
+      },
+      {
+        title: 'Commit project changes',
+        skip: () => !this.state.projectChanges && 'Can\'t find project changes',
+        task: this.commitProjectChanges,
+      },
+    ])
   }
 }
 
-module.exports = command
+CommitCommand.commandName = 'commit'
+CommitCommand.commandDescription = 'Commit changes'
+
+module.exports = CommitCommand

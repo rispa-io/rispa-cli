@@ -1,256 +1,213 @@
-const path = require('path')
-
 jest.resetAllMocks()
-jest.mock('inquirer')
-jest.mock('node-plop')
-jest.mock('fs-extra')
+jest.resetModules()
+
+jest.mock('../../utils/githubApi', () => require.requireActual('../../utils/__mocks__/githubApi'))
 jest.mock('cross-spawn')
-jest.mock('../../core')
-jest.mock('../../githubApi')
+jest.mock('inquirer')
+jest.mock('fs-extra')
 
-const mockInquirer = require.requireMock('inquirer')
-const mockCore = require.requireMock('../../core')
-const mockGithubApi = require.requireMock('../../githubApi')
+const path = require.requireActual('path')
+const { CONFIGURATION_PATH, PLUGIN_GIT_PREFIX } = require.requireActual('../../constants')
+
 const mockCrossSpawn = require.requireMock('cross-spawn')
+const mockInquirer = require.requireMock('inquirer')
+const mockFs = require.requireMock('fs-extra')
+const mockGithubApi = require.requireMock('../../utils/githubApi')
 
-const addPlugins = require.requireActual('../addPlugins')
+const AddPluginsCommand = require.requireActual('../addPlugins')
 
 describe('add plugins', () => {
-  let originalExit
   let originalConsoleLog
 
-  const pluginsNames = ['rispa-core', 'rispa-eslint-config']
-  const pluginsPath = '/sample/path'
-  const plugins = pluginsNames.map(pluginName => ({
-    name: pluginName,
-    clone_url: 'url',
-  }))
-  const projectConfigPath = path.resolve(process.cwd(), './.rispa.json')
-  const projectConfig = {
-    plugins: [],
-    pluginsPath,
-  }
-  const lernaJsonPath = path.resolve(process.cwd(), './lerna.json')
-
   beforeAll(() => {
-    originalExit = process.exit
     originalConsoleLog = console.log
-
-    Object.defineProperty(process, 'exit', {
-      value: code => {
-        throw code
-      },
-    })
-
-    mockInquirer.setMockAnswers({
-      plugins,
-    })
-    mockGithubApi.setMockPlugins(plugins)
-  })
-
-  afterEach(() => {
-    Object.defineProperty(console, 'log', {
-      value: originalConsoleLog,
-    })
   })
 
   afterAll(() => {
-    Object.defineProperty(process, 'exit', {
-      value: originalExit,
-    })
-
     Object.defineProperty(console, 'log', {
       value: originalConsoleLog,
     })
   })
 
-  it('should success add plugins and bootstrap with yarn', async () => {
-    const consoleLog = jest.fn()
-
+  beforeEach(() => {
     Object.defineProperty(console, 'log', {
-      value: consoleLog,
+      value: jest.fn(),
     })
 
-    mockCore.setMockModules({
-      [projectConfigPath]: projectConfig,
-      [lernaJsonPath]: {
-        npmClient: 'yarn',
+    mockCrossSpawn.sync.mockClear()
+    mockCrossSpawn.setMockOutput()
+    mockInquirer.setMockAnswers({})
+    mockGithubApi.setMockPlugins([])
+    mockFs.setMockFiles([])
+    mockFs.setMockJson({})
+  })
+
+  const cwd = '/cwd'
+  const pluginName = 'rispa-core'
+  const pluginRemoteUrl = `https://git.com/${pluginName}.git`
+  const rispaJsonPath = path.resolve(cwd, CONFIGURATION_PATH)
+  const crossSpawnOptions = { cwd, stdio: 'inherit' }
+
+  it('should success add plugin', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath: path.resolve(cwd, './packages'),
+        plugins: [],
+        remotes: {},
       },
     })
 
-    await expect(addPlugins(...pluginsNames))
-      .rejects.toBe(1)
+    mockGithubApi.setMockPlugins([
+      {
+        name: pluginName,
+        clone_url: pluginRemoteUrl,
+      },
+    ])
 
-    pluginsNames.forEach(pluginName =>
-      expect(consoleLog).toBeCalledWith(`Install plugin with name: ${pluginName}`)
-    )
+    const addPluginsCommand = new AddPluginsCommand([pluginName])
+    addPluginsCommand.init()
+
+    await expect(addPluginsCommand.run({
+      cwd,
+    })).resolves.toBeDefined()
+
+    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
+    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
+    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'add', pluginName, pluginRemoteUrl], crossSpawnOptions])
+    expect(crossSpawnCalls[2]).toEqual(['git', ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, 'master'], crossSpawnOptions])
+    expect(crossSpawnCalls[3]).toEqual(['npm', ['run', 'bs'], crossSpawnOptions])
+    expect(crossSpawnCalls[4]).toEqual(['git', ['add', '.'], crossSpawnOptions])
+    expect(crossSpawnCalls[5]).toEqual(['git', ['commit', '-m', `Add plugins: ${pluginName}`], crossSpawnOptions])
   })
 
-  it('should success add plugins and bootstrap with npm', async () => {
-    const consoleLog = jest.fn()
-
-    Object.defineProperty(console, 'log', {
-      value: consoleLog,
-    })
-
-    mockCore.setMockModules({
-      [projectConfigPath]: projectConfig,
-      [lernaJsonPath]: {
-        npmClient: 'npm',
+  it('should success add select plugin', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath: path.resolve(cwd, './packages'),
+        plugins: [],
+        remotes: {},
       },
     })
 
-    await expect(addPlugins(...pluginsNames))
-      .rejects.toBe(1)
+    mockGithubApi.setMockPlugins([
+      {
+        name: pluginName,
+        clone_url: pluginRemoteUrl,
+      },
+    ])
 
-    pluginsNames.forEach(pluginName =>
-      expect(consoleLog).toBeCalledWith(`Install plugin with name: ${pluginName}`)
-    )
-  })
-
-  it('should success add plugin by url', async () => {
-    const consoleLog = jest.fn()
-
-    Object.defineProperty(console, 'log', {
-      value: consoleLog,
+    mockInquirer.setMockAnswers({
+      selectedPlugins: [pluginName],
     })
 
-    mockCore.setMockModules({
-      [projectConfigPath]: projectConfig,
-      [lernaJsonPath]: {
-        npmClient: 'yarn',
+    const addPluginsCommand = new AddPluginsCommand([])
+    addPluginsCommand.init()
+
+    await expect(addPluginsCommand.run({
+      cwd,
+    })).resolves.toBeDefined()
+
+    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
+    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
+    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'add', pluginName, pluginRemoteUrl], crossSpawnOptions])
+    expect(crossSpawnCalls[2]).toEqual(['git', ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, 'master'], crossSpawnOptions])
+    expect(crossSpawnCalls[3]).toEqual(['npm', ['run', 'bs'], crossSpawnOptions])
+    expect(crossSpawnCalls[4]).toEqual(['git', ['add', '.'], crossSpawnOptions])
+    expect(crossSpawnCalls[5]).toEqual(['git', ['commit', '-m', `Add plugins: ${pluginName}`], crossSpawnOptions])
+  })
+
+  it('should success add plugin via git url', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath: path.resolve(cwd, './packages'),
+        plugins: [],
+        remotes: {},
       },
     })
 
-    const clonePluginName = 'plugin-name'
-    const cloneUrl = `https://test.com/${clonePluginName}.git`
+    const addPluginsCommand = new AddPluginsCommand([`${PLUGIN_GIT_PREFIX}${pluginRemoteUrl}`])
+    addPluginsCommand.init()
 
-    await expect(addPlugins(`git:${cloneUrl}`))
-      .rejects.toBe(1)
+    await expect(addPluginsCommand.run({
+      cwd,
+    })).resolves.toBeDefined()
 
-    expect(consoleLog).toBeCalledWith(`Install plugin with name: ${clonePluginName}`)
+    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
+    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
+    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'add', pluginName, pluginRemoteUrl], crossSpawnOptions])
+    expect(crossSpawnCalls[2]).toEqual(['git', ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, 'master'], crossSpawnOptions])
+    expect(crossSpawnCalls[3]).toEqual(['npm', ['run', 'bs'], crossSpawnOptions])
+    expect(crossSpawnCalls[4]).toEqual(['git', ['add', '.'], crossSpawnOptions])
+    expect(crossSpawnCalls[5]).toEqual(['git', ['commit', '-m', `Add plugins: ${pluginName}`], crossSpawnOptions])
   })
 
-  it('should success add plugins, but plugins already installed', async () => {
-    const consoleLog = jest.fn()
-
-    Object.defineProperty(console, 'log', {
-      value: consoleLog,
-    })
-
-    mockCore.setMockModules({
-      [projectConfigPath]: Object.assign({}, projectConfig, {
-        plugins: pluginsNames,
-      }),
-      [lernaJsonPath]: {
-        npmClient: 'yarn',
+  it('should skip add plugin - already exist', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath: path.resolve(cwd, './packages'),
+        plugins: [pluginName],
+        remotes: {
+          [pluginName]: pluginRemoteUrl,
+        },
       },
     })
 
-    await expect(addPlugins(...pluginsNames))
-      .rejects.toBe(1)
+    mockGithubApi.setMockPlugins([
+      {
+        name: pluginName,
+        clone_url: pluginRemoteUrl,
+      },
+    ])
 
-    pluginsNames.forEach(pluginName =>
-      expect(consoleLog).toBeCalledWith(`Plugin '${pluginName}' already installed`)
-    )
+    const addPluginsCommand = new AddPluginsCommand([pluginName])
+    addPluginsCommand.init()
+
+    await expect(addPluginsCommand.run({
+      cwd,
+    })).resolves.toBeDefined()
+
+    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
+    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
+    expect(crossSpawnCalls[1]).toEqual(['npm', ['run', 'bs'], crossSpawnOptions])
   })
 
-  it('should success add plugins with select', async () => {
-    const consoleLog = jest.fn()
-
-    Object.defineProperty(console, 'log', {
-      value: consoleLog,
-    })
-
-    mockCore.setMockModules({
-      [projectConfigPath]: projectConfig,
-      [lernaJsonPath]: {
-        npmClient: 'yarn',
+  it('should failed add plugin - cant find plugin', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath: path.resolve(cwd, './packages'),
+        plugins: [],
+        remotes: {},
       },
     })
 
-    await expect(addPlugins())
-      .rejects.toBe(1)
+    mockGithubApi.setMockPlugins([])
 
-    pluginsNames.forEach(pluginName =>
-      expect(consoleLog).toBeCalledWith(`Install plugin with name: ${pluginName}`)
-    )
+    const addPluginsCommand = new AddPluginsCommand([pluginName])
+    addPluginsCommand.init()
+
+    await expect(addPluginsCommand.run({
+      cwd,
+    })).rejects.toHaveProperty('message', `Can't find plugins with names:\n - ${pluginName}`)
   })
 
-  it('should success add plugins with select and empty config', async () => {
-    const consoleLog = jest.fn()
-
-    Object.defineProperty(console, 'log', {
-      value: consoleLog,
-    })
-
-    mockCore.setMockModules({
-      [projectConfigPath]: {},
-      [lernaJsonPath]: {
-        npmClient: 'yarn',
+  it('should failed add plugin - tree has modifications', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath: path.resolve(cwd, './packages'),
+        plugins: [],
+        remotes: {},
       },
     })
 
-    await expect(addPlugins())
-      .rejects.toBe(1)
+    mockGithubApi.setMockPlugins([])
 
-    pluginsNames.forEach(pluginName =>
-      expect(consoleLog).toBeCalledWith(`Install plugin with name: ${pluginName}`)
-    )
-  })
-
-  it('should failed add plugin by url - invalid url', async () => {
-    const consoleLog = jest.fn()
-
-    Object.defineProperty(console, 'log', {
-      value: consoleLog,
-    })
-
-    mockCore.setMockModules({
-      [projectConfigPath]: projectConfig,
-    })
-
-    const cloneUrl = 'https://test.com/plugin-name'
-
-    await expect(addPlugins(`git:${cloneUrl}`))
-      .rejects.toHaveProperty('message', `Invalid plugin git url: ${cloneUrl}`)
-  })
-
-  it('should failed add plugins - plugins not found', async () => {
-    mockCore.setMockModules({
-      [projectConfigPath]: projectConfig,
-    })
-    const notExistPlugin = 'invalid'
-
-    await expect(addPlugins(notExistPlugin))
-      .rejects.toHaveProperty('message', `Can't find plugins with names:\n - ${notExistPlugin}`)
-  })
-
-  it('should failed add plugins - cant find plugins for install', async () => {
-    mockCore.setMockModules({
-      [projectConfigPath]: Object.assign({}, projectConfig, {
-        plugins: pluginsNames,
-      }),
-    })
-
-    await expect(addPlugins())
-      .rejects.toHaveProperty('message', 'Can\'t find plugins for install')
-  })
-
-  it('should failed add plugins - project config not found', async () => {
-    mockCore.setMockModules({})
-
-    await expect(addPlugins())
-      .rejects.toHaveProperty('message', 'Can\'t find rispa project config')
-  })
-
-  it('should failed add plugins - working tree has modifications', async () => {
-    mockCore.setMockModules({
-      [projectConfigPath]: projectConfig,
-    })
     mockCrossSpawn.setMockOutput([null, new Buffer('M test.js')])
 
-    await expect(addPlugins())
-      .rejects.toHaveProperty('message', 'Working tree has modifications. Cannot add plugins')
+    const addPluginsCommand = new AddPluginsCommand([pluginName])
+    addPluginsCommand.init()
+
+    await expect(addPluginsCommand.run({
+      cwd,
+    })).rejects.toHaveProperty('message', 'Working tree has modifications. Cannot add plugins')
   })
 })

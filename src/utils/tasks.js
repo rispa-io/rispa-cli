@@ -21,8 +21,10 @@ const createTaskWrapper = ({ before, after, task }) => (context, wrapper) => {
 
 const improveTask = task => {
   if (!task.wrapped && (task.after || task.before)) {
-    task.task = createTaskWrapper(task)
-    task.wrapped = true
+    return Object.assign({}, task, {
+      task: createTaskWrapper(task),
+      wrapped: true,
+    })
   }
 
   return task

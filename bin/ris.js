@@ -5,22 +5,21 @@ require('sudo-block')()
 
 const spawn = require('cross-spawn')
 const path = require('path')
+const chalk = require('chalk')
 const fs = require('fs-extra')
 const createDebug = require('debug')
-
-const logError = createDebug('rispa:error:cli')
-
-const CWD = process.cwd()
-const LOCAL_VERSION_PATH = path.resolve(CWD, './node_modules/.bin/ris')
+const { CWD, LOCAL_VERSION_PATH, PACKAGE_JSON_PATH } = require('../src/constants')
 
 const RunPluginScriptCommand = require('../src/commands/runPluginScript')
-const CreateProjectCommand = require('../src/commands/createProject2')
-const AddPluginsCommand = require('../src/commands/addPlugins2')
-const RemovePluginsCommand = require('../src/commands/removePlugins2')
-const UpdatePluginsCommand = require('../src/commands/updatePlugins2')
-const GenerateCommand = require('../src/commands/generate2')
-const CommitCommand = require('../src/commands/commit2')
-const NumerateCommand = require('../src/commands/numerate2')
+const CreateProjectCommand = require('../src/commands/createProject')
+const AddPluginsCommand = require('../src/commands/addPlugins')
+const RemovePluginsCommand = require('../src/commands/removePlugins')
+const UpdatePluginsCommand = require('../src/commands/updatePlugins')
+const GenerateCommand = require('../src/commands/generate')
+const CommitCommand = require('../src/commands/commit')
+const NumerateCommand = require('../src/commands/numerate')
+
+const logError = createDebug('rispa:error:cli')
 
 const commands = [
   RunPluginScriptCommand,
@@ -87,7 +86,7 @@ const isGlobalRun = () => {
 }
 
 const canRunLocalVersion = () => {
-  const packageJsonPath = path.resolve(CWD, './package.json')
+  const packageJsonPath = path.resolve(CWD, PACKAGE_JSON_PATH)
 
   if (!fs.existsSync(packageJsonPath)) {
     return false
@@ -101,14 +100,15 @@ const canRunLocalVersion = () => {
       return true
     }
 
-    handleError('Can\'t find local version of CLI in `node_modules`.')
+    console.log(chalk.red(`Can't find local version of CLI in ${chalk.cyan('node_modules')}`))
+    process.exit(1)
   }
 
   return false
 }
 
 const runLocalVersion = args => {
-  console.log('Switch to use local version')
+  console.log(chalk.bold.green('Switch to use local version'))
 
   const result = spawn.sync(
     'node',

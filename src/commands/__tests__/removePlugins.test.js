@@ -1,140 +1,165 @@
-const path = require('path')
-
 jest.resetAllMocks()
-jest.mock('fs-extra')
+jest.resetModules()
+
 jest.mock('cross-spawn')
-jest.mock('../../core')
+jest.mock('inquirer')
+jest.mock('fs-extra')
 
+const path = require.requireActual('path')
+const { CONFIGURATION_PATH } = require.requireActual('../../constants')
+
+const mockCrossSpawn = require.requireMock('cross-spawn')
+const mockInquirer = require.requireMock('inquirer')
 const mockFs = require.requireMock('fs-extra')
-const mockCore = require.requireMock('../../core')
 
-const removePlugins = require.requireActual('../removePlugins')
+const RemovePluginsCommand = require.requireActual('../removePlugins')
 
-describe('remove plugins', () => {
-  let originalExit
+describe('remove project', () => {
   let originalConsoleLog
 
-  const pluginsNames = ['rispa-core', 'rispa-eslint-config']
-  const pluginsPath = './plugins'
-  const projectConfigPath = path.resolve(process.cwd(), './.rispa.json')
-  const projectConfig = {
-    plugins: [],
-    pluginsPath,
-  }
-  const remotes = {
-    'rispa-core': '/rispa-core-remote',
-    'rispa-eslint-config': '/rispa-eslint-config-remote',
-  }
-
   beforeAll(() => {
-    originalExit = process.exit
-    Object.defineProperty(process, 'exit', {
-      value: code => {
-        throw code
-      },
-    })
-  })
-
-  afterEach(() => {
-    Object.defineProperty(console, 'log', {
-      value: originalConsoleLog,
-    })
+    originalConsoleLog = console.log
   })
 
   afterAll(() => {
-    Object.defineProperty(process, 'exit', {
-      value: originalExit,
-    })
-
     Object.defineProperty(console, 'log', {
       value: originalConsoleLog,
     })
+  })
 
+  beforeEach(() => {
+    Object.defineProperty(console, 'log', {
+      value: jest.fn(),
+    })
+
+    mockCrossSpawn.sync.mockClear()
+    mockCrossSpawn.setMockOutput()
+    mockInquirer.setMockAnswers({})
     mockFs.setMockFiles([])
-    mockCore.setMockModules({})
+    mockFs.setMockJson({})
+    mockFs.setMockRemoveCallback(() => {
+    })
+  })
+
+  const cwd = '/cwd'
+  const pluginName = 'rispa-core'
+  const pluginRemoteUrl = `https://git.com/${pluginName}.git`
+  const rispaJsonPath = path.resolve(cwd, CONFIGURATION_PATH)
+  const crossSpawnOptions = { cwd, stdio: 'inherit' }
+  const pluginsPath = path.resolve(cwd, './packages')
+
+  it('should success remove plugin', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath,
+        plugins: [pluginName],
+        remotes: {
+          [pluginName]: pluginRemoteUrl,
+        },
+      },
+    })
+
+    const removePluginsCommand = new RemovePluginsCommand([pluginName])
+    removePluginsCommand.init()
+
+    await expect(removePluginsCommand.run({
+      cwd,
+    }).catch(e => console.error(e))).resolves.toBeDefined()
+
+    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
+    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
+    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'rm', pluginName], crossSpawnOptions])
+    expect(crossSpawnCalls[2]).toEqual(['git', ['add', '.'], crossSpawnOptions])
+    expect(crossSpawnCalls[3]).toEqual(['git', ['commit', '-m', `Remove plugins: ${pluginName}`], crossSpawnOptions])
   })
 
   it('should success remove plugin', async () => {
-    const consoleLog = jest.fn()
-
-    Object.defineProperty(console, 'log', {
-      value: consoleLog,
-    })
-
-    mockCore.setMockModules({
-      [projectConfigPath]: Object.assign({}, projectConfig, {
-        plugins: pluginsNames,
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
         pluginsPath,
-        remotes,
-      }),
+        plugins: [pluginName],
+        remotes: {
+          [pluginName]: pluginRemoteUrl,
+        },
+      },
     })
 
-    await expect(removePlugins(...pluginsNames))
-      .rejects.toBe(1)
+    mockInquirer.setMockAnswers({
+      selectedPlugins: [pluginName],
+    })
 
-    pluginsNames.forEach(pluginName =>
-      expect(consoleLog).toBeCalledWith(`Remove plugin with name: ${pluginName}`)
-    )
+    const removePluginsCommand = new RemovePluginsCommand([])
+    removePluginsCommand.init()
+
+    await expect(removePluginsCommand.run({
+      cwd,
+    })).resolves.toBeDefined()
+
+    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
+    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
+    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'rm', pluginName], crossSpawnOptions])
+    expect(crossSpawnCalls[2]).toEqual(['git', ['add', '.'], crossSpawnOptions])
+    expect(crossSpawnCalls[3]).toEqual(['git', ['commit', '-m', `Remove plugins: ${pluginName}`], crossSpawnOptions])
   })
 
-  it('should success remove plugin in dev mode', async () => {
-    const consoleLog = jest.fn()
-
-    Object.defineProperty(console, 'log', {
-      value: consoleLog,
-    })
-
-    mockCore.setMockModules({
-      [projectConfigPath]: Object.assign({}, projectConfig, {
-        mode: 'dev',
-        plugins: pluginsNames,
+  it('should failed remove plugin - cant find plugin', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
         pluginsPath,
-        remotes,
-      }),
+        plugins: [],
+        remotes: {},
+      },
     })
 
-    await expect(removePlugins(...pluginsNames))
-      .rejects.toBe(1)
+    const removePluginsCommand = new RemovePluginsCommand([pluginName])
+    removePluginsCommand.init()
 
-    pluginsNames.forEach(pluginName =>
-      expect(consoleLog).toBeCalledWith(`Remove plugin with name: ${pluginName}`)
-    )
+    await expect(removePluginsCommand.run({
+      cwd,
+    })).rejects.toHaveProperty('message', `Can't find plugins with names:\n - ${pluginName}`)
   })
 
-  it('should failed update plugins - project config not found', async () => {
-    mockCore.setMockModules({})
+  it('should failed remove plugin - tree has modifications', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath,
+        plugins: [],
+        remotes: {},
+      },
+    })
 
-    await expect(removePlugins())
-      .rejects.toHaveProperty('message', 'Can\'t find rispa project config')
+    mockCrossSpawn.setMockOutput([null, new Buffer('M test.js')])
+
+    const removePluginsCommand = new RemovePluginsCommand([pluginName])
+    removePluginsCommand.init()
+
+    await expect(removePluginsCommand.run({
+      cwd,
+    })).rejects.toHaveProperty('message', 'Working tree has modifications. Cannot remove plugins')
   })
 
-  it('should failed update plugins - cant remove plugin', async () => {
-    const consoleLog = jest.fn()
-
-    Object.defineProperty(console, 'log', {
-      value: consoleLog,
-    })
-
-    mockCore.setMockModules({
-      [projectConfigPath]: Object.assign({}, projectConfig, {
-        plugins: pluginsNames,
+  it('should failed remove plugin - error during remove', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
         pluginsPath,
-      }),
+        plugins: [pluginName],
+        remotes: {
+          [pluginName]: pluginRemoteUrl,
+        },
+      },
     })
 
-    const removeMocks = pluginsNames.reduce((result, pluginName) => Object.assign(result, {
-      [path.resolve(process.cwd(), `${pluginsPath}/${pluginName}`)]: () => {
+    mockFs.setMockRemoveCallback({
+      [path.resolve(pluginsPath, `./${pluginName}`)]: () => {
         throw new Error()
       },
-    }), {})
+    })
 
-    mockFs.setMockRemoveCallback(removeMocks)
+    const removePluginsCommand = new RemovePluginsCommand([pluginName])
+    removePluginsCommand.init()
 
-    await expect(removePlugins(...pluginsNames))
-      .rejects.toBe(1)
-
-    pluginsNames.forEach(pluginName =>
-      expect(consoleLog).toBeCalledWith(`Can't remove plugin with name: ${pluginName}`, '')
-    )
+    await expect(removePluginsCommand.run({
+      cwd,
+    })).rejects.toHaveProperty('message', 'Something went wrong')
   })
 })

@@ -45,9 +45,7 @@ class RunPluginScriptCommand extends Command {
   checkingSingle(ctx) {
     const { pluginName, scriptName } = this.state
     const currentPlugin = ctx.plugins[pluginName]
-    if (!currentPlugin) {
-      throw new Error(`Can't find plugin with name '${pluginName}'`)
-    } else if (currentPlugin.scripts.indexOf(scriptName) === -1) {
+    if (currentPlugin.scripts.indexOf(scriptName) === -1) {
       throw new Error(`Can't find script '${scriptName}' in plugin with name '${pluginName}'`)
     }
 

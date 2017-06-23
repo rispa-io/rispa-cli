@@ -1,3 +1,8 @@
+const path = require('path')
+
+const CWD = process.cwd()
+const LOCAL_VERSION_PATH = path.resolve(CWD, './node_modules/.bin/ris')
+
 const PACKAGE_JSON_PATH = './package.json'
 const YARN_LOCK_PATH = './yarn.lock'
 const LERNA_JSON_PATH = './lerna.json'
@@ -14,6 +19,9 @@ const DEV_MODE = 'dev'
 const ALL_PLUGINS = 'all'
 
 module.exports = {
+  CWD,
+  LOCAL_VERSION_PATH,
+
   PACKAGE_JSON_PATH,
   YARN_LOCK_PATH,
   LERNA_JSON_PATH,

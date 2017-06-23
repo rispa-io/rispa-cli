@@ -6,7 +6,7 @@ class Command extends Listr {
   constructor(options) {
     super(Object.assign({
       renderer: ListrRender,
-    }), options)
+    }, options))
   }
 
   add(task) {

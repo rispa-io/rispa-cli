@@ -1,4 +1,4 @@
-const { getChanges: gitGetChanges } = require('../git')
+const { getChanges: gitGetChanges } = require('../utils/git')
 
 const gitCheckChangesTask = ctx => {
   if (!ctx.projectPath) {
