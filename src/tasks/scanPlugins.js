@@ -27,14 +27,13 @@ const getPluginInfo = pluginPath => {
   }
 }
 
-const getPluginsFromCache = (packagesPath, cache) => {
-  if (!(packagesPath in cache)) {
+const getPluginsFromCache = (pluginsPath, cache) => {
+  if (!(pluginsPath in cache.paths)) {
     return null
   }
 
-  const packages = cache.paths[packagesPath] || []
-  return packages
-    .map(packageName => cache.packages[packageName])
+  return cache.paths[pluginsPath]
+    .map(packageName => cache.plugins[packageName])
     .filter(item => item)
     .reduce((result, packageInfo) => {
       if (packageInfo.alias) {

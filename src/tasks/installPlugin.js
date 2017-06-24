@@ -14,10 +14,6 @@ const createInstallPlugin = (name, cloneUrl) => improveTask({
   title: `Install plugin with name ${chalk.cyan(name)}`,
   skip: ({ configuration: { plugins } }) => plugins.indexOf(name) !== -1 && 'Plugin already installed',
   before: ctx => {
-    if (!ctx.configuration) {
-      throw new Error('Can\'t find project configuration')
-    }
-
     if (!ctx.installedPlugins) {
       ctx.installedPlugins = []
     }

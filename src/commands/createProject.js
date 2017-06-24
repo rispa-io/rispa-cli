@@ -10,7 +10,6 @@ const selectPlugins = require('../tasks/selectPlugins')
 const fetchPlugins = require('../tasks/fetchPlugins')
 const createInstallPlugin = require('../tasks/installPlugin')
 const installProjectDeps = require('../tasks/installProjectDeps')
-const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
 const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
 
 class CreateProjectCommand extends Command {

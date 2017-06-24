@@ -6,7 +6,7 @@ const readProjectConfiguration = require('../tasks/readProjectConfiguration')
 const scanPlugins = require('../tasks/scanPlugins')
 
 class GenerateCommand extends Command {
-  constructor([pluginName, generatorName, args]) {
+  constructor([pluginName, generatorName, ...args]) {
     super({})
 
     this.state = {

@@ -8,6 +8,7 @@ jest.mock('inquirer')
 jest.mock('fs-extra')
 
 const path = require.requireActual('path')
+const { DEFAULT_PLUGIN_BRANCH, LERNA_JSON_PATH } = require.requireActual('../../constants')
 
 const mockCrossSpawn = require.requireMock('cross-spawn')
 const mockInquirer = require.requireMock('inquirer')
@@ -22,10 +23,6 @@ describe('create project', () => {
 
   beforeAll(() => {
     originalConsoleLog = console.log
-
-    mockGenerator.setMockGenerators({
-      project: true,
-    })
   })
 
   afterAll(() => {
@@ -55,6 +52,22 @@ describe('create project', () => {
 
   const crossSpawnOptions = { cwd: projectPath, stdio: 'inherit' }
 
+  const expectSuccessCreateProjectViaYarn = (crossSpawnCalls, runGeneratorActions) => {
+    expect(crossSpawnCalls[0]).toEqual(['git', ['init'], crossSpawnOptions])
+    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'add', 'origin', remoteUrl], crossSpawnOptions])
+    expect(crossSpawnCalls[2]).toEqual(['git', ['add', '.'], crossSpawnOptions])
+    expect(crossSpawnCalls[3]).toEqual(['git', ['commit', '-m', `Create project '${projectName}'`], crossSpawnOptions])
+    expect(crossSpawnCalls[4]).toEqual(['git', ['remote', 'add', pluginName, pluginRemoteUrl], crossSpawnOptions])
+    expect(crossSpawnCalls[5]).toEqual(['git', ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, DEFAULT_PLUGIN_BRANCH], crossSpawnOptions])
+    expect(crossSpawnCalls[6]).toEqual(['yarn', ['install'], crossSpawnOptions])
+    expect(crossSpawnCalls[7]).toEqual(['git', ['add', '.'], crossSpawnOptions])
+    expect(crossSpawnCalls[8]).toEqual(['git', ['commit', '-m', 'Bootstrap deps and install plugins'], crossSpawnOptions])
+
+    expect(crossSpawnCalls.length).toBe(9)
+
+    expect(runGeneratorActions).toBeCalledWith({ projectName })
+  }
+
   it('should success create project', async () => {
     mockFs.setMockFiles([])
 
@@ -74,6 +87,13 @@ describe('create project', () => {
       ],
     })
 
+    const runGeneratorActions = jest.fn()
+    mockGenerator.setMockGenerators({
+      project: {
+        runActions: runGeneratorActions,
+      },
+    })
+
     const createProjectCommand = new CreateProjectCommand([projectName])
     createProjectCommand.init()
 
@@ -86,12 +106,14 @@ describe('create project', () => {
     expect(crossSpawnCalls[1]).toEqual(['git', ['add', '.'], crossSpawnOptions])
     expect(crossSpawnCalls[2]).toEqual(['git', ['commit', '-m', `Create project '${projectName}'`], crossSpawnOptions])
     expect(crossSpawnCalls[3]).toEqual(['git', ['remote', 'add', pluginName, pluginRemoteUrl], crossSpawnOptions])
-    expect(crossSpawnCalls[4]).toEqual(['git', ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, 'master'], crossSpawnOptions])
+    expect(crossSpawnCalls[4]).toEqual(['git', ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, DEFAULT_PLUGIN_BRANCH], crossSpawnOptions])
     expect(crossSpawnCalls[5]).toEqual(['npm', ['install'], crossSpawnOptions])
     expect(crossSpawnCalls[6]).toEqual(['git', ['add', '.'], crossSpawnOptions])
     expect(crossSpawnCalls[7]).toEqual(['git', ['commit', '-m', 'Bootstrap deps and install plugins'], crossSpawnOptions])
 
     expect(crossSpawnCalls.length).toBe(8)
+
+    expect(runGeneratorActions).toBeCalledWith({ projectName })
   })
 
   it('should success create project via yarn', async () => {
@@ -115,26 +137,66 @@ describe('create project', () => {
       remoteUrl,
     })
 
+    const runGeneratorActions = jest.fn()
+    mockGenerator.setMockGenerators({
+      project: {
+        runActions: runGeneratorActions,
+      },
+    })
+
     const createProjectCommand = new CreateProjectCommand([])
     createProjectCommand.init()
 
     await expect(createProjectCommand.run({
       cwd,
       yarn: true,
-    }).catch(e => console.error(e))).resolves.toBeDefined()
+    })).resolves.toBeDefined()
 
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual(['git', ['init'], crossSpawnOptions])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'add', 'origin', remoteUrl], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[3]).toEqual(['git', ['commit', '-m', `Create project '${projectName}'`], crossSpawnOptions])
-    expect(crossSpawnCalls[4]).toEqual(['git', ['remote', 'add', pluginName, pluginRemoteUrl], crossSpawnOptions])
-    expect(crossSpawnCalls[5]).toEqual(['git', ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, 'master'], crossSpawnOptions])
-    expect(crossSpawnCalls[6]).toEqual(['yarn', ['install'], crossSpawnOptions])
-    expect(crossSpawnCalls[7]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[8]).toEqual(['git', ['commit', '-m', 'Bootstrap deps and install plugins'], crossSpawnOptions])
+    expectSuccessCreateProjectViaYarn(mockCrossSpawn.sync.mock.calls, runGeneratorActions)
+  })
 
-    expect(crossSpawnCalls.length).toBe(9)
+  it('should success create project via yarn', async () => {
+    mockFs.setMockFiles([])
+
+    mockGithubApi.setMockPlugins([
+      {
+        name: pluginName,
+        clone_url: pluginRemoteUrl,
+      },
+    ])
+
+    mockInquirer.setMockAnswers({
+      selectedPlugins: [
+        {
+          name: pluginName,
+          cloneUrl: pluginRemoteUrl,
+        },
+      ],
+      projectName,
+      remoteUrl,
+    })
+
+    const runGeneratorActions = jest.fn()
+    mockGenerator.setMockGenerators({
+      project: {
+        runActions: runGeneratorActions,
+      },
+    })
+
+    mockFs.setMockJson({
+      [path.resolve(projectPath, LERNA_JSON_PATH)]: {
+        npmClient: 'yarn',
+      },
+    })
+
+    const createProjectCommand = new CreateProjectCommand([])
+    createProjectCommand.init()
+
+    await expect(createProjectCommand.run({
+      cwd,
+    })).resolves.toBeDefined()
+
+    expectSuccessCreateProjectViaYarn(mockCrossSpawn.sync.mock.calls, runGeneratorActions)
   })
 
   it('should failed create project - project exist', async () => {

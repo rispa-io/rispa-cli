@@ -1,4 +1,5 @@
 const spawn = require('cross-spawn')
+const { DEFAULT_PLUGIN_BRANCH } = require('../constants')
 
 const defaultSpawnOptions = cwd => ({ cwd, stdio: 'inherit' })
 
@@ -14,14 +15,6 @@ const pullRepository = path => (
   spawn.sync(
     'git',
     ['pull'],
-    defaultSpawnOptions(path)
-  ).status
-)
-
-const resetRepository = path => (
-  spawn.sync(
-    'git',
-    ['reset', '--hard', 'origin/master'],
     defaultSpawnOptions(path)
   ).status
 )
@@ -44,20 +37,20 @@ const removeRemote = (path, remoteName) => {
 
 const addSubtree = (path, prefix, remoteName, remoteUrl) => {
   addRemote(path, remoteName, remoteUrl)
-  spawn.sync(
-    'git',
-    ['subtree', 'add', `--prefix=${prefix}`, remoteName, 'master'],
-    defaultSpawnOptions(path)
-  )
+  return spawn.sync(
+      'git',
+      ['subtree', 'add', `--prefix=${prefix}`, remoteName, DEFAULT_PLUGIN_BRANCH],
+      defaultSpawnOptions(path)
+    ).status === 0
 }
 
 const updateSubtree = (path, prefix, remoteName, remoteUrl) => {
   addRemote(path, remoteName, remoteUrl)
-  spawn.sync(
-    'git',
-    ['subtree', 'pull', `--prefix=${prefix}`, remoteName, 'master'],
-    defaultSpawnOptions(path)
-  )
+  return spawn.sync(
+      'git',
+      ['subtree', 'pull', `--prefix=${prefix}`, remoteName, DEFAULT_PLUGIN_BRANCH],
+      defaultSpawnOptions(path)
+    ).status === 0
 }
 
 const init = (path, remoteUrl) => {
@@ -110,11 +103,8 @@ const tagInfo = path => {
   }
 
   const parts = /v((\d+).(\d+).(\d+))-(\d+)-\w+/.exec(tagDescription)
-  if (!parts) {
-    return null
-  }
-
   const [version, major, minor, patch, newCommitsCount] = parts.slice(1)
+
   return {
     version,
     versionParts: {
@@ -139,7 +129,6 @@ const addTag = (path, tag) => {
 module.exports = {
   cloneRepository,
   pullRepository,
-  resetRepository,
   addSubtree,
   updateSubtree,
   init,

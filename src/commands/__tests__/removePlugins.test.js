@@ -6,7 +6,7 @@ jest.mock('inquirer')
 jest.mock('fs-extra')
 
 const path = require.requireActual('path')
-const { CONFIGURATION_PATH } = require.requireActual('../../constants')
+const { CONFIGURATION_PATH, DEV_MODE } = require.requireActual('../../constants')
 
 const mockCrossSpawn = require.requireMock('cross-spawn')
 const mockInquirer = require.requireMock('inquirer')
@@ -14,7 +14,7 @@ const mockFs = require.requireMock('fs-extra')
 
 const RemovePluginsCommand = require.requireActual('../removePlugins')
 
-describe('remove project', () => {
+describe('remove plugins', () => {
   let originalConsoleLog
 
   beforeAll(() => {
@@ -64,13 +64,39 @@ describe('remove project', () => {
 
     await expect(removePluginsCommand.run({
       cwd,
-    }).catch(e => console.error(e))).resolves.toBeDefined()
+    })).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
     expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'rm', pluginName], crossSpawnOptions])
     expect(crossSpawnCalls[2]).toEqual(['git', ['add', '.'], crossSpawnOptions])
     expect(crossSpawnCalls[3]).toEqual(['git', ['commit', '-m', `Remove plugins: ${pluginName}`], crossSpawnOptions])
+
+    expect(crossSpawnCalls.length).toBe(4)
+  })
+
+  it('should success remove plugin in dev mode', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        mode: DEV_MODE,
+        pluginsPath,
+        plugins: [pluginName],
+        remotes: {
+          [pluginName]: pluginRemoteUrl,
+        },
+      },
+    })
+
+    const removePluginsCommand = new RemovePluginsCommand([pluginName])
+    removePluginsCommand.init()
+
+    await expect(removePluginsCommand.run({
+      cwd,
+    })).resolves.toBeDefined()
+
+    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
+
+    expect(crossSpawnCalls.length).toBe(0)
   })
 
   it('should success remove plugin', async () => {
@@ -100,6 +126,40 @@ describe('remove project', () => {
     expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'rm', pluginName], crossSpawnOptions])
     expect(crossSpawnCalls[2]).toEqual(['git', ['add', '.'], crossSpawnOptions])
     expect(crossSpawnCalls[3]).toEqual(['git', ['commit', '-m', `Remove plugins: ${pluginName}`], crossSpawnOptions])
+
+    expect(crossSpawnCalls.length).toBe(4)
+  })
+
+  it('should success remove multiple plugins', async () => {
+    const pluginName2 = 'rispa-config'
+    const pluginRemoteUrl2 = `https://git.com/${pluginName2}.git`
+
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath,
+        plugins: [pluginName, pluginName2],
+        remotes: {
+          [pluginName]: pluginRemoteUrl,
+          [pluginName2]: pluginRemoteUrl2,
+        },
+      },
+    })
+
+    const removePluginsCommand = new RemovePluginsCommand([pluginName, pluginName2])
+    removePluginsCommand.init()
+
+    await expect(removePluginsCommand.run({
+      cwd,
+    })).resolves.toBeDefined()
+
+    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
+    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
+    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'rm', pluginName], crossSpawnOptions])
+    expect(crossSpawnCalls[2]).toEqual(['git', ['remote', 'rm', pluginName2], crossSpawnOptions])
+    expect(crossSpawnCalls[3]).toEqual(['git', ['add', '.'], crossSpawnOptions])
+    expect(crossSpawnCalls[4]).toEqual(['git', ['commit', '-m', `Remove plugins: ${pluginName}, ${pluginName2}`], crossSpawnOptions])
+
+    expect(crossSpawnCalls.length).toBe(5)
   })
 
   it('should failed remove plugin - cant find plugin', async () => {
@@ -149,9 +209,11 @@ describe('remove project', () => {
       },
     })
 
+    const errorMessage = 'errorMessage'
+
     mockFs.setMockRemoveCallback({
       [path.resolve(pluginsPath, `./${pluginName}`)]: () => {
-        throw new Error()
+        throw new Error(errorMessage)
       },
     })
 
@@ -160,6 +222,6 @@ describe('remove project', () => {
 
     await expect(removePluginsCommand.run({
       cwd,
-    })).rejects.toHaveProperty('message', 'Something went wrong')
+    })).rejects.toHaveProperty('errors.0.message', errorMessage)
   })
 })

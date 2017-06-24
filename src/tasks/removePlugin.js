@@ -8,10 +8,6 @@ const { DEV_MODE } = require('../constants')
 const createRemovePlugin = name => improveTask({
   title: `Remove plugin with name ${chalk.cyan(name)}`,
   before: ctx => {
-    if (!ctx.configuration) {
-      throw new Error('Can\'t find project configuration')
-    }
-
     if (!ctx.removedPlugins) {
       ctx.removedPlugins = []
     }

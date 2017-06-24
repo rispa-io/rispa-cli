@@ -88,15 +88,12 @@ class AddPluginsCommand extends Command {
       {
         title: 'Install plugins',
         task: this.installPlugins,
-        before: ctx => {
-          ctx.installedPlugins = []
-        },
       },
       bootstrapProjectDeps,
       saveProjectConfiguration,
       {
         title: 'Git commit',
-        skip: ctx => (ctx.installedPlugins && !ctx.installedPlugins.length && 'Plugins not added') || skipDevMode(ctx),
+        skip: ctx => ((!ctx.installedPlugins || !ctx.installedPlugins.length) && 'Plugins not added') || skipDevMode(ctx),
         task: ({ projectPath, installedPlugins }) => {
           gitCommit(projectPath, `Add plugins: ${installedPlugins.join(', ')}`)
         },

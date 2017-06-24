@@ -236,6 +236,6 @@ describe('run plugin script', () => {
 
     await expect(runPluginScriptCommand.run({
       cwd,
-    })).rejects.toHaveProperty('message', 'Something went wrong')
+    })).rejects.toHaveProperty('errors.0.message', 'Failed run plugin script')
   })
 })

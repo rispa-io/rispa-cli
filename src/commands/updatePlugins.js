@@ -63,16 +63,16 @@ class RemovePluginsCommand extends Command {
         task: this.updatePlugins,
         before: ctx => {
           if (pluginsToUpdate[0] === ALL_PLUGINS) {
-            this.state.pluginsToUpdate = ctx.configuration.plugins || []
+            this.state.pluginsToUpdate = ctx.configuration.plugins
           }
         },
       },
       saveProjectConfiguration,
       {
         title: 'Git commit',
-        skip: ctx => (ctx.updatedPlugins && !ctx.updatedPlugins.length && 'Plugins not updated') || skipDevMode(ctx),
+        skip: ctx => (ctx.updatedPlugins.length === 0 && 'Plugins not updated') || skipDevMode(ctx),
         task: ({ projectPath, updatedPlugins }) => {
-          gitCommit(projectPath, `Remove plugins: ${updatedPlugins.join(', ')}`)
+          gitCommit(projectPath, `Update plugins: ${updatedPlugins.join(', ')}`)
         },
       },
       cleanCache,

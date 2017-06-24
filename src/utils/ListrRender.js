@@ -59,9 +59,8 @@ const render = tasks => (
   )
 )
 
-class VerboseRenderer {
+class ListrRender {
   constructor(tasks) {
-
     this.tasks = tasks
 
     this.render = () => {
@@ -76,4 +75,4 @@ class VerboseRenderer {
   }
 }
 
-module.exports = VerboseRenderer;
+module.exports = ListrRender

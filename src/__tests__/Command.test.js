@@ -51,13 +51,13 @@ describe('Command', () => {
 
     await expect(command.run(context)).resolves.toBe(context)
 
-    expect(task.before).toBeCalled()
-    expect(task.task).toBeCalled()
-    expect(task.after).toBeCalled()
+    expect(task.before.mock.calls[0][0]).toBe(context)
+    expect(task.task.mock.calls[0][0]).toBe(context)
+    expect(task.after.mock.calls[0][0]).toBe(context)
 
-    expect(subtask.task).toBeCalled()
+    expect(subtask.task.mock.calls[0][0]).toBe(context)
 
-    expect(taskWithSubtasks.task).toBeCalled()
+    expect(taskWithSubtasks.task.mock.calls[0][0]).toBe(context)
 
     expect(console.log).toHaveBeenCalledTimes(6)
   })

@@ -7,7 +7,7 @@ const { DEV_MODE } = require('../constants')
 
 const updatePluginRepository = pluginPath => {
   if (!fs.existsSync(path.resolve(pluginPath, './.git'))) {
-    throw new Error('Can\'t find `.git`')
+    throw new Error('Not a git repository: .git')
   }
 
   pullRepository(pluginPath)
@@ -18,30 +18,28 @@ const updatePluginSubtree = (remotes, projectPath, pluginsPath, pluginName) => {
   const pluginsRelPath = path.relative(projectPath, pluginsPath)
   const prefix = `${pluginsRelPath}/${pluginName}`
 
-  updateSubtree(projectPath, prefix, pluginName, remoteUrl)
+  if (!updateSubtree(projectPath, prefix, pluginName, remoteUrl)) {
+    throw new Error(`Failed update subtree '${remoteUrl}'`)
+  }
 }
 
 const createUpdatePlugin = name => improveTask({
   title: `Update plugin with name ${chalk.cyan(name)}`,
   before: ctx => {
-    if (!ctx.configuration) {
-      throw new Error('Can\'t find project configuration')
-    }
-
     if (!ctx.updatedPlugins) {
       ctx.updatedPlugins = []
     }
   },
   task: ctx => {
-    const { projectPath } = ctx
-    const pluginsPath = path.resolve(projectPath, ctx.configuration.pluginsPath)
-    const mode = ctx.mode || ctx.configuration.mode
+    const { projectPath, configuration } = ctx
+    const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
+    const mode = ctx.mode || configuration.mode
     const pluginPath = path.resolve(pluginsPath, `./${name}`)
 
     if (mode === DEV_MODE) {
       updatePluginRepository(pluginPath)
     } else {
-      updatePluginSubtree(ctx.configuration.remotes, projectPath, pluginsPath, name)
+      updatePluginSubtree(configuration.remotes, projectPath, pluginsPath, name)
     }
 
     ctx.updatedPlugins.push(name)

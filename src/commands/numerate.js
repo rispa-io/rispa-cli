@@ -50,9 +50,9 @@ class NumerateCommand extends Command {
   }
 
   updateProjectTagVersion({ projectPath }) {
-    const { projectChanges } = this.state
+    const { projectTag } = this.state
 
-    return createUpdateTagVersion(projectPath, projectChanges).task()
+    return createUpdateTagVersion(projectPath, projectTag).task()
   }
 
   init() {
