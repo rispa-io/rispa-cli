@@ -4,13 +4,14 @@ const fs = require('fs-extra')
 const { prompt } = require('inquirer')
 const configureGenerators = require('@rispa/generator')
 const Command = require('../Command')
-const { performProjectName } = require('../utils/project')
+const { performProjectName, createDefaultConfiguration } = require('../utils/project')
 const { init: gitInit, commit: gitCommit } = require('../utils/git')
 const selectPlugins = require('../tasks/selectPlugins')
 const fetchPlugins = require('../tasks/fetchPlugins')
 const createInstallPlugin = require('../tasks/installPlugin')
 const installProjectDeps = require('../tasks/installProjectDeps')
 const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
+const { skipDevMode } = require('../utils/tasks')
 
 class CreateProjectCommand extends Command {
   constructor([projectName, remoteUrl]) {
@@ -70,15 +71,13 @@ class CreateProjectCommand extends Command {
 
   installPlugins(ctx) {
     const { pluginsToInstall } = this.state
+    const { projectPath, mode } = ctx
 
-    ctx.configuration = {
-      mode: ctx.mode,
-      pluginsPath: './packages',
-      plugins: [],
-      remotes: {},
-    }
+    ctx.configuration = createDefaultConfiguration(mode)
 
-    fs.ensureDirSync(ctx.configuration.pluginsPath)
+    ctx.pluginsPath = path.resolve(projectPath, ctx.configuration.pluginsPath)
+
+    fs.ensureDirSync(ctx.pluginsPath)
 
     return new Listr(
       pluginsToInstall.map(({ name, cloneUrl }) =>
@@ -97,6 +96,7 @@ class CreateProjectCommand extends Command {
       },
       {
         title: 'Enter remote url',
+        skip: skipDevMode,
         enabled: () => !remoteUrl,
         task: this.enterRemoteUrl,
       },

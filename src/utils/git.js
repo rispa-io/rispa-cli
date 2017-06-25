@@ -8,7 +8,7 @@ const cloneRepository = (path, cloneUrl) => (
     'git',
     ['clone', cloneUrl],
     defaultSpawnOptions(path)
-  ).status
+  ).status === 0
 )
 
 const pullRepository = path => (
@@ -16,59 +16,68 @@ const pullRepository = path => (
     'git',
     ['pull'],
     defaultSpawnOptions(path)
-  ).status
+  ).status === 0
 )
 
-const addRemote = (path, remoteName, remoteUrl) => {
+const addRemote = (path, remoteName, remoteUrl) => (
   spawn.sync(
     'git',
     ['remote', 'add', remoteName, remoteUrl],
     defaultSpawnOptions(path)
-  )
-}
+  ).status === 0
+)
 
-const removeRemote = (path, remoteName) => {
+const removeRemote = (path, remoteName) => (
   spawn.sync(
     'git',
     ['remote', 'rm', remoteName],
     defaultSpawnOptions(path)
-  )
-}
+  ).status === 0
+)
 
-const addSubtree = (path, prefix, remoteName, remoteUrl) => {
-  addRemote(path, remoteName, remoteUrl)
-  return spawn.sync(
-      'git',
-      ['subtree', 'add', `--prefix=${prefix}`, remoteName, DEFAULT_PLUGIN_BRANCH],
-      defaultSpawnOptions(path)
-    ).status === 0
-}
+const addSubtree = (path, prefix, remoteName, remoteUrl) => (
+  addRemote(path, remoteName, remoteUrl) &&
+  spawn.sync(
+    'git',
+    ['subtree', 'add', `--prefix=${prefix}`, remoteName, DEFAULT_PLUGIN_BRANCH],
+    defaultSpawnOptions(path)
+  ).status === 0
+)
 
-const updateSubtree = (path, prefix, remoteName, remoteUrl) => {
-  addRemote(path, remoteName, remoteUrl)
-  return spawn.sync(
-      'git',
-      ['subtree', 'pull', `--prefix=${prefix}`, remoteName, DEFAULT_PLUGIN_BRANCH],
-      defaultSpawnOptions(path)
-    ).status === 0
-}
+const updateSubtree = (path, prefix, remoteName, remoteUrl) => (
+  addRemote(path, remoteName, remoteUrl) &&
+  spawn.sync(
+    'git',
+    ['subtree', 'pull', `--prefix=${prefix}`, remoteName, DEFAULT_PLUGIN_BRANCH],
+    defaultSpawnOptions(path)
+  ).status === 0
+)
 
 const init = (path, remoteUrl) => {
-  const options = defaultSpawnOptions(path)
-  spawn.sync('git', ['init'], options)
-  if (remoteUrl) {
-    addRemote(path, 'origin', remoteUrl)
+  let success = spawn.sync(
+    'git',
+    ['init'],
+    defaultSpawnOptions(path)
+  ).status === 0
+
+  if (success && remoteUrl) {
+    success = addRemote(path, 'origin', remoteUrl)
   }
+  return success
 }
 
 const commit = (path, message) => {
   const options = defaultSpawnOptions(path)
-  return spawn.sync('git', ['add', '.'], options).status === 0
-    && spawn.sync('git', ['commit', '-m', message], options).status === 0
+  return spawn.sync('git', ['add', '.'], options).status === 0 &&
+    spawn.sync('git', ['commit', '-m', message], options).status === 0
 }
 
 const push = path => (
-  spawn.sync('git', ['push'], defaultSpawnOptions(path)).status === 0
+  spawn.sync(
+    'git',
+    ['push'],
+    defaultSpawnOptions(path)
+  ).status === 0
 )
 
 const getChanges = path => {
@@ -117,13 +126,9 @@ const tagInfo = path => {
 }
 
 const addTag = (path, tag) => {
-  const spawnOptions = {
-    cwd: path,
-    stdio: 'inherit',
-  }
-
-  return spawn.sync('git', ['tag', tag], spawnOptions).status === 0
-    && spawn.sync('git', ['push', '--tags'], spawnOptions).status === 0
+  const spawnOptions = defaultSpawnOptions(path)
+  return spawn.sync('git', ['tag', tag], spawnOptions).status === 0 &&
+    spawn.sync('git', ['push', '--tags'], spawnOptions).status === 0
 }
 
 module.exports = {

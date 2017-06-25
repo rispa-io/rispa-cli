@@ -6,6 +6,13 @@ const performProjectName = projectName => (
   projectName.replace(/\s+/g, '-')
 )
 
+const createDefaultConfiguration = mode => ({
+  mode,
+  pluginsPath: './packages',
+  plugins: [],
+  remotes: {},
+})
+
 const readConfiguration = projectPath => {
   const configurationPath = path.resolve(projectPath, CONFIGURATION_PATH)
   return fs.readJsonSync(configurationPath, { throws: false })
@@ -18,6 +25,7 @@ const saveConfiguration = (configuration, projectPath) => {
 
 module.exports = {
   performProjectName,
+  createDefaultConfiguration,
   readConfiguration,
   saveConfiguration,
 }

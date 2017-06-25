@@ -37,6 +37,7 @@ describe('add plugins', () => {
 
     mockCrossSpawn.sync.mockClear()
     mockCrossSpawn.setMockOutput()
+    mockCrossSpawn.setMockReject(false)
     mockInquirer.setMockAnswers({})
     mockGithubApi.setMockPlugins([])
     mockFs.setMockFiles([])
@@ -59,12 +60,10 @@ describe('add plugins', () => {
       },
     })
 
-    mockGithubApi.setMockPlugins([
-      {
-        name: pluginName,
-        clone_url: pluginRemoteUrl,
-      },
-    ])
+    mockGithubApi.setMockPlugins([{
+      name: pluginName,
+      clone_url: pluginRemoteUrl,
+    }])
 
     const addPluginsCommand = new AddPluginsCommand([pluginName])
     addPluginsCommand.init()
@@ -94,12 +93,10 @@ describe('add plugins', () => {
       },
     })
 
-    mockGithubApi.setMockPlugins([
-      {
-        name: pluginName,
-        clone_url: pluginRemoteUrl,
-      },
-    ])
+    mockGithubApi.setMockPlugins([{
+      name: pluginName,
+      clone_url: pluginRemoteUrl,
+    }])
 
     mockInquirer.setMockAnswers({
       selectedPlugins: [pluginName],
@@ -133,12 +130,10 @@ describe('add plugins', () => {
       },
     })
 
-    mockGithubApi.setMockPlugins([
-      {
-        name: pluginName,
-        clone_url: pluginRemoteUrl,
-      },
-    ])
+    mockGithubApi.setMockPlugins([{
+      name: pluginName,
+      clone_url: pluginRemoteUrl,
+    }])
 
     const addPluginsCommand = new AddPluginsCommand([pluginName])
     addPluginsCommand.init()
@@ -146,6 +141,37 @@ describe('add plugins', () => {
     await expect(addPluginsCommand.run({
       cwd,
     })).resolves.toBeDefined()
+
+    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
+    expect(crossSpawnCalls[0]).toEqual(['git', ['clone', pluginRemoteUrl], { cwd: pluginsPath, stdio: 'inherit' }])
+    expect(crossSpawnCalls[1]).toEqual(['npm', ['run', 'bs'], crossSpawnOptions])
+
+    expect(crossSpawnCalls.length).toBe(2)
+  })
+
+  it('should failed add plugin in dev mode - cant clone repository', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        mode: DEV_MODE,
+        pluginsPath,
+        plugins: [],
+        remotes: {},
+      },
+    })
+
+    mockCrossSpawn.setMockReject(true)
+
+    mockGithubApi.setMockPlugins([{
+      name: pluginName,
+      clone_url: pluginRemoteUrl,
+    }])
+
+    const addPluginsCommand = new AddPluginsCommand([pluginName])
+    addPluginsCommand.init()
+
+    await expect(addPluginsCommand.run({
+      cwd,
+    })).rejects.toHaveProperty('errors.0.message', 'Can\'t clone repository')
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['clone', pluginRemoteUrl], { cwd: pluginsPath, stdio: 'inherit' }])
@@ -163,12 +189,10 @@ describe('add plugins', () => {
       },
     })
 
-    mockGithubApi.setMockPlugins([
-      {
-        name: pluginName,
-        clone_url: pluginRemoteUrl,
-      },
-    ])
+    mockGithubApi.setMockPlugins([{
+      name: pluginName,
+      clone_url: pluginRemoteUrl,
+    }])
 
     const addPluginsCommand = new AddPluginsCommand([pluginName])
     addPluginsCommand.init()
@@ -227,12 +251,10 @@ describe('add plugins', () => {
       },
     })
 
-    mockGithubApi.setMockPlugins([
-      {
-        name: pluginName,
-        clone_url: pluginRemoteUrl,
-      },
-    ])
+    mockGithubApi.setMockPlugins([{
+      name: pluginName,
+      clone_url: pluginRemoteUrl,
+    }])
 
     const addPluginsCommand = new AddPluginsCommand([pluginName])
     addPluginsCommand.init()

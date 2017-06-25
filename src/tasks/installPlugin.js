@@ -1,12 +1,18 @@
 const path = require('path')
 const chalk = require('chalk')
-const { addSubtree, cloneRepository } = require('../utils/git')
+const { addSubtree, cloneRepository: gitCloneRepository } = require('../utils/git')
 const { improveTask } = require('../utils/tasks')
 const { DEV_MODE } = require('../constants')
 
 const checkCloneUrl = cloneUrl => {
   if (!cloneUrl.endsWith('.git')) {
     throw new Error(`Invalid plugin remote url ${chalk.cyan(cloneUrl)}`)
+  }
+}
+
+const cloneRepository = (pluginsPath, cloneUrl) => {
+  if (!gitCloneRepository(pluginsPath, cloneUrl)) {
+    throw new Error('Can\'t clone repository')
   }
 }
 
@@ -20,7 +26,7 @@ const createInstallPlugin = (name, cloneUrl) => improveTask({
   },
   task: ctx => {
     const { projectPath } = ctx
-    const pluginsPath = path.resolve(projectPath, ctx.configuration.pluginsPath)
+    const pluginsPath = ctx.pluginsPath || path.resolve(projectPath, ctx.configuration.pluginsPath)
     const mode = ctx.mode || ctx.configuration.mode
 
     checkCloneUrl(cloneUrl)
@@ -33,6 +39,7 @@ const createInstallPlugin = (name, cloneUrl) => improveTask({
       addSubtree(projectPath, prefix, name, cloneUrl)
     }
 
+    ctx.pluginsPath = pluginsPath
     ctx.installedPlugins.push(name)
     ctx.configuration.plugins.push(name)
     ctx.configuration.remotes[name] = cloneUrl
