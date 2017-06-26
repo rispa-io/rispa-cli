@@ -1,63 +1,229 @@
 jest.resetAllMocks()
+jest.resetModules()
+
 jest.mock('@rispa/generator', () => require.requireActual('../../__mocks__/generator'))
-jest.mock('../../packages')
-jest.mock('../../core')
+jest.mock('../../tasks/scanPlugins', () => require.requireActual('../../tasks/__mocks__/scanPlugins'))
+jest.mock('cross-spawn')
+jest.mock('inquirer')
+jest.mock('fs-extra')
 
-const mockPackages = require.requireMock('../../packages')
+const path = require.requireActual('path')
+const chalk = require.requireActual('chalk')
+const { CONFIGURATION_PATH, PLUGIN_GENERATORS_PATH } = require.requireActual('../../constants')
+
+const mockCrossSpawn = require.requireMock('cross-spawn')
+const mockInquirer = require.requireMock('inquirer')
+const mockFs = require.requireMock('fs-extra')
 const mockGenerator = require.requireMock('@rispa/generator')
+const mockScanPlugins = require.requireMock('../../tasks/scanPlugins')
 
-const generate = require.requireActual('../generate')
+const GenerateCommand = require.requireActual('../generate')
 
-describe('create project', () => {
-  let originalExit
-
-  const packageName = '@rispa/core'
-  const packages = {
-    [packageName]: {
-      name: packageName,
-      path: '/sample/path',
-      generatorsPath: '/.rispa/generators/index.js',
-    },
-  }
-  const generatorName = 'test'
+describe('generate', () => {
+  let originalConsoleLog
 
   beforeAll(() => {
-    originalExit = process.exit
-    Object.defineProperty(process, 'exit', {
-      value: code => {
-        throw code
-      },
-    })
-
-    mockPackages.setMockPackages(packages)
-    mockGenerator.setMockGenerators({
-      [generatorName]: {},
-    })
+    originalConsoleLog = console.log
   })
 
   afterAll(() => {
-    Object.defineProperty(process, 'exit', {
-      value: originalExit,
+    Object.defineProperty(console, 'log', {
+      value: originalConsoleLog,
+    })
+  })
+
+  beforeEach(() => {
+    Object.defineProperty(console, 'log', {
+      value: jest.fn(),
     })
 
-    mockPackages.setMockPackages({})
+    mockCrossSpawn.sync.mockClear()
+    mockCrossSpawn.setMockOutput()
+    mockCrossSpawn.setMockReject(false)
+    mockInquirer.setMockAnswers({})
+    mockFs.setMockFiles([])
+    mockFs.setMockJson({})
+  })
+
+  const cwd = '/cwd'
+  const pluginName = 'rispa-core'
+  const pluginRemoteUrl = `https://git.com/${pluginName}.git`
+  const rispaJsonPath = path.resolve(cwd, CONFIGURATION_PATH)
+  const args = [1, 2, 'test']
+  const pluginsPath = path.resolve(cwd, './packages')
+  const pluginPath = path.resolve(pluginsPath, `./${pluginName}`)
+  const generatorName = 'generatorName'
+  const generatorsPath = path.resolve(pluginPath, PLUGIN_GENERATORS_PATH)
+
+  it('should success run generator', async () => {
+    mockScanPlugins.setMockPlugins({
+      [pluginName]: {
+        name: pluginName,
+        scripts: [],
+        path: pluginPath,
+        generators: generatorsPath,
+      },
+    })
+
+    const configuration = {
+      pluginsPath,
+      plugins: [pluginName],
+      remotes: {
+        [pluginName]: pluginRemoteUrl,
+      },
+    }
+
+    mockFs.setMockJson({
+      [rispaJsonPath]: configuration,
+    })
+
+    const generatorRun = jest.fn(() => Promise.resolve())
+
+    mockGenerator.setMockGenerators({
+      [generatorName]: {
+        runActions: generatorRun,
+      },
+    })
+
+    const generateCommand = new GenerateCommand([pluginName, generatorName, ...args])
+    generateCommand.init()
+
+    await expect(generateCommand.run({
+      cwd,
+    })).resolves.toBeDefined()
+
+    expect(generatorRun.mock.calls[0][0]).toHaveProperty('configuration', configuration)
+    expect(generatorRun.mock.calls[0][0]).toHaveProperty('projectPath', cwd)
+    expect(generatorRun.mock.calls[0][0]).toHaveProperty('args', args)
+  })
+
+  it('should success run selected generator', async () => {
+    mockScanPlugins.setMockPlugins({
+      [pluginName]: {
+        name: pluginName,
+        scripts: [],
+        path: pluginPath,
+        generators: generatorsPath,
+      },
+    })
+
+    const configuration = {
+      pluginsPath,
+      plugins: [pluginName],
+      remotes: {
+        [pluginName]: pluginRemoteUrl,
+      },
+    }
+
+    mockFs.setMockJson({
+      [rispaJsonPath]: configuration,
+    })
+
+    mockInquirer.setMockAnswers({
+      pluginName,
+      generatorName,
+    })
+
+    const generatorRun = jest.fn(() => Promise.resolve())
+
+    mockGenerator.setMockGenerators({
+      [generatorName]: {
+        runActions: generatorRun,
+      },
+    })
+
+    const generateCommand = new GenerateCommand([])
+    generateCommand.init()
+
+    await expect(generateCommand.run({
+      cwd,
+    })).resolves.toBeDefined()
+
+    expect(generatorRun.mock.calls[0][0]).toHaveProperty('configuration', configuration)
+    expect(generatorRun.mock.calls[0][0]).toHaveProperty('projectPath', cwd)
+    expect(generatorRun.mock.calls[0][0]).toHaveProperty('args', [])
+  })
+
+  it('should failed run generator - cant find plugin', async () => {
+    mockScanPlugins.setMockPlugins({})
+
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath,
+        plugins: [pluginName],
+        remotes: {
+          [pluginName]: pluginRemoteUrl,
+        },
+      },
+    })
+
+    const generateCommand = new GenerateCommand([pluginName, generatorName])
+    generateCommand.init()
+
+    await expect(generateCommand.run({
+      cwd,
+    })).rejects.toHaveProperty('message', `Can't find plugin with name ${chalk.cyan(pluginName)}`)
+  })
+
+  it('should failed run generator - cant find generators', async () => {
+    mockScanPlugins.setMockPlugins({
+      [pluginName]: {
+        name: pluginName,
+        scripts: [],
+        path: pluginPath,
+        generators: generatorsPath,
+      },
+    })
+
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath,
+        plugins: [pluginName],
+        remotes: {
+          [pluginName]: pluginRemoteUrl,
+        },
+      },
+    })
+
     mockGenerator.setMockGenerators({})
+
+    const generateCommand = new GenerateCommand([pluginName, generatorName])
+    generateCommand.init()
+
+    await expect(generateCommand.run({
+      cwd,
+    })).rejects.toHaveProperty('message', 'Can\'t find generators')
   })
 
-  it('should success generate', async () => {
-    await expect(generate(packageName, generatorName, 'test=test', 'sample=sample'))
-      .rejects.toBe(1)
-  })
+  it('should failed run generator - cant find generator', async () => {
+    mockScanPlugins.setMockPlugins({
+      [pluginName]: {
+        name: pluginName,
+        scripts: [],
+        path: pluginPath,
+        generators: generatorsPath,
+      },
+    })
 
-  it('should failed generate - package not found', async () => {
-    const invalidPackageName = 'invalid'
-    await expect(generate(invalidPackageName))
-      .rejects.toHaveProperty('message', `Can't find plugin with name: ${invalidPackageName}`)
-  })
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath,
+        plugins: [pluginName],
+        remotes: {
+          [pluginName]: pluginRemoteUrl,
+        },
+      },
+    })
 
-  it('should failed generate - generator not found', async () => {
-    const invalidGeneratorName = 'invalid'
-    await expect(generate(packageName, invalidGeneratorName))
-      .rejects.toHaveProperty('message', `Can't find generator with name: ${invalidGeneratorName}`)
+    mockGenerator.setMockGenerators({
+      test: {},
+    })
+
+    const generateCommand = new GenerateCommand([pluginName, generatorName])
+    generateCommand.init()
+
+    await expect(generateCommand.run({
+      cwd,
+    })).rejects.toHaveProperty('message', `Can't find generator with name ${chalk.cyan(generatorName)}`)
   })
 })

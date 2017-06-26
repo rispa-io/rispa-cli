@@ -1,13 +1,21 @@
 const path = require('path')
 const fs = require('fs-extra')
+const { CONFIGURATION_PATH } = require('../constants')
 
-const { requireIfExist } = require('./core')
+const performProjectName = projectName => (
+  projectName.replace(/\s+/g, '-')
+)
 
-const CONFIGURATION_PATH = './.rispa.json'
+const createDefaultConfiguration = mode => ({
+  mode,
+  pluginsPath: './packages',
+  plugins: [],
+  remotes: {},
+})
 
 const readConfiguration = projectPath => {
   const configurationPath = path.resolve(projectPath, CONFIGURATION_PATH)
-  return requireIfExist(configurationPath)
+  return fs.readJsonSync(configurationPath, { throws: false })
 }
 
 const saveConfiguration = (configuration, projectPath) => {
@@ -16,5 +24,8 @@ const saveConfiguration = (configuration, projectPath) => {
 }
 
 module.exports = {
-  readConfiguration, saveConfiguration,
+  performProjectName,
+  createDefaultConfiguration,
+  readConfiguration,
+  saveConfiguration,
 }

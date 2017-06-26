@@ -1,153 +1,109 @@
-const path = require('path')
-const spawn = require('cross-spawn')
-const { handleError, requireIfExist } = require('../core')
-const githubApi = require('../githubApi')
-const { readConfiguration, saveConfiguration } = require('../project')
-const { installPlugins, selectPluginsToInstall } = require('../plugin')
-const { commit: gitCommit, getChanges: gitGetChanges } = require('../git')
-const { removeCache: removePluginsCache } = require('../packages')
-
-const lernaBootstrapProjectNpm = projectPath => (
-  spawn.sync(
-    'npm',
-    ['run', 'bs'],
-    {
-      cwd: projectPath,
-      stdio: 'inherit',
-    }
-  ).status
-)
-
-const lernaBootstrapProjectYarn = projectPath => (
-  spawn.sync(
-    'yarn',
-    ['bs'],
-    {
-      cwd: projectPath,
-      stdio: 'inherit',
-    }
-  ).status
-)
-
-const bootstrapPluginsDeps = projectPath => {
-  const { npmClient } = requireIfExist(path.resolve(projectPath, './lerna.json'))
-  if (npmClient === 'npm') {
-    lernaBootstrapProjectNpm(projectPath)
-  } else {
-    lernaBootstrapProjectYarn(projectPath)
-  }
-}
-
-const updateConfiguration = (configuration, plugins, projectPath) => {
-  const newPlugins = Array.from(configuration.plugins || [])
-  const newRemotes = Object.assign({}, configuration.remotes || {})
-  plugins.forEach(plugin => {
-    newPlugins.push(plugin.name)
-    newRemotes[plugin.name] = plugin.clone_url
-  })
-  saveConfiguration(Object.assign({}, configuration, {
-    remotes: newRemotes,
-    plugins: newPlugins,
-  }), projectPath)
-}
-
-const getPluginsFromAvailableList = async pluginsNames => {
-  const { data: { items: plugins } } = await githubApi.plugins()
-
-  const notValidPluginsNames = []
-  const pluginsToInstall = pluginsNames.map(pluginName => {
-    const plugin = plugins.filter(({ name }) => name === pluginName)[0]
-    if (!plugin) {
-      notValidPluginsNames.push(pluginsNames)
-    }
-    return plugin
-  })
-
-  if (notValidPluginsNames.length > 0) {
-    handleError(`Can't find plugins with names:\n - ${notValidPluginsNames.join(', ')}`)
-  }
-
-  return pluginsToInstall
-}
+const Listr = require('listr')
+const fs = require('fs-extra')
+const createInstallPlugin = require('../tasks/installPlugin')
+const Command = require('../Command')
+const readProjectConfiguration = require('../tasks/readProjectConfiguration')
+const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
+const gitCheckChanges = require('../tasks/gitCheckChanges')
+const selectPlugins = require('../tasks/selectPlugins')
+const fetchPlugins = require('../tasks/fetchPlugins')
+const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
+const cleanCache = require('../tasks/cleanCache')
+const { extendsTask, skipDevMode } = require('../utils/tasks')
+const { commit: gitCommit } = require('../utils/git')
+const { PLUGIN_GIT_PREFIX } = require('../constants')
 
 const extractPluginNameFromUrl = cloneUrl => {
   const parts = cloneUrl.split('/')
   return parts[parts.length - 1].replace(/\.git$/, '')
 }
 
-const getPluginsByUrl = clonePluginUrl => {
-  if (!clonePluginUrl.endsWith('.git')) {
-    handleError(`Invalid plugin git url: ${clonePluginUrl}`)
+const findPlugin = (plugins, plugin) => {
+  if (plugin.startsWith(PLUGIN_GIT_PREFIX)) {
+    return {
+      name: extractPluginNameFromUrl(plugin),
+      cloneUrl: plugin.replace(PLUGIN_GIT_PREFIX, ''),
+    }
   }
 
-  return [{
-    name: extractPluginNameFromUrl(clonePluginUrl),
-    clone_url: clonePluginUrl,
-  }]
+  const currentPlugin = plugins.find(({ name }) => name === plugin)
+  return currentPlugin || { name: plugin }
 }
 
-const extractCloneUrl = pluginName => (
-  pluginName && pluginName.startsWith('git:') ?
-    pluginName.replace(/^git:/, '') : null
-)
+class AddPluginsCommand extends Command {
+  constructor([...pluginsToInstall]) {
+    super({})
 
-const getPluginsToInstall = async (pluginsNames, installedPluginsNames) => {
-  let pluginsToInstall
-  if (pluginsNames.length) {
-    const clonePluginUrl = extractCloneUrl(pluginsNames[0])
-    pluginsToInstall = (clonePluginUrl
-      ? getPluginsByUrl(clonePluginUrl)
-      : await getPluginsFromAvailableList(pluginsNames)
-    ).filter(({ name }) => {
-      if (installedPluginsNames.indexOf(name) !== -1) {
-        console.log(`Plugin '${name}' already installed`)
-        return false
-      }
-      return true
-    })
-  } else {
-    pluginsToInstall = await selectPluginsToInstall(installedPluginsNames)
+    this.state = {
+      pluginsToInstall,
+    }
+
+    this.installPlugins = this.installPlugins.bind(this)
   }
-  return pluginsToInstall
+
+  installPlugins(ctx) {
+    const { plugins, configuration: { pluginsPath } } = ctx
+
+    fs.ensureDirSync(pluginsPath)
+
+    const pluginsToInstall = this.state.pluginsToInstall.map(plugin => findPlugin(plugins, plugin))
+
+    const invalidPlugins = pluginsToInstall.filter(plugin => !plugin.cloneUrl).map(plugin => plugin.name)
+    if (invalidPlugins.length) {
+      throw new Error(`Can't find plugins with names:\n - ${invalidPlugins.join(', ')}`)
+    }
+
+    return new Listr(
+      pluginsToInstall.map(({ name, cloneUrl }) =>
+        createInstallPlugin(name, cloneUrl)
+      ), { exitOnError: false }
+    )
+  }
+
+  init() {
+    const { pluginsToInstall } = this.state
+    this.add([
+      extendsTask(readProjectConfiguration),
+      extendsTask(gitCheckChanges, {
+        skip: skipDevMode,
+        after: ({ hasChanges }) => {
+          if (hasChanges) {
+            throw new Error('Working tree has modifications. Cannot add plugins')
+          }
+        },
+      }),
+      fetchPlugins,
+      {
+        title: 'Select plugins to install',
+        task: selectPlugins.task,
+        enabled: () => pluginsToInstall.length === 0,
+        before: ctx => {
+          ctx.excludePluginsNames = ctx.configuration.plugins
+        },
+        after: ctx => {
+          this.state.pluginsToInstall = ctx.selectedPlugins
+          delete ctx.selectedPlugins
+        },
+      },
+      {
+        title: 'Install plugins',
+        task: this.installPlugins,
+      },
+      bootstrapProjectDeps,
+      saveProjectConfiguration,
+      {
+        title: 'Git commit',
+        skip: ctx => ((!ctx.installedPlugins || !ctx.installedPlugins.length) && 'Plugins not added') || skipDevMode(ctx),
+        task: ({ projectPath, installedPlugins }) => {
+          gitCommit(projectPath, `Add plugins: ${installedPlugins.join(', ')}`)
+        },
+      },
+      cleanCache,
+    ])
+  }
 }
 
-const addPlugins = async (...pluginsNames) => {
-  const projectPath = process.cwd()
-  const configuration = readConfiguration(projectPath)
+AddPluginsCommand.commandName = 'add'
+AddPluginsCommand.commandDescription = 'Add plugins'
 
-  if (!configuration) {
-    handleError('Can\'t find rispa project config')
-  }
-
-  const {
-    mode,
-    plugins: installedPluginsNames = [],
-    pluginsPath: relPluginsPath = './packages',
-  } = configuration
-  const pluginsPath = path.resolve(projectPath, relPluginsPath)
-
-  if (gitGetChanges(projectPath)) {
-    handleError('Working tree has modifications. Cannot add plugins')
-  }
-
-  const pluginsToInstall = await getPluginsToInstall(
-    pluginsNames,
-    installedPluginsNames
-  )
-
-  installPlugins(pluginsToInstall, projectPath, pluginsPath, mode)
-
-  updateConfiguration(configuration, pluginsToInstall, projectPath)
-
-  bootstrapPluginsDeps(projectPath)
-
-  gitCommit(projectPath,
-    `Add plugins: ${pluginsToInstall.map(plugin => plugin.name).join(', ')}`
-  )
-
-  removePluginsCache(projectPath)
-
-  process.exit(1)
-}
-
-module.exports = addPlugins
+module.exports = AddPluginsCommand

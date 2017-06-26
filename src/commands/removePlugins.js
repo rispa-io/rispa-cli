@@ -1,68 +1,83 @@
-const path = require('path')
-const fs = require('fs-extra')
-const { readConfiguration, saveConfiguration } = require('../project')
-const { handleError } = require('../core')
-const { removeRemote } = require('../git')
-const { removeCache: removePluginsCache } = require('../packages')
+const Listr = require('listr')
+const Command = require('../Command')
+const readProjectConfiguration = require('../tasks/readProjectConfiguration')
+const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
+const cleanCache = require('../tasks/cleanCache')
+const createRemovePlugin = require('../tasks/removePlugin')
+const selectPlugins = require('../tasks/selectPlugins')
+const { extendsTask, skipDevMode } = require('../utils/tasks')
+const gitCheckChanges = require('../tasks/gitCheckChanges')
+const { commit: gitCommit } = require('../utils/git')
 
-const removePlugin = plugin => {
-  try {
-    fs.removeSync(plugin.path)
-    console.log(`Remove plugin with name: ${plugin.name}`)
-    return true
-  } catch ({ message }) {
-    console.log(`Can't remove plugin with name: ${plugin.name}`, message)
-    return false
+class RemovePluginsCommand extends Command {
+  constructor([...pluginsToRemove]) {
+    super({})
+
+    this.state = {
+      pluginsToRemove,
+    }
+
+    this.removePlugins = this.removePlugins.bind(this)
+  }
+
+  removePlugins(ctx) {
+    const { pluginsToRemove } = this.state
+    const { configuration: { plugins } } = ctx
+
+    const invalidPlugins = pluginsToRemove.filter(plugin => plugins.indexOf(plugin) === -1)
+    if (invalidPlugins.length) {
+      throw new Error(`Can't find plugins with names:\n - ${invalidPlugins.join(', ')}`)
+    }
+
+    return new Listr(
+      pluginsToRemove.map(plugin =>
+        createRemovePlugin(plugin)
+      ), { exitOnError: false }
+    )
+  }
+
+  init() {
+    const { pluginsToRemove } = this.state
+    this.add([
+      readProjectConfiguration,
+      extendsTask(gitCheckChanges, {
+        skip: skipDevMode,
+        after: ({ hasChanges }) => {
+          if (hasChanges) {
+            throw new Error('Working tree has modifications. Cannot remove plugins')
+          }
+        },
+      }),
+      {
+        title: 'Select plugins to remove',
+        task: selectPlugins.task,
+        enabled: () => pluginsToRemove.length === 0,
+        after: ctx => {
+          this.state.pluginsToRemove = ctx.selectedPlugins
+          delete ctx.selectedPlugins
+        },
+      },
+      {
+        title: 'Remove plugins',
+        task: this.removePlugins,
+      },
+      saveProjectConfiguration,
+      {
+        title: 'Git commit',
+        skip: ctx => (
+          (ctx.removedPlugins.length === 0 && 'Plugins not removed') ||
+          skipDevMode(ctx)
+        ),
+        task: ({ projectPath, removedPlugins }) => {
+          gitCommit(projectPath, `Remove plugins: ${removedPlugins.join(', ')}`)
+        },
+      },
+      cleanCache,
+    ])
   }
 }
 
-const configurationIsValid = configuration =>
-configuration && configuration.plugins && configuration.pluginsPath
+RemovePluginsCommand.commandName = 'remove'
+RemovePluginsCommand.commandDescription = 'Remove plugins'
 
-const removePlugins = async (...pluginsNames) => {
-  const projectPath = process.cwd()
-  const configuration = readConfiguration(projectPath)
-  if (!configurationIsValid(configuration)) {
-    handleError('Can\'t find rispa project config')
-  }
-
-  const {
-    plugins,
-    remotes = {},
-    mode,
-  } = configuration
-  const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
-
-  const removedPluginsNames = pluginsNames
-    .filter(name => plugins.indexOf(name) !== -1)
-    .map(name => ({
-      name,
-      path: `${pluginsPath}/${name}`,
-    }))
-    .filter(removePlugin)
-    .map(({ name }) => name)
-
-  if (mode !== 'dev') {
-    removedPluginsNames.forEach(plugin => {
-      removeRemote(projectPath, plugin)
-    })
-  }
-
-  const lastPlugins = plugins.filter(
-    pluginName => removedPluginsNames.indexOf(pluginName) === -1
-  )
-
-  saveConfiguration(Object.assign({}, configuration, {
-    plugins: lastPlugins,
-    remotes: lastPlugins.reduce((newRemotes, plugin) => {
-      newRemotes[plugin] = remotes[plugin]
-      return newRemotes
-    }, {}),
-  }), projectPath)
-
-  removePluginsCache(projectPath)
-
-  process.exit(1)
-}
-
-module.exports = removePlugins
+module.exports = RemovePluginsCommand

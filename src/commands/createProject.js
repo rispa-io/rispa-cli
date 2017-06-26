@@ -1,119 +1,143 @@
+const Listr = require('listr')
 const path = require('path')
-const spawn = require('cross-spawn')
+const fs = require('fs-extra')
 const { prompt } = require('inquirer')
 const configureGenerators = require('@rispa/generator')
+const Command = require('../Command')
+const { performProjectName, createDefaultConfiguration } = require('../utils/project')
+const { init: gitInit, commit: gitCommit } = require('../utils/git')
+const selectPlugins = require('../tasks/selectPlugins')
+const fetchPlugins = require('../tasks/fetchPlugins')
+const createInstallPlugin = require('../tasks/installPlugin')
+const installProjectDeps = require('../tasks/installProjectDeps')
+const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
+const { skipDevMode } = require('../utils/tasks')
 
-const { handleError, requireIfExist } = require('../core')
-const { installPlugins, selectPluginsToInstall } = require('../plugin')
-const { saveConfiguration } = require('../project')
-const { init: gitInit, commit: gitCommit } = require('../git')
+class CreateProjectCommand extends Command {
+  constructor([projectName, remoteUrl]) {
+    super({})
 
-const enterProjectName = () => prompt([{
-  type: 'input',
-  name: 'projectName',
-  message: 'Enter project name:',
-}])
-
-const enterRemoteUrl = () => prompt([{
-  type: 'input',
-  name: 'remoteUrl',
-  message: 'Enter remote url for project (optional):',
-}])
-
-const installProjectDepsYarn = projectPath => (
-  spawn.sync(
-    'yarn',
-    ['install'],
-    {
-      cwd: projectPath,
-      stdio: 'inherit',
+    this.state = {
+      projectName: projectName && performProjectName(projectName),
+      remoteUrl,
+      pluginsForInstall: [],
     }
-  ).status
-)
 
-const installProjectDepsNpm = projectPath => (
-  spawn.sync(
-    'npm',
-    ['install'],
-    {
-      cwd: projectPath,
-      stdio: 'inherit',
-    }
-  ).status
-)
-
-const generateProjectStructure = async (projectPath, projectName) => {
-  const generators = configureGenerators(projectPath)
-  await generators.getGenerator('project').runActions({ projectName })
-}
-
-const bootstrapProjectDeps = projectPath => {
-  const { npmClient } = requireIfExist(path.resolve(projectPath, './lerna.json'))
-  if (npmClient === 'npm') {
-    installProjectDepsNpm(projectPath)
-  } else {
-    installProjectDepsYarn(projectPath)
+    this.enterProjectName = this.enterProjectName.bind(this)
+    this.enterRemoteUrl = this.enterRemoteUrl.bind(this)
+    this.generateProjectStructure = this.generateProjectStructure.bind(this)
+    this.gitInit = this.gitInit.bind(this)
+    this.installPlugins = this.installPlugins.bind(this)
   }
-}
 
-const performProjectName = projectName => (
-  projectName.replace(/\s+/g, '-')
-)
+  enterProjectName() {
+    return prompt([{
+      type: 'input',
+      name: 'projectName',
+      message: 'Enter project name:',
+    }]).then(({ projectName }) => {
+      this.state.projectName = performProjectName(projectName)
+    })
+  }
 
-const parseParams = args =>
-  args.reduce((params, arg) => {
-    const paramMatch = /^--([^=]+)=(.*)/.exec(arg)
-    if (paramMatch) {
-      params[paramMatch[1]] = paramMatch[2]
-    } else {
-      params.name = arg
+  enterRemoteUrl() {
+    return prompt([{
+      type: 'input',
+      name: 'remoteUrl',
+      message: 'Enter remote url for project (optional):',
+    }]).then(({ remoteUrl }) => {
+      this.state.remoteUrl = remoteUrl
+    })
+  }
+
+  generateProjectStructure(ctx) {
+    const { projectName } = this.state
+
+    ctx.projectPath = path.resolve(ctx.cwd, `./${projectName}`)
+
+    if (fs.existsSync(ctx.projectPath)) {
+      throw new Error(`The directory '${projectName}' already exist.\nTry using a new project name.`)
     }
-    return params
-  }, {})
 
-const create = async (...args) => {
-  try {
-    const distPath = process.cwd()
-    const { name, mode } = parseParams(args)
+    const generators = configureGenerators(ctx.projectPath)
+    return generators.getGenerator('project').runActions({ projectName })
+  }
 
-    const projectName = performProjectName(
-      name || (await enterProjectName()).projectName
-    )
-    const remoteUrl = (await enterRemoteUrl()).remoteUrl
-
-    const projectPath = path.resolve(distPath, `./${projectName}`)
-    const pluginsPath = path.resolve(projectPath, './packages')
-
-    await generateProjectStructure(projectPath, projectName)
-
+  gitInit({ projectPath }) {
+    const { projectName, remoteUrl } = this.state
     gitInit(projectPath, remoteUrl)
     gitCommit(projectPath, `Create project '${projectName}'`)
-
-    const plugins = await selectPluginsToInstall()
-
-    installPlugins(plugins, projectPath, pluginsPath, mode)
-
-    bootstrapProjectDeps(projectPath)
-
-    saveConfiguration({
-      mode,
-      pluginsPath: './packages',
-      plugins: plugins.map(plugin => plugin.name),
-      remotes: plugins.reduce((remotes, plugin) => {
-        remotes[plugin.name] = plugin.clone_url
-        return remotes
-      }, {}),
-    }, projectPath)
-
-    gitCommit(projectPath, 'Bootstrap deps and install plugins')
-
-    console.log(`Project "${projectName}" successfully generated!`)
-  } catch (e) {
-    handleError(e)
   }
 
-  process.exit(1)
+  installPlugins(ctx) {
+    const { pluginsToInstall } = this.state
+    const { projectPath, mode } = ctx
+
+    ctx.configuration = createDefaultConfiguration(mode)
+
+    ctx.pluginsPath = path.resolve(projectPath, ctx.configuration.pluginsPath)
+
+    fs.ensureDirSync(ctx.pluginsPath)
+
+    return new Listr(
+      pluginsToInstall.map(({ name, cloneUrl }) =>
+        createInstallPlugin(name, cloneUrl)
+      ), { exitOnError: false }
+    )
+  }
+
+  init() {
+    const { projectName, remoteUrl } = this.state
+    this.add([
+      {
+        title: 'Enter project name',
+        enabled: () => !projectName,
+        task: this.enterProjectName,
+      },
+      {
+        title: 'Enter remote url',
+        skip: skipDevMode,
+        enabled: () => !remoteUrl,
+        task: this.enterRemoteUrl,
+      },
+      {
+        title: 'Generate project structure',
+        task: this.generateProjectStructure,
+      },
+      {
+        title: 'Git init',
+        task: this.gitInit,
+      },
+      fetchPlugins,
+      {
+        title: 'Select plugins to install',
+        task: selectPlugins.task,
+        after: ctx => {
+          this.state.pluginsToInstall = ctx.selectedPlugins
+          delete ctx.selectedPlugins
+        },
+      },
+      {
+        title: 'Install plugins',
+        task: this.installPlugins,
+        before: ctx => {
+          ctx.installedPlugins = []
+        },
+      },
+      installProjectDeps,
+      {
+        title: 'Create configuration',
+        task: saveProjectConfiguration.task,
+      },
+      {
+        title: 'Git commit',
+        task: ({ projectPath }) => gitCommit(projectPath, 'Bootstrap deps and install plugins'),
+      },
+    ])
+  }
 }
 
-module.exports = create
+CreateProjectCommand.commandName = 'new'
+CreateProjectCommand.commandDescription = 'Generate project structure'
 
+module.exports = CreateProjectCommand

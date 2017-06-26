@@ -1,114 +1,83 @@
-const spawn = require('cross-spawn')
-const { scanPackages } = require('../packages')
-const { prompt } = require('inquirer')
+const path = require('path')
+const Listr = require('listr')
+const Command = require('../Command')
+const readProjectConfiguration = require('../tasks/readProjectConfiguration')
+const createUpdatePluginTagVersion = require('../tasks/updatePluginTagVersion')
+const createUpdateTagVersion = require('../tasks/updateTagVersion')
+const { checkDevMode } = require('../utils/tasks')
+const { tagInfo: gitTagInfo } = require('../utils/git')
+const { DEV_MODE } = require('../constants')
 
-const gitGetLastTagDescription = path => (
-  spawn.sync(
-    'git',
-    ['describe', '--tags', '--long', '--match', 'v*'],
-    {
-      cwd: path,
-      stdio: 'pipe',
+class NumerateCommand extends Command {
+  constructor() {
+    super({})
+
+    this.state = {
+      pluginsTags: [],
+      projectTag: null,
     }
-  )
-)
 
-const gitAddTag = (path, tag) => {
-  const spawnOptions = {
-    cwd: path,
-    stdio: 'inherit',
-  }
-  spawn.sync('git', ['tag', tag], spawnOptions)
-  spawn.sync('git', ['push', '--tags'], spawnOptions)
-}
-
-const selectNextVersion = versions => prompt([{
-  type: 'list',
-  name: 'nextVersion',
-  choices: versions,
-  message: 'Select next version:',
-}])
-
-const getTagInfo = path => {
-  const result = gitGetLastTagDescription(path)
-  const tagDescription = result.status !== 1 && String(result.output[1])
-  if (!tagDescription) {
-    return null
+    this.getTags = this.getTags.bind(this)
+    this.updatePluginsTagVersion = this.updatePluginsTagVersion.bind(this)
+    this.updateProjectTagVersion = this.updateProjectTagVersion.bind(this)
   }
 
-  const parts = /v((\d+).(\d+).(\d+))-(\d+)-\w+/.exec(tagDescription)
-  if (!parts) {
-    return null
-  }
+  getTags(ctx) {
+    const mode = ctx.mode || ctx.configuration.mode
+    const { projectPath, configuration } = ctx
 
-  const [version, major, minor, patch, newCommitsCount] = parts.slice(1)
-  return {
-    version,
-    versionParts: {
-      major,
-      minor,
-      patch,
-    },
-    newCommitsCount,
-  }
-}
+    if (mode === DEV_MODE) {
+      const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
 
-const getPackages = () => {
-  const packages = scanPackages()
-  return Object.keys(packages)
-    .map(name => packages[name])
-    .filter((item, index, arr) => arr.indexOf(item) === index)
-}
-
-const updateVersion = async ({ name, path, tagInfo }) => {
-  const { newCommitsCount, version, versionParts } = tagInfo
-
-  console.log(`${newCommitsCount} new commit(s) for plugin '${name}' after ${version}`)
-
-  const { major, minor, patch } = versionParts
-  const versions = {
-    PATCH: `${major}.${minor}.${+patch + 1}`,
-    MINOR: `${major}.${+minor + 1}.0`,
-    MAJOR: `${+major + 1}.0.0`,
-  }
-  const choices = Object.keys(versions).map(versionName => ({
-    name: `${versionName} ${versions[versionName]}`,
-    value: versions[versionName],
-  }))
-  const nextVersion = (await selectNextVersion(choices)).nextVersion
-  gitAddTag(path, `v${nextVersion}`)
-}
-
-const processQueue = async (queue, func) => {
-  const next = queue.pop()
-  if (next) {
-    await func(next)
-    await processQueue(queue, func)
-  }
-}
-
-const command = async () => {
-  const packages = getPackages()
-
-  const queue = []
-  packages.forEach(({ name, path }) => {
-    const tagInfo = getTagInfo(path)
-    if (!tagInfo) {
-      console.log(`No version tag found for ${name}`)
-    } else if (tagInfo.newCommitsCount > 0) {
-      queue.push({
-        name,
-        path,
-        tagInfo,
-      })
+      this.state.pluginsTags = configuration.plugins
+        .map(pluginName => ({
+          name: pluginName,
+          path: path.resolve(pluginsPath, `./${pluginName}`),
+        }))
+        .map(plugin => Object.assign(plugin, {
+          tag: gitTagInfo(plugin.path),
+        }))
+        .filter(plugin => !!plugin.tag)
     }
-  })
 
-  if (queue.length) {
-    await processQueue(queue, updateVersion)
-  } else {
-    console.log('No plugins to be numerated')
+    this.state.projectTag = gitTagInfo(projectPath)
+  }
+
+  updatePluginsTagVersion() {
+    const { pluginsTags } = this.state
+
+    return new Listr(pluginsTags.map(createUpdatePluginTagVersion), { exitOnError: false })
+  }
+
+  updateProjectTagVersion({ projectPath }) {
+    const { projectTag } = this.state
+
+    return createUpdateTagVersion(projectPath, projectTag).task()
+  }
+
+  init() {
+    this.add([
+      readProjectConfiguration,
+      {
+        title: 'Get tags',
+        task: this.getTags,
+      },
+      {
+        title: 'Update plugins tag version',
+        enabled: checkDevMode,
+        skip: () => this.state.pluginsTags.length === 0,
+        task: this.updatePluginsTagVersion,
+      },
+      {
+        title: 'Update project tag version',
+        skip: () => !this.state.projectTag,
+        task: this.updateProjectTagVersion,
+      },
+    ])
   }
 }
 
-module.exports = command
+NumerateCommand.commandName = 'numerate'
+NumerateCommand.commandDescription = 'Numerate'
+
+module.exports = NumerateCommand
