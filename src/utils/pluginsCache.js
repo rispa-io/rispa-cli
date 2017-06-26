@@ -7,7 +7,7 @@ const createPluginsCache = () => ({
   plugins: {},
 })
 
-const savePluginsCache = (pluginsByPaths, packages, projectPath) => {
+const savePluginsCache = (pluginsByPaths, plugins, projectPath) => {
   const pluginsCachePath = path.resolve(projectPath, PLUGINS_CACHE_PATH)
   const pluginsCacheDirPath = path.dirname(pluginsCachePath)
 
@@ -22,10 +22,10 @@ const savePluginsCache = (pluginsByPaths, packages, projectPath) => {
         return result
       }, {}),
 
-    packages: Object.keys(packages)
+    plugins: Object.keys(plugins)
       .filter((key, idx, keys) => keys.indexOf(packages[key].name) === idx)
       .reduce((result, key) => {
-        result[key] = packages[key]
+        result[key] = plugins[key]
         return result
       }, {}),
   }, null, 2))
