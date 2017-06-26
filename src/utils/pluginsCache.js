@@ -7,7 +7,7 @@ const createPluginsCache = () => ({
   plugins: {},
 })
 
-const savePluginsCache = (pluginsByPaths, packages, projectPath) => {
+const savePluginsCache = (pluginsByPaths, plugins, projectPath) => {
   const pluginsCachePath = path.resolve(projectPath, PLUGINS_CACHE_PATH)
   const pluginsCacheDirPath = path.dirname(pluginsCachePath)
 
@@ -16,16 +16,16 @@ const savePluginsCache = (pluginsByPaths, packages, projectPath) => {
   fs.writeFileSync(pluginsCachePath, JSON.stringify({
     paths: Object.keys(pluginsByPaths)
       .reduce((result, pluginsPath) => {
-        const plugins = pluginsByPaths[pluginsPath]
-        result[pluginsPath] = Object.keys(plugins)
+        const pluginsByPath = pluginsByPaths[pluginsPath]
+        result[pluginsPath] = Object.keys(pluginsByPath)
           .filter((key, idx, keys) => keys.indexOf(plugins[key].name) === idx)
         return result
       }, {}),
 
-    packages: Object.keys(packages)
-      .filter((key, idx, keys) => keys.indexOf(packages[key].name) === idx)
+    plugins: Object.keys(plugins)
+      .filter((key, idx, keys) => keys.indexOf(plugins[key].name) === idx)
       .reduce((result, key) => {
-        result[key] = packages[key]
+        result[key] = plugins[key]
         return result
       }, {}),
   }, null, 2))
