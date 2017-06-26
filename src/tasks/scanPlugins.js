@@ -33,7 +33,7 @@ const getPluginsFromCache = (pluginsPath, cache) => {
   }
 
   return cache.paths[pluginsPath]
-    .map(packageName => cache.plugins[packageName])
+    .map(pluginName => cache.plugins[pluginName])
     .filter(item => item)
     .reduce((result, packageInfo) => {
       if (packageInfo.alias) {
