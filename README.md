@@ -165,7 +165,7 @@ It will launch generator with the name `generator-name` of package `core` in cur
 ### Commit
 ### `ris commit`
 
-To commit project or plugins changer, run inside project directory:
+To commit project or plugins changes, run inside project directory:
 
 ```sh
 ris commit
