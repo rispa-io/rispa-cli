@@ -11,6 +11,7 @@ const fetchPlugins = require('../tasks/fetchPlugins')
 const createInstallPlugin = require('../tasks/installPlugin')
 const installProjectDeps = require('../tasks/installProjectDeps')
 const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
+const resolvePluginsDeps = require('../tasks/resolvePluginsDeps')
 const { skipDevMode } = require('../utils/tasks')
 
 class CreateProjectCommand extends Command {
@@ -52,6 +53,7 @@ class CreateProjectCommand extends Command {
 
   generateProjectStructure(ctx) {
     const { projectName } = this.state
+    const { mode } = ctx
 
     ctx.projectPath = path.resolve(ctx.cwd, `./${projectName}`)
 
@@ -59,8 +61,11 @@ class CreateProjectCommand extends Command {
       throw new Error(`The directory '${projectName}' already exist.\nTry using a new project name.`)
     }
 
-    const generators = configureGenerators(ctx.projectPath)
-    return generators.getGenerator('project').runActions({ projectName })
+    ctx.configuration = createDefaultConfiguration(mode)
+
+    return configureGenerators(ctx.projectPath)
+      .getGenerator('project')
+      .runActions({ projectName })
   }
 
   gitInit({ projectPath }) {
@@ -71,9 +76,7 @@ class CreateProjectCommand extends Command {
 
   installPlugins(ctx) {
     const { pluginsToInstall } = this.state
-    const { projectPath, mode } = ctx
-
-    ctx.configuration = createDefaultConfiguration(mode)
+    const { projectPath } = ctx
 
     ctx.pluginsPath = path.resolve(projectPath, ctx.configuration.pluginsPath)
 
@@ -124,6 +127,7 @@ class CreateProjectCommand extends Command {
           ctx.installedPlugins = []
         },
       },
+      resolvePluginsDeps,
       installProjectDeps,
       {
         title: 'Create configuration',

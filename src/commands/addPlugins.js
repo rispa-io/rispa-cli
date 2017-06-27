@@ -9,6 +9,7 @@ const selectPlugins = require('../tasks/selectPlugins')
 const fetchPlugins = require('../tasks/fetchPlugins')
 const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
 const cleanCache = require('../tasks/cleanCache')
+const resolvePluginsDeps = require('../tasks/resolvePluginsDeps')
 const { extendsTask, skipDevMode } = require('../utils/tasks')
 const { commit: gitCommit } = require('../utils/git')
 const { PLUGIN_GIT_PREFIX } = require('../constants')
@@ -91,6 +92,7 @@ class AddPluginsCommand extends Command {
         title: 'Install plugins',
         task: this.installPlugins,
       },
+      resolvePluginsDeps,
       bootstrapProjectDeps,
       saveProjectConfiguration,
       {

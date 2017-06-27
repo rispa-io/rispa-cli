@@ -55,6 +55,13 @@
     "collectCoverageFrom": [
       "src/**/*.js"
     ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/build/"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/build/"
+    ],
     "coverageThreshold": {
       "global": {
         "branches": 100,

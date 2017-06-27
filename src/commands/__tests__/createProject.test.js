@@ -8,7 +8,7 @@ jest.mock('inquirer')
 jest.mock('fs-extra')
 
 const path = require.requireActual('path')
-const { DEFAULT_PLUGIN_BRANCH, LERNA_JSON_PATH } = require.requireActual('../../constants')
+const { DEFAULT_PLUGIN_BRANCH, LERNA_JSON_PATH, PLUGIN_PREFIX } = require.requireActual('../../constants')
 
 const mockCrossSpawn = require.requireMock('cross-spawn')
 const mockInquirer = require.requireMock('inquirer')
@@ -71,12 +71,16 @@ describe('create project', () => {
   it('should success create project', async () => {
     mockFs.setMockFiles([])
 
-    mockGithubApi.setMockPlugins([
-      {
-        name: pluginName,
-        clone_url: pluginRemoteUrl,
+    mockGithubApi.setMockPlugins([{
+      name: pluginName,
+      cloneUrl: pluginRemoteUrl,
+    }])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginName.replace('rispa-', PLUGIN_PREFIX),
       },
-    ])
+    })
 
     mockInquirer.setMockAnswers({
       selectedPlugins: [
@@ -119,20 +123,22 @@ describe('create project', () => {
   it('should success create project via yarn', async () => {
     mockFs.setMockFiles([])
 
-    mockGithubApi.setMockPlugins([
-      {
-        name: pluginName,
-        clone_url: pluginRemoteUrl,
+    mockGithubApi.setMockPlugins([{
+      name: pluginName,
+      cloneUrl: pluginRemoteUrl,
+    }])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginName.replace('rispa-', PLUGIN_PREFIX),
       },
-    ])
+    })
 
     mockInquirer.setMockAnswers({
-      selectedPlugins: [
-        {
-          name: pluginName,
-          cloneUrl: pluginRemoteUrl,
-        },
-      ],
+      selectedPlugins: [{
+        name: pluginName,
+        cloneUrl: pluginRemoteUrl,
+      }],
       projectName,
       remoteUrl,
     })
@@ -158,20 +164,22 @@ describe('create project', () => {
   it('should success create project via yarn', async () => {
     mockFs.setMockFiles([])
 
-    mockGithubApi.setMockPlugins([
-      {
-        name: pluginName,
-        clone_url: pluginRemoteUrl,
+    mockGithubApi.setMockPlugins([{
+      name: pluginName,
+      cloneUrl: pluginRemoteUrl,
+    }])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginName.replace('rispa-', PLUGIN_PREFIX),
       },
-    ])
+    })
 
     mockInquirer.setMockAnswers({
-      selectedPlugins: [
-        {
-          name: pluginName,
-          cloneUrl: pluginRemoteUrl,
-        },
-      ],
+      selectedPlugins: [{
+        name: pluginName,
+        cloneUrl: pluginRemoteUrl,
+      }],
       projectName,
       remoteUrl,
     })
