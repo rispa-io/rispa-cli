@@ -70,14 +70,23 @@ const getRemotes = path => {
   return remotes
 }
 
-const addSubtree = (path, prefix, remoteName, remoteUrl, ref = DEFAULT_PLUGIN_BRANCH) => (
-  addRemote(path, remoteName, remoteUrl) &&
-  spawn.sync(
+const addSubtree = (path, prefix, remoteName, remoteUrl, ref = DEFAULT_PLUGIN_BRANCH) => {
+  if (!addRemote(path, remoteName, remoteUrl)) {
+    throw new Error('Failed add remote url')
+  }
+
+  const result = spawn.sync(
     'git',
     ['subtree', 'add', `--prefix=${prefix}`, remoteName, ref],
     defaultSpawnOptions(path)
-  ).status === 0
-)
+  )
+
+  if (result.status !== 0) {
+    throw new Error('Failed add subtree')
+  }
+
+  return result
+}
 
 const updateSubtree = (path, prefix, remoteName, remoteUrl, ref = DEFAULT_PLUGIN_BRANCH) => (
   addRemote(path, remoteName, remoteUrl) &&
