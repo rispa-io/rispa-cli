@@ -9,7 +9,10 @@ const LERNA_JSON_PATH = './lerna.json'
 const CONFIGURATION_PATH = './rispa.json'
 const PLUGINS_CACHE_PATH = './build/plugins.json'
 const LOG_TIME_FORMAT = 'HH:mm:ss'
-const GITHUB_SEARCH_PLUGINS_QUERY = 'q=user:rispa-io+topic:rispa-plugin'
+const BASE_GITHUB_URL = 'https://api.github.com'
+const BASE_GITHUB_RAW_URL = 'https://raw.githubusercontent.com'
+const GITHUB_SEARCH_PLUGINS_QUERY = 'q=org:rispa-io+topic:rispa-plugin'
+const GITHUB_SEARCH_PLUGINS_EXTENDABLE_QUERY = 'q=org:rispa-io+topic:extendable'
 const PLUGIN_PREFIX = '@rispa/'
 const PLUGIN_ALIAS = 'rispa:name'
 const PLUGIN_ACTIVATOR_PATH = './.rispa/activator.js'
@@ -30,7 +33,10 @@ module.exports = {
   CONFIGURATION_PATH,
   PLUGINS_CACHE_PATH,
   LOG_TIME_FORMAT,
+  BASE_GITHUB_URL,
+  BASE_GITHUB_RAW_URL,
   GITHUB_SEARCH_PLUGINS_QUERY,
+  GITHUB_SEARCH_PLUGINS_EXTENDABLE_QUERY,
   PLUGIN_PREFIX,
   PLUGIN_ACTIVATOR_PATH,
   PLUGIN_GENERATORS_PATH,

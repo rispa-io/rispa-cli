@@ -8,7 +8,9 @@ jest.mock('fs-extra')
 
 const path = require.requireActual('path')
 const chalk = require.requireActual('chalk')
-const { CONFIGURATION_PATH, PLUGIN_GIT_PREFIX, DEFAULT_PLUGIN_BRANCH, DEV_MODE } = require.requireActual('../../constants')
+const {
+  CONFIGURATION_PATH, PLUGIN_GIT_PREFIX, DEFAULT_PLUGIN_BRANCH, DEV_MODE, PLUGIN_PREFIX, DEFAULT_PLUGIN_DEV_BRANCH, PACKAGE_JSON_PATH,
+} = require.requireActual('../../constants')
 
 const mockCrossSpawn = require.requireMock('cross-spawn')
 const mockInquirer = require.requireMock('inquirer')
@@ -45,11 +47,19 @@ describe('add plugins', () => {
   })
 
   const cwd = '/cwd'
+  const pluginsPath = path.resolve(cwd, './packages')
   const pluginName = 'rispa-core'
+  const pluginPackageName = pluginName.replace('rispa-', PLUGIN_PREFIX)
   const pluginRemoteUrl = `https://git.com/${pluginName}.git`
+  const pluginPath = path.resolve(pluginsPath, `./${pluginName}`)
+  const pluginPackageJsonPath = path.resolve(pluginPath, PACKAGE_JSON_PATH)
+  const resolvePluginName = 'rispa-config'
+  const resolvePluginPackageName = resolvePluginName.replace('rispa-', PLUGIN_PREFIX)
+  const resolvePluginVersion = '1.2.3'
+  const resolvePluginRemoteUrl = `https://git.com/${resolvePluginName}.git`
+
   const rispaJsonPath = path.resolve(cwd, CONFIGURATION_PATH)
   const crossSpawnOptions = { cwd, stdio: 'inherit' }
-  const pluginsPath = path.resolve(cwd, './packages')
 
   it('should success add plugin', async () => {
     mockFs.setMockJson({
@@ -58,12 +68,31 @@ describe('add plugins', () => {
         plugins: [],
         remotes: {},
       },
+      [pluginPackageJsonPath]: {
+        dependencies: {
+          [resolvePluginPackageName]: resolvePluginVersion,
+        },
+      },
     })
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      clone_url: pluginRemoteUrl,
+      cloneUrl: pluginRemoteUrl,
+    }, {
+      name: resolvePluginName,
+      cloneUrl: resolvePluginRemoteUrl,
     }])
+
+    mockGithubApi.setMockPluginsExtendable([resolvePluginName])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginPackageName,
+      },
+      [resolvePluginName]: {
+        name: resolvePluginPackageName,
+      },
+    })
 
     const addPluginsCommand = new AddPluginsCommand([pluginName])
     addPluginsCommand.init()
@@ -75,13 +104,101 @@ describe('add plugins', () => {
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'add', pluginName, pluginRemoteUrl], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, DEFAULT_PLUGIN_BRANCH], crossSpawnOptions])
-    expect(crossSpawnCalls[3]).toEqual(['npm', ['run', 'bs'], crossSpawnOptions])
-    expect(crossSpawnCalls[4]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[5]).toEqual(['git', ['commit', '-m', `Add plugins: ${pluginName}`], crossSpawnOptions])
+    expect(crossSpawnCalls[1]).toEqual([
+      'git',
+      ['remote', 'add', pluginName, pluginRemoteUrl],
+      crossSpawnOptions,
+    ])
+    expect(crossSpawnCalls[2]).toEqual([
+      'git',
+      ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, DEFAULT_PLUGIN_BRANCH],
+      crossSpawnOptions,
+    ])
+    expect(crossSpawnCalls[3]).toEqual([
+      'git',
+      ['remote', 'add', resolvePluginName, resolvePluginRemoteUrl],
+      crossSpawnOptions,
+    ])
+    expect(crossSpawnCalls[4]).toEqual([
+      'git',
+      ['subtree', 'add', `--prefix=packages/${resolvePluginName}`, resolvePluginName, `v${resolvePluginVersion}`],
+      crossSpawnOptions,
+    ])
+    expect(crossSpawnCalls[5]).toEqual(['npm', ['run', 'bs'], crossSpawnOptions])
+    expect(crossSpawnCalls[6]).toEqual(['git', ['add', '.'], crossSpawnOptions])
+    expect(crossSpawnCalls[7]).toEqual(['git', ['commit', '-m', `Add plugins: ${pluginName}, ${resolvePluginName}`], crossSpawnOptions])
 
-    expect(crossSpawnCalls.length).toBe(6)
+    expect(crossSpawnCalls.length).toBe(8)
+  })
+
+  it('should success add plugin', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath,
+        plugins: [],
+        remotes: {},
+      },
+      [pluginPackageJsonPath]: {
+        dependencies: {
+          [resolvePluginPackageName]: resolvePluginVersion,
+        },
+      },
+    })
+
+    mockGithubApi.setMockPlugins([{
+      name: pluginName,
+      cloneUrl: pluginRemoteUrl,
+    }, {
+      name: resolvePluginName,
+      cloneUrl: resolvePluginRemoteUrl,
+    }])
+
+    mockGithubApi.setMockPluginsExtendable([resolvePluginName])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginPackageName,
+      },
+      [resolvePluginName]: {
+        name: resolvePluginPackageName,
+      },
+    })
+
+    const addPluginsCommand = new AddPluginsCommand([pluginName])
+    addPluginsCommand.init()
+
+    await expect(addPluginsCommand.run({
+      cwd,
+      projectPath: cwd,
+    })).resolves.toBeDefined()
+
+    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
+    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
+    expect(crossSpawnCalls[1]).toEqual([
+      'git',
+      ['remote', 'add', pluginName, pluginRemoteUrl],
+      crossSpawnOptions,
+    ])
+    expect(crossSpawnCalls[2]).toEqual([
+      'git',
+      ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, DEFAULT_PLUGIN_BRANCH],
+      crossSpawnOptions,
+    ])
+    expect(crossSpawnCalls[3]).toEqual([
+      'git',
+      ['remote', 'add', resolvePluginName, resolvePluginRemoteUrl],
+      crossSpawnOptions,
+    ])
+    expect(crossSpawnCalls[4]).toEqual([
+      'git',
+      ['subtree', 'add', `--prefix=packages/${resolvePluginName}`, resolvePluginName, `v${resolvePluginVersion}`],
+      crossSpawnOptions,
+    ])
+    expect(crossSpawnCalls[5]).toEqual(['npm', ['run', 'bs'], crossSpawnOptions])
+    expect(crossSpawnCalls[6]).toEqual(['git', ['add', '.'], crossSpawnOptions])
+    expect(crossSpawnCalls[7]).toEqual(['git', ['commit', '-m', `Add plugins: ${pluginName}, ${resolvePluginName}`], crossSpawnOptions])
+
+    expect(crossSpawnCalls.length).toBe(8)
   })
 
   it('should success add select plugin', async () => {
@@ -91,12 +208,28 @@ describe('add plugins', () => {
         plugins: [],
         remotes: {},
       },
+      [pluginPackageJsonPath]: {
+        dependencies: {
+          [resolvePluginPackageName]: resolvePluginVersion,
+        },
+      },
     })
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      clone_url: pluginRemoteUrl,
+      cloneUrl: pluginRemoteUrl,
+    }, {
+      name: resolvePluginName,
+      cloneUrl: resolvePluginRemoteUrl,
     }])
+
+    mockGithubApi.setMockPluginsExtendable([resolvePluginName])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginPackageName,
+      },
+    })
 
     mockInquirer.setMockAnswers({
       selectedPlugins: [pluginName],
@@ -107,12 +240,21 @@ describe('add plugins', () => {
 
     await expect(addPluginsCommand.run({
       cwd,
+      projectPath: cwd,
     })).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'add', pluginName, pluginRemoteUrl], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, DEFAULT_PLUGIN_BRANCH], crossSpawnOptions])
+    expect(crossSpawnCalls[1]).toEqual([
+      'git',
+      ['remote', 'add', pluginName, pluginRemoteUrl],
+      crossSpawnOptions,
+    ])
+    expect(crossSpawnCalls[2]).toEqual([
+      'git',
+      ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, DEFAULT_PLUGIN_BRANCH],
+      crossSpawnOptions,
+    ])
     expect(crossSpawnCalls[3]).toEqual(['npm', ['run', 'bs'], crossSpawnOptions])
     expect(crossSpawnCalls[4]).toEqual(['git', ['add', '.'], crossSpawnOptions])
     expect(crossSpawnCalls[5]).toEqual(['git', ['commit', '-m', `Add plugins: ${pluginName}`], crossSpawnOptions])
@@ -132,8 +274,14 @@ describe('add plugins', () => {
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      clone_url: pluginRemoteUrl,
+      cloneUrl: pluginRemoteUrl,
     }])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginName.replace('rispa-', PLUGIN_PREFIX),
+      },
+    })
 
     const addPluginsCommand = new AddPluginsCommand([pluginName])
     addPluginsCommand.init()
@@ -143,7 +291,10 @@ describe('add plugins', () => {
     })).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual(['git', ['clone', pluginRemoteUrl], { cwd: pluginsPath, stdio: 'inherit' }])
+    expect(crossSpawnCalls[0]).toEqual(['git', ['clone', '--branch', DEFAULT_PLUGIN_DEV_BRANCH, pluginRemoteUrl], {
+      cwd: pluginsPath,
+      stdio: 'inherit',
+    }])
     expect(crossSpawnCalls[1]).toEqual(['npm', ['run', 'bs'], crossSpawnOptions])
 
     expect(crossSpawnCalls.length).toBe(2)
@@ -163,8 +314,14 @@ describe('add plugins', () => {
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      clone_url: pluginRemoteUrl,
+      cloneUrl: pluginRemoteUrl,
     }])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginName.replace('rispa-', PLUGIN_PREFIX),
+      },
+    })
 
     const addPluginsCommand = new AddPluginsCommand([pluginName])
     addPluginsCommand.init()
@@ -174,7 +331,10 @@ describe('add plugins', () => {
     })).rejects.toHaveProperty('errors.0.message', 'Can\'t clone repository')
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual(['git', ['clone', pluginRemoteUrl], { cwd: pluginsPath, stdio: 'inherit' }])
+    expect(crossSpawnCalls[0]).toEqual(['git', ['clone', '--branch', DEFAULT_PLUGIN_DEV_BRANCH, pluginRemoteUrl], {
+      cwd: pluginsPath,
+      stdio: 'inherit',
+    }])
     expect(crossSpawnCalls[1]).toEqual(['npm', ['run', 'bs'], crossSpawnOptions])
 
     expect(crossSpawnCalls.length).toBe(2)
@@ -191,8 +351,14 @@ describe('add plugins', () => {
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      clone_url: pluginRemoteUrl,
+      cloneUrl: pluginRemoteUrl,
     }])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginName.replace('rispa-', PLUGIN_PREFIX),
+      },
+    })
 
     const addPluginsCommand = new AddPluginsCommand([pluginName])
     addPluginsCommand.init()
@@ -253,8 +419,14 @@ describe('add plugins', () => {
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      clone_url: pluginRemoteUrl,
+      cloneUrl: pluginRemoteUrl,
     }])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginName.replace('rispa-', PLUGIN_PREFIX),
+      },
+    })
 
     const addPluginsCommand = new AddPluginsCommand([pluginName])
     addPluginsCommand.init()
@@ -323,8 +495,14 @@ describe('add plugins', () => {
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      clone_url: pluginRemoteUrl,
+      cloneUrl: pluginRemoteUrl,
     }])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginName.replace('rispa-', PLUGIN_PREFIX),
+      },
+    })
 
     const addPluginsCommand = new AddPluginsCommand([])
     addPluginsCommand.init()

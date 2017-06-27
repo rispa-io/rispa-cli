@@ -1,6 +1,9 @@
 const path = require('path')
 const chalk = require('chalk')
-const { addSubtree, cloneRepository: gitCloneRepository } = require('../utils/git')
+const {
+  addSubtree,
+  cloneRepository: gitCloneRepository,
+} = require('../utils/git')
 const { improveTask } = require('../utils/tasks')
 const { DEV_MODE } = require('../constants')
 
@@ -10,13 +13,13 @@ const checkCloneUrl = cloneUrl => {
   }
 }
 
-const cloneRepository = (pluginsPath, cloneUrl) => {
-  if (!gitCloneRepository(pluginsPath, cloneUrl)) {
+const cloneRepository = (pluginsPath, cloneUrl, version) => {
+  if (!gitCloneRepository(pluginsPath, cloneUrl, version)) {
     throw new Error('Can\'t clone repository')
   }
 }
 
-const createInstallPlugin = (name, cloneUrl) => improveTask({
+const createInstallPlugin = (name, cloneUrl, ref) => improveTask({
   title: `Install plugin with name ${chalk.cyan(name)}`,
   skip: ({ configuration: { plugins } }) => plugins.indexOf(name) !== -1 && 'Plugin already installed',
   before: ctx => {
@@ -36,7 +39,7 @@ const createInstallPlugin = (name, cloneUrl) => improveTask({
     } else {
       const pluginsRelPath = path.relative(projectPath, pluginsPath)
       const prefix = `${pluginsRelPath}/${name}`
-      addSubtree(projectPath, prefix, name, cloneUrl)
+      addSubtree(projectPath, prefix, name, cloneUrl, ref)
     }
 
     ctx.pluginsPath = pluginsPath

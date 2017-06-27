@@ -1,12 +1,12 @@
 const spawn = require('cross-spawn')
-const { DEFAULT_PLUGIN_BRANCH } = require('../constants')
+const { DEFAULT_PLUGIN_BRANCH, DEFAULT_PLUGIN_DEV_BRANCH } = require('../constants')
 
 const defaultSpawnOptions = cwd => ({ cwd, stdio: 'inherit' })
 
-const cloneRepository = (path, cloneUrl) => (
+const cloneRepository = (path, cloneUrl, ref = DEFAULT_PLUGIN_DEV_BRANCH) => (
   spawn.sync(
     'git',
-    ['clone', cloneUrl],
+    ['clone', '--branch', ref, cloneUrl],
     defaultSpawnOptions(path)
   ).status === 0
 )
@@ -35,20 +35,20 @@ const removeRemote = (path, remoteName) => (
   ).status === 0
 )
 
-const addSubtree = (path, prefix, remoteName, remoteUrl) => (
+const addSubtree = (path, prefix, remoteName, remoteUrl, ref = DEFAULT_PLUGIN_BRANCH) => (
   addRemote(path, remoteName, remoteUrl) &&
   spawn.sync(
     'git',
-    ['subtree', 'add', `--prefix=${prefix}`, remoteName, DEFAULT_PLUGIN_BRANCH],
+    ['subtree', 'add', `--prefix=${prefix}`, remoteName, ref],
     defaultSpawnOptions(path)
   ).status === 0
 )
 
-const updateSubtree = (path, prefix, remoteName, remoteUrl) => (
+const updateSubtree = (path, prefix, remoteName, remoteUrl, ref = DEFAULT_PLUGIN_BRANCH) => (
   addRemote(path, remoteName, remoteUrl) &&
   spawn.sync(
     'git',
-    ['subtree', 'pull', `--prefix=${prefix}`, remoteName, DEFAULT_PLUGIN_BRANCH],
+    ['subtree', 'pull', `--prefix=${prefix}`, remoteName, ref],
     defaultSpawnOptions(path)
   ).status === 0
 )
