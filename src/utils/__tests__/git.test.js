@@ -6,6 +6,7 @@ jest.mock('cross-spawn')
 const mockCrossSpawn = require.requireMock('cross-spawn')
 const {
   getRemotes,
+  addSubtree,
   push,
   addTag,
   tagInfo,
@@ -60,6 +61,27 @@ describe('git', () => {
 
       expect(mockCrossSpawn.sync)
         .toBeCalledWith('git', ['push'], spawnOptions)
+    })
+  })
+
+  describe('addSubtree', () => {
+    const path = '/projectPath'
+    const remoteName = 'remoteName'
+    const prefix = `packages/${remoteName}`
+    const remoteUrl = 'remoteUrl'
+
+    it('should throw error if failed add remote', () => {
+      mockCrossSpawn.setMockReject(true)
+
+      expect(() => addSubtree(path, prefix, remoteName, remoteUrl)).toThrow('Failed add remote')
+    })
+
+    it('should throw error if failed add subtree', () => {
+      mockCrossSpawn.sync
+        .mockImplementationOnce(() => ({ status: 0 }))
+        .mockImplementationOnce(() => ({ status: 1 }))
+
+      expect(() => addSubtree(path, prefix, remoteName, remoteUrl)).toThrow('Failed add subtree')
     })
   })
 
