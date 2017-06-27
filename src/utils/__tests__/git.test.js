@@ -4,7 +4,7 @@ jest.resetModules()
 jest.mock('cross-spawn')
 
 const mockCrossSpawn = require.requireMock('cross-spawn')
-const { getRemotes } = require.requireActual('../git')
+const { getRemotes, push } = require.requireActual('../git')
 
 describe('git', () => {
   beforeEach(() => {
@@ -44,6 +44,16 @@ describe('git', () => {
           push: 'https://github.com/rispa-io/rispa-redux.git',
         },
       })
+    })
+  })
+
+  describe('push', () => {
+    it('should work correctly', () => {
+      mockCrossSpawn.setMockReject(false)
+      push('/path')
+
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['push'], { cwd: '/path', stdio: 'inherit'})
     })
   })
 })
