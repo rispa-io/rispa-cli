@@ -27,7 +27,7 @@ describe('assemble command', () => {
       const command = new AssembleCommand()
       command.init()
 
-      expect(command.tasks.length).toBe(3)
+      expect(command.tasks.length).toBe(4)
     })
   })
 
