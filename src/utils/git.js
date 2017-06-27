@@ -1,15 +1,23 @@
 const spawn = require('cross-spawn')
 const { DEFAULT_PLUGIN_BRANCH } = require('../constants')
 
+const REMOTE_REGEXP = /([^\s]+)\s+([^\s]+)\s+\((\w+)\)/g
+
 const defaultSpawnOptions = cwd => ({ cwd, stdio: 'inherit' })
 
-const cloneRepository = (path, cloneUrl) => (
-  spawn.sync(
+const cloneRepository = (path, cloneUrl) => {
+  const result = spawn.sync(
     'git',
     ['clone', cloneUrl],
     defaultSpawnOptions(path)
-  ).status === 0
-)
+  )
+
+  if (result.status !== 0) {
+    throw new Error('Can\'t clone repository')
+  }
+
+  return result
+}
 
 const pullRepository = path => (
   spawn.sync(
@@ -34,6 +42,33 @@ const removeRemote = (path, remoteName) => (
     defaultSpawnOptions(path)
   ).status === 0
 )
+
+const getRemotes = path => {
+  const result = spawn.sync(
+    'git',
+    ['remote', '-v'],
+    { cwd: path, stdio: 'pipe' }
+  )
+
+  if (result.status === 1) {
+    throw new Error('Can\'t get remotes')
+  }
+
+  const output = String(result.output[1])
+  const remotes = {}
+
+  let match = REMOTE_REGEXP.exec(output)
+  while (match) {
+    const [, remoteName, remoteUrl, action] = match
+    if (!remotes[remoteName]) {
+      remotes[remoteName] = {}
+    }
+    remotes[remoteName][action] = remoteUrl
+    match = REMOTE_REGEXP.exec(output)
+  }
+
+  return remotes
+}
 
 const addSubtree = (path, prefix, remoteName, remoteUrl) => (
   addRemote(path, remoteName, remoteUrl) &&
@@ -140,6 +175,7 @@ module.exports = {
   commit,
   push,
   removeRemote,
+  getRemotes,
   getChanges,
   tagInfo,
   addTag,
