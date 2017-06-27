@@ -55,10 +55,6 @@
     "collectCoverageFrom": [
       "src/**/*.js"
     ],
-    "coveragePathIgnorePatterns": [
-      "/node_modules/",
-      "/build/"
-    ],
     "modulePathIgnorePatterns": [
       "<rootDir>/build/"
     ],
