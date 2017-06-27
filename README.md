@@ -119,6 +119,17 @@ It will remove plugin with name `plugins-name` from current run project.
 **because, it doesn't make changes to the client code**<br/>
 **and requires corrections by user.**
 
+### `ris assemble`
+
+To assemble plugins, run inside project directory:
+
+```sh
+ris assemble
+```
+<img width="682" alt="ris assemble" src="https://user-images.githubusercontent.com/6418302/27585679-e2ba310c-5b45-11e7-830a-179e32c0e3e3.png">
+
+It will install not installed plugins from `rispa.json`.
+
 ### Launch plugin script
 ### `ris run` or `ris`
 
