@@ -29,7 +29,10 @@ const findPlugin = (plugin, pluginList) => {
     }
   }
 
-  const currentPlugin = pluginList.find(({ name }) => name === plugin)
+  const currentPlugin = pluginList.find(({ name, packageName, packageAlias }) =>
+    name === plugin || packageName === plugin || packageAlias === plugin
+  )
+
   return currentPlugin || { name: plugin }
 }
 
