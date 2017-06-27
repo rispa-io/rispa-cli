@@ -99,7 +99,10 @@ describe('add plugins', () => {
     }])
 
     mockInquirer.setMockAnswers({
-      selectedPlugins: [pluginName],
+      selectedPlugins: [{
+        name: pluginName,
+        cloneUrl: pluginRemoteUrl,
+      }],
     })
 
     const addPluginsCommand = new AddPluginsCommand([])
