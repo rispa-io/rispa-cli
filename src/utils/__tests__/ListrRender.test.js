@@ -103,7 +103,7 @@ describe('Listr custom render', () => {
   it('should handle data event', () => {
     actionHandler({
       type: 'data',
-      data: 'data'
+      data: 'data',
     })
     expect(console.log.mock.calls[0][0]).toContain('data')
   })
