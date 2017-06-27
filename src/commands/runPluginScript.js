@@ -7,7 +7,7 @@ const { extendsTask } = require('../utils/tasks')
 const { ALL_PLUGINS } = require('../constants')
 
 class RunPluginScriptCommand extends Command {
-  constructor([pluginName, scriptName, ...args], options = {}) {
+  constructor([pluginName, scriptName, ...args], options) {
     super(options)
 
     this.state = {

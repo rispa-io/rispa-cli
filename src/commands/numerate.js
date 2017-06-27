@@ -9,7 +9,7 @@ const { tagInfo: gitTagInfo } = require('../utils/git')
 const { DEV_MODE } = require('../constants')
 
 class NumerateCommand extends Command {
-  constructor(options = {}) {
+  constructor(options) {
     super(options)
 
     this.state = {

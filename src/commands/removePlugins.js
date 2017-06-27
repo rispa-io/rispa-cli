@@ -10,7 +10,7 @@ const gitCheckChanges = require('../tasks/gitCheckChanges')
 const { commit: gitCommit } = require('../utils/git')
 
 class RemovePluginsCommand extends Command {
-  constructor([...pluginsToRemove], options = {}) {
+  constructor([...pluginsToRemove], options) {
     super(options)
 
     this.state = {

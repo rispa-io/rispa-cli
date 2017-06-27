@@ -8,7 +8,7 @@ const createCommitAndPushChanges = require('../tasks/commitAndPushChanges')
 const { checkDevMode } = require('../utils/tasks')
 
 class CommitCommand extends Command {
-  constructor(options = {}) {
+  constructor(options) {
     super(options)
 
     this.state = {
