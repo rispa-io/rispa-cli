@@ -53,8 +53,7 @@ describe('git', () => {
       push('/path')
 
       expect(mockCrossSpawn.sync)
-        .toBeCalledWith('git', ['push'], { cwd: '/path', stdio: 'inherit'})
+        .toBeCalledWith('git', ['push'], { cwd: '/path', stdio: 'inherit' })
     })
   })
 })
-
