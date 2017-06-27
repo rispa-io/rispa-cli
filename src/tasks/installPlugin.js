@@ -13,12 +13,6 @@ const checkCloneUrl = cloneUrl => {
   }
 }
 
-const cloneRepository = (pluginsPath, cloneUrl, version) => {
-  if (!gitCloneRepository(pluginsPath, cloneUrl, version)) {
-    throw new Error('Can\'t clone repository')
-  }
-}
-
 const createInstallPlugin = (name, cloneUrl, ref) => improveTask({
   title: `Install plugin with name ${chalk.cyan(name)}`,
   skip: ({ configuration: { plugins } }) => plugins.indexOf(name) !== -1 && 'Plugin already installed',
@@ -35,7 +29,7 @@ const createInstallPlugin = (name, cloneUrl, ref) => improveTask({
     checkCloneUrl(cloneUrl)
 
     if (mode === DEV_MODE) {
-      cloneRepository(pluginsPath, cloneUrl)
+      gitCloneRepository(pluginsPath, cloneUrl)
     } else {
       const pluginsRelPath = path.relative(projectPath, pluginsPath)
       const prefix = `${pluginsRelPath}/${name}`

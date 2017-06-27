@@ -18,6 +18,7 @@ const UpdatePluginsCommand = require('../src/commands/updatePlugins')
 const GenerateCommand = require('../src/commands/generate')
 const CommitCommand = require('../src/commands/commit')
 const NumerateCommand = require('../src/commands/numerate')
+const AssembleCommand = require('../src/commands/assemble')
 
 const logError = createDebug('rispa:error:cli')
 
@@ -30,6 +31,7 @@ const commands = [
   GenerateCommand,
   CommitCommand,
   NumerateCommand,
+  AssembleCommand,
 ]
 
 const parseArgs = args => {
