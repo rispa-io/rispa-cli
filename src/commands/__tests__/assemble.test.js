@@ -1,7 +1,11 @@
+jest.mock('fs-extra')
 jest.mock('../../tasks/readProjectConfiguration')
 jest.mock('../../tasks/restorePlugin')
+jest.mock('../../utils/git')
+
 const readProjectConfigurationTask = require.requireMock('../../tasks/readProjectConfiguration')
 const createRestorePluginTask = require.requireMock('../../tasks/restorePlugin')
+const mockGit = require.requireMock('../../utils/git')
 
 const AssembleCommand = require.requireActual('../assemble')
 
@@ -23,9 +27,7 @@ describe('assemble command', () => {
       const command = new AssembleCommand()
       command.init()
 
-      expect(command.tasks.length).toBe(2)
-      expect(command.tasks[0].title).toBe(readProjectConfigurationTask.title)
-      expect(command.tasks[1].title).toBe('Restore plugins')
+      expect(command.tasks.length).toBe(3)
     })
   })
 
@@ -33,7 +35,7 @@ describe('assemble command', () => {
     const cwd = '/cwd'
     const restorePluginTask = jest.fn()
 
-    it('should run tasks', done => {
+    it('should run tasks', async () => {
       readProjectConfigurationTask.task.mockImplementation(ctx => {
         ctx.configuration = {
           plugins: ['rispa-core'],
@@ -48,16 +50,31 @@ describe('assemble command', () => {
         renderer: ListrEmptyRender,
       })
       command.init()
-      command.run({
+      const result = await command.run({
         cwd,
         projectPath: cwd,
-      }).then(result => {
-        expect(result).toBeDefined()
-        expect(readProjectConfigurationTask.task).toBeCalled()
-        expect(createRestorePluginTask.mock.calls[0][0]).toBe('rispa-core')
-
-        done()
       })
+
+      expect(result).toBeDefined()
+      expect(readProjectConfigurationTask.task).toBeCalled()
+      expect(createRestorePluginTask.mock.calls[0][0]).toBe('rispa-core')
+    })
+
+    it('should throw error working tree has modifications', async () => {
+      mockGit.getChanges.mockImplementation(() => ('changes'))
+
+      const command = new AssembleCommand({
+        renderer: ListrEmptyRender,
+      })
+      command.init()
+
+      await expect(command.run({
+        cwd,
+        projectPath: cwd,
+      })).rejects.toHaveProperty(
+        'message',
+        'Working tree has modifications. Cannot restore plugins'
+      )
     })
   })
 })
