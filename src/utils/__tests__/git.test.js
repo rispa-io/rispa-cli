@@ -4,7 +4,7 @@ jest.resetModules()
 jest.mock('cross-spawn')
 
 const mockCrossSpawn = require.requireMock('cross-spawn')
-const { getRemotes } = require.requireActual('../git')
+const { getRemotes, addSubtree } = require.requireActual('../git')
 
 describe('git', () => {
   beforeEach(() => {
@@ -44,6 +44,27 @@ describe('git', () => {
           push: 'https://github.com/rispa-io/rispa-redux.git',
         },
       })
+    })
+  })
+
+  describe('addSubtree', () => {
+    const path = '/projectPath'
+    const remoteName = 'remoteName'
+    const prefix = `packages/${remoteName}`
+    const remoteUrl = 'remoteUrl'
+
+    it('should throw error if failed add remote', () => {
+      mockCrossSpawn.setMockReject(true)
+
+      expect(() => addSubtree(path, prefix, remoteName, remoteUrl)).toThrow('Failed add remote')
+    })
+
+    it('should throw error if failed add subtree', () => {
+      mockCrossSpawn.sync
+        .mockImplementationOnce(() => ({ status: 0 }))
+        .mockImplementationOnce(() => ({ status: 1 }))
+
+      expect(() => addSubtree(path, prefix, remoteName, remoteUrl)).toThrow('Failed add subtree')
     })
   })
 })
