@@ -1,17 +1,17 @@
 const path = require('path')
-const chalk = require('chalk')
+const { cyan } = require('chalk')
 const { addSubtree, cloneRepository: gitCloneRepository } = require('../utils/git')
 const { improveTask } = require('../utils/tasks')
 const { DEV_MODE } = require('../constants')
 
 const checkCloneUrl = cloneUrl => {
   if (!cloneUrl.endsWith('.git')) {
-    throw new Error(`Invalid plugin remote url ${chalk.cyan(cloneUrl)}`)
+    throw new Error(`Invalid plugin remote url ${cyan(cloneUrl)}`)
   }
 }
 
 const createInstallPlugin = (name, cloneUrl) => improveTask({
-  title: `Install plugin with name ${chalk.cyan(name)}`,
+  title: `Install plugin with name ${cyan(name)}`,
   skip: ({ configuration: { plugins } }) => plugins.indexOf(name) !== -1 && 'Plugin already installed',
   before: ctx => {
     if (!ctx.installedPlugins) {
