@@ -18,15 +18,17 @@ const extractPluginNameFromUrl = cloneUrl => {
   return parts[parts.length - 1].replace(/\.git$/, '')
 }
 
-const findPlugin = (plugins, plugin) => {
-  if (plugin.startsWith(PLUGIN_GIT_PREFIX)) {
+const findPlugin = (plugin, pluginList) => {
+  if (typeof plugin === 'object') {
+    return plugin
+  } else if (plugin.startsWith(PLUGIN_GIT_PREFIX)) {
     return {
       name: extractPluginNameFromUrl(plugin),
       cloneUrl: plugin.replace(PLUGIN_GIT_PREFIX, ''),
     }
   }
 
-  const currentPlugin = plugins.find(({ name }) => name === plugin)
+  const currentPlugin = pluginList.find(({ name }) => name === plugin)
   return currentPlugin || { name: plugin }
 }
 
@@ -42,11 +44,11 @@ class AddPluginsCommand extends Command {
   }
 
   installPlugins(ctx) {
-    const { plugins, configuration: { pluginsPath } } = ctx
+    const { plugins: pluginList, configuration: { pluginsPath } } = ctx
 
     fs.ensureDirSync(pluginsPath)
 
-    const pluginsToInstall = this.state.pluginsToInstall.map(plugin => findPlugin(plugins, plugin))
+    const pluginsToInstall = this.state.pluginsToInstall.map(plugin => findPlugin(plugin, pluginList))
 
     const invalidPlugins = pluginsToInstall.filter(plugin => !plugin.cloneUrl).map(plugin => plugin.name)
     if (invalidPlugins.length) {
