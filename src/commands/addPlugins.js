@@ -34,8 +34,8 @@ const findPlugin = (plugin, pluginList) => {
 }
 
 class AddPluginsCommand extends Command {
-  constructor([...pluginsToInstall]) {
-    super({})
+  constructor([...pluginsToInstall], options = {}) {
+    super(options)
 
     this.state = {
       pluginsToInstall,

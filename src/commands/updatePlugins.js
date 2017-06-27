@@ -11,8 +11,8 @@ const { commit: gitCommit } = require('../utils/git')
 const { ALL_PLUGINS } = require('../constants')
 
 class RemovePluginsCommand extends Command {
-  constructor([...pluginsToUpdate]) {
-    super({})
+  constructor([...pluginsToUpdate], options = {}) {
+    super(options)
 
     this.state = {
       pluginsToUpdate,

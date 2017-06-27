@@ -2,27 +2,9 @@ const Command = require.requireActual('../Command')
 const Listr = require.requireActual('listr')
 
 describe('Command', () => {
-  let originalConsoleLog
-
-  beforeAll(() => {
-    originalConsoleLog = console.log
-  })
-
-  afterAll(() => {
-    Object.defineProperty(console, 'log', {
-      value: originalConsoleLog,
-    })
-  })
-
-  beforeEach(() => {
-    Object.defineProperty(console, 'log', {
-      value: jest.fn(),
-    })
-  })
-
   it('should success run tasks', async () => {
     const command = new Command({
-      renderer: 'verbose',
+      renderer: 'silent',
     })
 
     const context = {
@@ -32,13 +14,13 @@ describe('Command', () => {
     const task = {
       title: 'Single task',
       before: jest.fn(),
-      task: jest.fn(() => Promise.resolve()),
+      task: jest.fn(),
       after: jest.fn(),
     }
 
     const subtask = {
       title: 'Subtask task',
-      task: jest.fn(() => Promise.resolve()),
+      task: jest.fn(),
     }
 
     const taskWithSubtasks = {
@@ -54,11 +36,7 @@ describe('Command', () => {
     expect(task.before.mock.calls[0][0]).toBe(context)
     expect(task.task.mock.calls[0][0]).toBe(context)
     expect(task.after.mock.calls[0][0]).toBe(context)
-
     expect(subtask.task.mock.calls[0][0]).toBe(context)
-
     expect(taskWithSubtasks.task.mock.calls[0][0]).toBe(context)
-
-    expect(console.log).toHaveBeenCalledTimes(6)
   })
 })

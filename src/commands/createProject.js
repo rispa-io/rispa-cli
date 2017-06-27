@@ -15,8 +15,8 @@ const resolvePluginsDeps = require('../tasks/resolvePluginsDeps')
 const { skipDevMode } = require('../utils/tasks')
 
 class CreateProjectCommand extends Command {
-  constructor([projectName, remoteUrl]) {
-    super({})
+  constructor([projectName, remoteUrl], options = {}) {
+    super(options)
 
     this.state = {
       projectName: projectName && performProjectName(projectName),

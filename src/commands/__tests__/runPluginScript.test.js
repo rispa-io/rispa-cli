@@ -17,23 +17,7 @@ const mockInquirer = require.requireMock('inquirer')
 const RunPluginScriptCommand = require.requireActual('../runPluginScript')
 
 describe('run plugin script', () => {
-  let originalConsoleLog
-
-  beforeAll(() => {
-    originalConsoleLog = console.log
-  })
-
-  afterAll(() => {
-    Object.defineProperty(console, 'log', {
-      value: originalConsoleLog,
-    })
-  })
-
   beforeEach(() => {
-    Object.defineProperty(console, 'log', {
-      value: jest.fn(),
-    })
-
     mockCrossSpawn.sync.mockClear()
     mockCrossSpawn.setMockOutput()
     mockCrossSpawn.setMockReject(false)
@@ -47,6 +31,14 @@ describe('run plugin script', () => {
   const pluginPath = path.resolve(cwd, `./${pluginName}`)
   const args = [1, 2, 'test']
 
+  const runCommand = (params, options) => {
+    const command = new RunPluginScriptCommand(params, { renderer: 'silent' })
+    command.init()
+    return command.run(Object.assign({
+      cwd,
+    }, options))
+  }
+
   it('should success run', async () => {
     mockScanPlugins.setMockPlugins({
       [pluginName]: {
@@ -56,12 +48,8 @@ describe('run plugin script', () => {
       },
     })
 
-    const runPluginScriptCommand = new RunPluginScriptCommand([pluginName, scriptName, ...args])
-    runPluginScriptCommand.init()
-
-    await expect(runPluginScriptCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand([pluginName, scriptName, ...args]))
+      .resolves.toBeDefined()
 
     expect(mockCrossSpawn.sync).toBeCalledWith(
       'npm', ['run', scriptName, ...args],
@@ -78,13 +66,8 @@ describe('run plugin script', () => {
       },
     })
 
-    const runPluginScriptCommand = new RunPluginScriptCommand([pluginName, scriptName, ...args])
-    runPluginScriptCommand.init()
-
-    await expect(runPluginScriptCommand.run({
-      cwd,
-      yarn: true,
-    })).resolves.toBeDefined()
+    await expect(runCommand([pluginName, scriptName, ...args], { yarn: true }))
+      .resolves.toBeDefined()
 
     expect(mockCrossSpawn.sync).toBeCalledWith(
       'yarn', [scriptName, ...args],
@@ -106,12 +89,7 @@ describe('run plugin script', () => {
       scriptName,
     })
 
-    const runPluginScriptCommand = new RunPluginScriptCommand([])
-    runPluginScriptCommand.init()
-
-    await expect(runPluginScriptCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand([])).resolves.toBeDefined()
 
     expect(mockCrossSpawn.sync).toBeCalledWith(
       'npm', ['run', scriptName],
@@ -128,12 +106,8 @@ describe('run plugin script', () => {
       },
     })
 
-    const runPluginScriptCommand = new RunPluginScriptCommand([ALL_PLUGINS, scriptName, ...args])
-    runPluginScriptCommand.init()
-
-    await expect(runPluginScriptCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand([ALL_PLUGINS, scriptName, ...args]))
+      .resolves.toBeDefined()
 
     expect(mockCrossSpawn.sync).toBeCalledWith(
       'npm', ['run', scriptName, ...args],
@@ -150,23 +124,15 @@ describe('run plugin script', () => {
       },
     })
 
-    const runPluginScriptCommand = new RunPluginScriptCommand([ALL_PLUGINS, scriptName, ...args])
-    runPluginScriptCommand.init()
-
-    await expect(runPluginScriptCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', `Can't find script '${scriptName}' in plugins`)
+    await expect(runCommand([ALL_PLUGINS, scriptName, ...args]))
+      .rejects.toHaveProperty('message', `Can't find script '${scriptName}' in plugins`)
   })
 
   it('should failed run - cant find plugins', async () => {
     mockScanPlugins.setMockPlugins({})
 
-    const runPluginScriptCommand = new RunPluginScriptCommand([pluginName, scriptName])
-    runPluginScriptCommand.init()
-
-    await expect(runPluginScriptCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Can\'t find plugins')
+    await expect(runCommand([pluginName, scriptName]))
+      .rejects.toHaveProperty('message', 'Can\'t find plugins')
   })
 
   it('should failed run - cant find plugin', async () => {
@@ -178,12 +144,8 @@ describe('run plugin script', () => {
       },
     })
 
-    const runPluginScriptCommand = new RunPluginScriptCommand([pluginName, scriptName])
-    runPluginScriptCommand.init()
-
-    await expect(runPluginScriptCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Can\'t find plugin')
+    await expect(runCommand([pluginName, scriptName]))
+      .rejects.toHaveProperty('message', 'Can\'t find plugin')
   })
 
   it('should failed run - cant find script with name', async () => {
@@ -195,12 +157,8 @@ describe('run plugin script', () => {
       },
     })
 
-    const runPluginScriptCommand = new RunPluginScriptCommand([pluginName, scriptName])
-    runPluginScriptCommand.init()
-
-    await expect(runPluginScriptCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', `Can't find script '${scriptName}' in plugin with name '${pluginName}'`)
+    await expect(runCommand([pluginName, scriptName]))
+      .rejects.toHaveProperty('message', `Can't find script '${scriptName}' in plugin with name '${pluginName}'`)
   })
 
   it('should failed run with select plugin - cant find plugins with scripts', async () => {
@@ -212,12 +170,8 @@ describe('run plugin script', () => {
       },
     })
 
-    const runPluginScriptCommand = new RunPluginScriptCommand([])
-    runPluginScriptCommand.init()
-
-    await expect(runPluginScriptCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Can\'t find plugins with scripts')
+    await expect(runCommand([]))
+      .rejects.toHaveProperty('message', 'Can\'t find plugins with scripts')
   })
 
   it('should failed run - failed run script', async () => {
@@ -231,11 +185,7 @@ describe('run plugin script', () => {
 
     mockCrossSpawn.setMockReject(true)
 
-    const runPluginScriptCommand = new RunPluginScriptCommand([pluginName, scriptName, ...args])
-    runPluginScriptCommand.init()
-
-    await expect(runPluginScriptCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('errors.0.message', 'Failed run plugin script')
+    await expect(runCommand([pluginName, scriptName, ...args]))
+      .rejects.toHaveProperty('errors.0.message', 'Failed run plugin script')
   })
 })

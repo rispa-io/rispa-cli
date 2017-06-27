@@ -21,6 +21,9 @@ describe('numerate', () => {
 
   beforeAll(() => {
     originalConsoleLog = console.log
+    Object.defineProperty(console, 'log', {
+      value: jest.fn(),
+    })
   })
 
   afterAll(() => {
@@ -30,10 +33,6 @@ describe('numerate', () => {
   })
 
   beforeEach(() => {
-    Object.defineProperty(console, 'log', {
-      value: jest.fn(),
-    })
-
     mockCrossSpawn.sync.mockClear()
     mockCrossSpawn.setMockOutput()
     mockCrossSpawn.setMockReject(false)
@@ -53,6 +52,14 @@ describe('numerate', () => {
   const tagDescription = 'v2.4.11-2-aaaaaaaa'
   const nextVersion = '2.4.12'
 
+  const runCommand = options => {
+    const command = new NumerateCommand({ renderer: 'silent' })
+    command.init()
+    return command.run(Object.assign({
+      cwd,
+    }, options))
+  }
+
   it('should numerate project', async () => {
     mockFs.setMockJson({
       [rispaJsonPath]: {
@@ -70,12 +77,7 @@ describe('numerate', () => {
       nextVersion,
     })
 
-    const numerateCommand = new NumerateCommand([])
-    numerateCommand.init()
-
-    await expect(numerateCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand()).resolves.toBeDefined()
 
     expect(mockInquirer.prompt.mock.calls[0][0][0].choices).toEqual([
       {
@@ -125,13 +127,7 @@ describe('numerate', () => {
       nextVersion,
     })
 
-    const numerateCommand = new NumerateCommand([])
-    numerateCommand.init()
-
-    await expect(numerateCommand.run({
-      cwd,
-      mode: DEV_MODE,
-    }).catch(e => console.error(e))).resolves.toBeDefined()
+    await expect(runCommand({ mode: DEV_MODE })).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual([
@@ -169,13 +165,7 @@ describe('numerate', () => {
       nextVersion: false,
     })
 
-    const numerateCommand = new NumerateCommand([])
-    numerateCommand.init()
-
-    await expect(numerateCommand.run({
-      cwd,
-      mode: DEV_MODE,
-    })).resolves.toBeDefined()
+    await expect(runCommand({ mode: DEV_MODE })).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual([
@@ -217,12 +207,8 @@ describe('numerate', () => {
 
     mockCrossSpawn.setMockReject(true)
 
-    const numerateCommand = new NumerateCommand([])
-    numerateCommand.init()
-
-    await expect(numerateCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Failed git add tag')
+    await expect(runCommand())
+      .rejects.toHaveProperty('message', 'Failed git add tag')
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual([
@@ -262,13 +248,7 @@ describe('numerate', () => {
         output: [null, new Buffer('')],
       }))
 
-    const numerateCommand = new NumerateCommand([])
-    numerateCommand.init()
-
-    await expect(numerateCommand.run({
-      cwd,
-      mode: DEV_MODE,
-    })).resolves.toBeDefined()
+    await expect(runCommand({ mode: DEV_MODE })).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual([

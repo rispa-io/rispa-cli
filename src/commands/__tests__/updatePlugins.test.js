@@ -15,23 +15,7 @@ const mockFs = require.requireMock('fs-extra')
 const UpdatePluginsCommand = require.requireActual('../updatePlugins')
 
 describe('update plugins', () => {
-  let originalConsoleLog
-
-  beforeAll(() => {
-    originalConsoleLog = console.log
-  })
-
-  afterAll(() => {
-    Object.defineProperty(console, 'log', {
-      value: originalConsoleLog,
-    })
-  })
-
   beforeEach(() => {
-    Object.defineProperty(console, 'log', {
-      value: jest.fn(),
-    })
-
     mockCrossSpawn.sync.mockClear()
     mockCrossSpawn.setMockOutput()
     mockCrossSpawn.setMockReject(false)
@@ -49,6 +33,14 @@ describe('update plugins', () => {
   const crossSpawnOptions = { cwd, stdio: 'inherit' }
   const pluginsPath = path.resolve(cwd, './packages')
   const pluginPath = path.resolve(pluginsPath, `./${pluginName}`)
+
+  const runCommand = params => {
+    const command = new UpdatePluginsCommand(params, { renderer: 'silent' })
+    command.init()
+    return command.run({
+      cwd,
+    })
+  }
 
   const expectSuccessUpdateSinglePlugin = crossSpawnCalls => {
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
@@ -74,12 +66,7 @@ describe('update plugins', () => {
       },
     })
 
-    const updatePluginsCommand = new UpdatePluginsCommand([pluginName])
-    updatePluginsCommand.init()
-
-    await expect(updatePluginsCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand([pluginName])).resolves.toBeDefined()
 
     expectSuccessUpdateSinglePlugin(mockCrossSpawn.sync.mock.calls)
   })
@@ -96,12 +83,8 @@ describe('update plugins', () => {
       },
     })
 
-    const updatePluginsCommand = new UpdatePluginsCommand([pluginName])
-    updatePluginsCommand.init()
-
-    await expect(updatePluginsCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('errors.0.message', 'Not a git repository: .git')
+    await expect(runCommand([pluginName]))
+      .rejects.toHaveProperty('errors.0.message', 'Not a git repository: .git')
   })
 
   it('should success update single plugin in dev mode', async () => {
@@ -118,12 +101,7 @@ describe('update plugins', () => {
 
     mockFs.setMockFiles([path.resolve(pluginPath, './.git')])
 
-    const updatePluginsCommand = new UpdatePluginsCommand([pluginName])
-    updatePluginsCommand.init()
-
-    await expect(updatePluginsCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand([pluginName])).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['pull'], { cwd: pluginPath, stdio: 'inherit' }])
@@ -145,12 +123,7 @@ describe('update plugins', () => {
       },
     })
 
-    const updatePluginsCommand = new UpdatePluginsCommand([ALL_PLUGINS])
-    updatePluginsCommand.init()
-
-    await expect(updatePluginsCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand([ALL_PLUGINS])).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
@@ -185,12 +158,7 @@ describe('update plugins', () => {
       selectedPlugins: [pluginName],
     })
 
-    const updatePluginsCommand = new UpdatePluginsCommand([])
-    updatePluginsCommand.init()
-
-    await expect(updatePluginsCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand([])).resolves.toBeDefined()
 
     expectSuccessUpdateSinglePlugin(mockCrossSpawn.sync.mock.calls)
   })
@@ -204,12 +172,8 @@ describe('update plugins', () => {
       },
     })
 
-    const updatePluginsCommand = new UpdatePluginsCommand([pluginName])
-    updatePluginsCommand.init()
-
-    await expect(updatePluginsCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', `Can't find plugins with names:\n - ${pluginName}`)
+    await expect(runCommand([pluginName]))
+      .rejects.toHaveProperty('message', `Can't find plugins with names:\n - ${pluginName}`)
   })
 
   it('should failed update plugins - tree has modifications', async () => {
@@ -223,12 +187,8 @@ describe('update plugins', () => {
 
     mockCrossSpawn.setMockOutput([null, new Buffer('M test.js')])
 
-    const updatePluginsCommand = new UpdatePluginsCommand([pluginName])
-    updatePluginsCommand.init()
-
-    await expect(updatePluginsCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Working tree has modifications. Cannot update plugins')
+    await expect(runCommand([pluginName]))
+      .rejects.toHaveProperty('message', 'Working tree has modifications. Cannot update plugins')
   })
 
   it('should failed update plugin - failed update subtree', async () => {
@@ -244,11 +204,7 @@ describe('update plugins', () => {
 
     mockCrossSpawn.setMockReject(true)
 
-    const updatePluginsCommand = new UpdatePluginsCommand([pluginName])
-    updatePluginsCommand.init()
-
-    await expect(updatePluginsCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('errors.0.message', `Failed update subtree '${pluginRemoteUrl}'`)
+    await expect(runCommand([pluginName]))
+      .rejects.toHaveProperty('errors.0.message', `Failed update subtree '${pluginRemoteUrl}'`)
   })
 })

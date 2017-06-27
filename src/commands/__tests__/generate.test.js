@@ -20,23 +20,7 @@ const mockScanPlugins = require.requireMock('../../tasks/scanPlugins')
 const GenerateCommand = require.requireActual('../generate')
 
 describe('generate', () => {
-  let originalConsoleLog
-
-  beforeAll(() => {
-    originalConsoleLog = console.log
-  })
-
-  afterAll(() => {
-    Object.defineProperty(console, 'log', {
-      value: originalConsoleLog,
-    })
-  })
-
   beforeEach(() => {
-    Object.defineProperty(console, 'log', {
-      value: jest.fn(),
-    })
-
     mockCrossSpawn.sync.mockClear()
     mockCrossSpawn.setMockOutput()
     mockCrossSpawn.setMockReject(false)
@@ -54,6 +38,14 @@ describe('generate', () => {
   const pluginPath = path.resolve(pluginsPath, `./${pluginName}`)
   const generatorName = 'generatorName'
   const generatorsPath = path.resolve(pluginPath, PLUGIN_GENERATORS_PATH)
+
+  const runCommand = params => {
+    const command = new GenerateCommand(params, { renderer: 'silent' })
+    command.init()
+    return command.run({
+      cwd,
+    })
+  }
 
   it('should success run generator', async () => {
     mockScanPlugins.setMockPlugins({
@@ -85,12 +77,8 @@ describe('generate', () => {
       },
     })
 
-    const generateCommand = new GenerateCommand([pluginName, generatorName, ...args])
-    generateCommand.init()
-
-    await expect(generateCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand([pluginName, generatorName, ...args]))
+      .resolves.toBeDefined()
 
     expect(generatorRun.mock.calls[0][0]).toHaveProperty('configuration', configuration)
     expect(generatorRun.mock.calls[0][0]).toHaveProperty('projectPath', cwd)
@@ -132,12 +120,7 @@ describe('generate', () => {
       },
     })
 
-    const generateCommand = new GenerateCommand([])
-    generateCommand.init()
-
-    await expect(generateCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand([])).resolves.toBeDefined()
 
     expect(generatorRun.mock.calls[0][0]).toHaveProperty('configuration', configuration)
     expect(generatorRun.mock.calls[0][0]).toHaveProperty('projectPath', cwd)
@@ -157,12 +140,8 @@ describe('generate', () => {
       },
     })
 
-    const generateCommand = new GenerateCommand([pluginName, generatorName])
-    generateCommand.init()
-
-    await expect(generateCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', `Can't find plugin with name ${chalk.cyan(pluginName)}`)
+    await expect(runCommand([pluginName, generatorName]))
+      .rejects.toHaveProperty('message', `Can't find plugin with name ${chalk.cyan(pluginName)}`)
   })
 
   it('should failed run generator - cant find generators', async () => {
@@ -187,12 +166,8 @@ describe('generate', () => {
 
     mockGenerator.setMockGenerators({})
 
-    const generateCommand = new GenerateCommand([pluginName, generatorName])
-    generateCommand.init()
-
-    await expect(generateCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Can\'t find generators')
+    await expect(runCommand([pluginName, generatorName]))
+      .rejects.toHaveProperty('message', 'Can\'t find generators')
   })
 
   it('should failed run generator - cant find generator', async () => {
@@ -219,11 +194,7 @@ describe('generate', () => {
       test: {},
     })
 
-    const generateCommand = new GenerateCommand([pluginName, generatorName])
-    generateCommand.init()
-
-    await expect(generateCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', `Can't find generator with name ${chalk.cyan(generatorName)}`)
+    await expect(runCommand([pluginName, generatorName]))
+      .rejects.toHaveProperty('message', `Can't find generator with name ${chalk.cyan(generatorName)}`)
   })
 })

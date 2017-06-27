@@ -15,23 +15,7 @@ const mockFs = require.requireMock('fs-extra')
 const RemovePluginsCommand = require.requireActual('../removePlugins')
 
 describe('remove plugins', () => {
-  let originalConsoleLog
-
-  beforeAll(() => {
-    originalConsoleLog = console.log
-  })
-
-  afterAll(() => {
-    Object.defineProperty(console, 'log', {
-      value: originalConsoleLog,
-    })
-  })
-
   beforeEach(() => {
-    Object.defineProperty(console, 'log', {
-      value: jest.fn(),
-    })
-
     mockCrossSpawn.sync.mockClear()
     mockCrossSpawn.setMockOutput()
     mockInquirer.setMockAnswers({})
@@ -48,6 +32,14 @@ describe('remove plugins', () => {
   const crossSpawnOptions = { cwd, stdio: 'inherit' }
   const pluginsPath = path.resolve(cwd, './packages')
 
+  const runCommand = params => {
+    const command = new RemovePluginsCommand(params, { renderer: 'silent' })
+    command.init()
+    return command.run({
+      cwd,
+    })
+  }
+
   it('should success remove plugin', async () => {
     mockFs.setMockJson({
       [rispaJsonPath]: {
@@ -59,12 +51,7 @@ describe('remove plugins', () => {
       },
     })
 
-    const removePluginsCommand = new RemovePluginsCommand([pluginName])
-    removePluginsCommand.init()
-
-    await expect(removePluginsCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand([pluginName])).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
@@ -87,12 +74,7 @@ describe('remove plugins', () => {
       },
     })
 
-    const removePluginsCommand = new RemovePluginsCommand([pluginName])
-    removePluginsCommand.init()
-
-    await expect(removePluginsCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand([pluginName])).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
 
@@ -114,12 +96,7 @@ describe('remove plugins', () => {
       selectedPlugins: [pluginName],
     })
 
-    const removePluginsCommand = new RemovePluginsCommand([])
-    removePluginsCommand.init()
-
-    await expect(removePluginsCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand([])).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
@@ -145,12 +122,7 @@ describe('remove plugins', () => {
       },
     })
 
-    const removePluginsCommand = new RemovePluginsCommand([pluginName, pluginName2])
-    removePluginsCommand.init()
-
-    await expect(removePluginsCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand([pluginName, pluginName2])).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
@@ -171,12 +143,8 @@ describe('remove plugins', () => {
       },
     })
 
-    const removePluginsCommand = new RemovePluginsCommand([pluginName])
-    removePluginsCommand.init()
-
-    await expect(removePluginsCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', `Can't find plugins with names:\n - ${pluginName}`)
+    await expect(runCommand([pluginName]))
+      .rejects.toHaveProperty('message', `Can't find plugins with names:\n - ${pluginName}`)
   })
 
   it('should failed remove plugin - tree has modifications', async () => {
@@ -190,12 +158,8 @@ describe('remove plugins', () => {
 
     mockCrossSpawn.setMockOutput([null, new Buffer('M test.js')])
 
-    const removePluginsCommand = new RemovePluginsCommand([pluginName])
-    removePluginsCommand.init()
-
-    await expect(removePluginsCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Working tree has modifications. Cannot remove plugins')
+    await expect(runCommand([pluginName]))
+      .rejects.toHaveProperty('message', 'Working tree has modifications. Cannot remove plugins')
   })
 
   it('should failed remove plugin - error during remove', async () => {
@@ -217,11 +181,7 @@ describe('remove plugins', () => {
       },
     })
 
-    const removePluginsCommand = new RemovePluginsCommand([pluginName])
-    removePluginsCommand.init()
-
-    await expect(removePluginsCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('errors.0.message', errorMessage)
+    await expect(runCommand([pluginName]))
+      .rejects.toHaveProperty('errors.0.message', errorMessage)
   })
 })

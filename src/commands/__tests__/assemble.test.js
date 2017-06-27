@@ -9,13 +9,6 @@ const mockGit = require.requireMock('../../utils/git')
 
 const AssembleCommand = require.requireActual('../assemble')
 
-class ListrEmptyRender {
-  constructor() {
-    this.render = () => {}
-    this.end = () => {}
-  }
-}
-
 describe('assemble command', () => {
   beforeEach(() => {
     jest.resetAllMocks()
@@ -47,7 +40,7 @@ describe('assemble command', () => {
       }))
 
       const command = new AssembleCommand({
-        renderer: ListrEmptyRender,
+        renderer: 'silent',
       })
       command.init()
       const result = await command.run({
@@ -64,7 +57,7 @@ describe('assemble command', () => {
       mockGit.getChanges.mockImplementation(() => ('changes'))
 
       const command = new AssembleCommand({
-        renderer: ListrEmptyRender,
+        renderer: 'silent',
       })
       command.init()
 

@@ -21,6 +21,9 @@ describe('commit', () => {
 
   beforeAll(() => {
     originalConsoleLog = console.log
+    Object.defineProperty(console, 'log', {
+      value: jest.fn(),
+    })
   })
 
   afterAll(() => {
@@ -30,10 +33,6 @@ describe('commit', () => {
   })
 
   beforeEach(() => {
-    Object.defineProperty(console, 'log', {
-      value: jest.fn(),
-    })
-
     mockCrossSpawn.sync.mockClear()
     mockCrossSpawn.setMockOutput()
     mockCrossSpawn.setMockReject(false)
@@ -51,6 +50,14 @@ describe('commit', () => {
   const commitMessage = 'Test commit message'
   const crossSpawnOptions = { cwd, stdio: 'inherit' }
   const crossSpawnPluginOptions = { cwd: pluginPath, stdio: 'inherit' }
+
+  const runCommand = () => {
+    const command = new CommitCommand({ renderer: 'silent' })
+    command.init()
+    return command.run({
+      cwd,
+    })
+  }
 
   it('should commit changes', async () => {
     mockFs.setMockJson({
@@ -70,12 +77,7 @@ describe('commit', () => {
     const changes = 'M test.js'
     mockCrossSpawn.setMockOutput([null, new Buffer(changes)])
 
-    const commitCommand = new CommitCommand([])
-    commitCommand.init()
-
-    await expect(commitCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand()).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
 
@@ -106,12 +108,7 @@ describe('commit', () => {
     const changes = 'M test.js'
     mockCrossSpawn.setMockOutput([null, new Buffer(changes)])
 
-    const commitCommand = new CommitCommand([])
-    commitCommand.init()
-
-    await expect(commitCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand()).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
 
@@ -143,12 +140,7 @@ describe('commit', () => {
       commitMessage,
     })
 
-    const commitCommand = new CommitCommand([])
-    commitCommand.init()
-
-    await expect(commitCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand()).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
 
@@ -177,12 +169,7 @@ describe('commit', () => {
     const changes = 'M test.js'
     mockCrossSpawn.setMockOutput([null, new Buffer(changes)])
 
-    const commitCommand = new CommitCommand([])
-    commitCommand.init()
-
-    await expect(commitCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand()).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
 
@@ -217,12 +204,8 @@ describe('commit', () => {
 
     mockCrossSpawn.setMockReject(true)
 
-    const commitCommand = new CommitCommand([])
-    commitCommand.init()
-
-    await expect(commitCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Failed git commit')
+    await expect(runCommand())
+      .rejects.toHaveProperty('message', 'Failed git commit')
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
 
@@ -259,12 +242,8 @@ describe('commit', () => {
 
     mockCrossSpawn.setMockReject(true)
 
-    const commitCommand = new CommitCommand([])
-    commitCommand.init()
-
-    await expect(commitCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Failed git push')
+    await expect(runCommand())
+      .rejects.toHaveProperty('message', 'Failed git push')
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
 
