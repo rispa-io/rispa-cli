@@ -29,9 +29,9 @@ describe('scan plugins', () => {
   })
 
   beforeEach(() => {
-    // Object.defineProperty(console, 'log', {
-    //   value: jest.fn(),
-    // })
+    Object.defineProperty(console, 'log', {
+      value: jest.fn(),
+    })
 
     mockFs.setMockFiles([])
     mockFs.setMockJson({})
