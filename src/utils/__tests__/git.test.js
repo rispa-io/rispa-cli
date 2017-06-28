@@ -6,6 +6,7 @@ jest.mock('cross-spawn')
 const mockCrossSpawn = require.requireMock('cross-spawn')
 const {
   getRemotes,
+  removeRemote,
   addSubtree,
   push,
   addTag,
@@ -51,6 +52,15 @@ describe('git', () => {
           push: 'https://github.com/rispa-io/rispa-redux.git',
         },
       })
+    })
+  })
+
+  describe('removeRemote', () => {
+    it('should work correctly', () => {
+      removeRemote(cwd, 'remoteName')
+
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['remote', 'rm', 'remoteName'], spawnOptions)
     })
   })
 

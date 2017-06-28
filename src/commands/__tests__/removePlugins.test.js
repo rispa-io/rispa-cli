@@ -1,146 +1,121 @@
-jest.resetAllMocks()
-jest.resetModules()
-
-jest.mock('cross-spawn')
-jest.mock('inquirer')
 jest.mock('fs-extra')
+jest.mock('../../tasks/readProjectConfiguration')
+jest.mock('../../tasks/saveProjectConfiguration')
+jest.mock('../../tasks/selectPlugins')
+jest.mock('../../tasks/cleanCache')
+jest.mock('../../utils/git')
 
 const path = require.requireActual('path')
-const { CONFIGURATION_PATH, DEV_MODE } = require.requireActual('../../constants')
+const { DEV_MODE } = require.requireActual('../../constants')
 
-const mockCrossSpawn = require.requireMock('cross-spawn')
-const mockInquirer = require.requireMock('inquirer')
 const mockFs = require.requireMock('fs-extra')
+const readProjectConfiguration = require.requireMock('../../tasks/readProjectConfiguration')
+const saveProjectConfiguration = require.requireMock('../../tasks/saveProjectConfiguration')
+const selectPlugins = require.requireMock('../../tasks/selectPlugins')
+const cleanCache = require.requireMock('../../tasks/cleanCache')
+const mockGit = require.requireMock('../../utils/git')
 
 const RemovePluginsCommand = require.requireActual('../removePlugins')
 
 describe('remove plugins', () => {
   beforeEach(() => {
-    mockCrossSpawn.sync.mockClear()
-    mockCrossSpawn.setMockOutput()
-    mockInquirer.setMockAnswers({})
-    mockFs.setMockFiles([])
-    mockFs.setMockJson({})
-    mockFs.setMockRemoveCallback(() => {
-    })
+    mockGit.getChanges.mockClear()
+    mockGit.removeRemote.mockClear()
+    mockGit.commit.mockClear()
+    saveProjectConfiguration.task.mockClear()
+    selectPlugins.task.mockClear()
+    cleanCache.task.mockClear()
   })
 
   const cwd = '/cwd'
   const pluginName = 'rispa-core'
   const pluginRemoteUrl = `https://git.com/${pluginName}.git`
-  const rispaJsonPath = path.resolve(cwd, CONFIGURATION_PATH)
-  const crossSpawnOptions = { cwd, stdio: 'inherit' }
-  const pluginsPath = path.resolve(cwd, './packages')
+  const pluginsPath = './packages'
 
   const runCommand = params => {
     const command = new RemovePluginsCommand(params, { renderer: 'silent' })
     command.init()
     return command.run({
       cwd,
+      projectPath: cwd,
+    })
+  }
+
+  const mockReadConfigurationTask = mode => {
+    readProjectConfiguration.task.mockImplementation(ctx => {
+      ctx.configuration = {
+        mode,
+        pluginsPath,
+        plugins: [pluginName],
+        remotes: {
+          [pluginName]: pluginRemoteUrl,
+        },
+      }
     })
   }
 
   it('should success remove plugin', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
+    mockReadConfigurationTask()
+    mockGit.getChanges.mockImplementation(() => false)
 
     await expect(runCommand([pluginName])).resolves.toBeDefined()
 
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'rm', pluginName], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[3]).toEqual(['git', ['commit', '-m', `Remove plugins: ${pluginName}`], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(4)
+    expect(saveProjectConfiguration.task).toBeCalled()
+    expect(mockGit.getChanges).toBeCalled()
+    expect(mockGit.removeRemote).toBeCalledWith(cwd, pluginName)
+    expect(mockGit.commit).toBeCalledWith(cwd, `Remove plugins: ${pluginName}`)
+    expect(cleanCache.task).toBeCalled()
   })
 
   it('should success remove plugin in dev mode', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        mode: DEV_MODE,
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
+    mockReadConfigurationTask(DEV_MODE)
 
     await expect(runCommand([pluginName])).resolves.toBeDefined()
 
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-
-    expect(crossSpawnCalls.length).toBe(0)
+    expect(mockGit.getChanges).not.toBeCalled()
+    expect(mockGit.removeRemote).not.toBeCalled()
+    expect(mockGit.commit).not.toBeCalled()
+    expect(saveProjectConfiguration.task).toBeCalled()
+    expect(cleanCache.task).toBeCalled()
   })
 
-  it('should success remove plugin', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
+  it('should success remove plugin selected from list', async () => {
+    mockReadConfigurationTask()
 
-    mockInquirer.setMockAnswers({
-      selectedPlugins: [pluginName],
+    selectPlugins.task.mockImplementation(ctx => {
+      ctx.selectedPlugins = [pluginName]
     })
 
     await expect(runCommand([])).resolves.toBeDefined()
 
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'rm', pluginName], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[3]).toEqual(['git', ['commit', '-m', `Remove plugins: ${pluginName}`], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(4)
+    expect(mockGit.removeRemote).toBeCalledWith(cwd, pluginName)
+    expect(mockGit.commit).toBeCalledWith(cwd, `Remove plugins: ${pluginName}`)
   })
 
   it('should success remove multiple plugins', async () => {
-    const pluginName2 = 'rispa-config'
-    const pluginRemoteUrl2 = `https://git.com/${pluginName2}.git`
-
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
+    readProjectConfiguration.task.mockImplementation(ctx => {
+      ctx.configuration = {
         pluginsPath,
-        plugins: [pluginName, pluginName2],
+        plugins: ['rispa-core', 'rispa-config'],
         remotes: {
-          [pluginName]: pluginRemoteUrl,
-          [pluginName2]: pluginRemoteUrl2,
+          'rispa-core': 'remote1',
+          'rispa-config': 'remote2',
         },
-      },
+      }
     })
 
-    await expect(runCommand([pluginName, pluginName2])).resolves.toBeDefined()
+    await expect(runCommand(['rispa-core', 'rispa-config'])).resolves.toBeDefined()
 
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'rm', pluginName], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['remote', 'rm', pluginName2], crossSpawnOptions])
-    expect(crossSpawnCalls[3]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[4]).toEqual(['git', ['commit', '-m', `Remove plugins: ${pluginName}, ${pluginName2}`], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(5)
+    expect(mockGit.removeRemote).toBeCalledWith(cwd, 'rispa-core')
+    expect(mockGit.removeRemote).toBeCalledWith(cwd, 'rispa-config')
+    expect(mockGit.commit).toBeCalledWith(cwd, 'Remove plugins: rispa-core, rispa-config')
   })
 
   it('should failed remove plugin - cant find plugin', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
+    readProjectConfiguration.task.mockImplementation(ctx => {
+      ctx.configuration = {
         plugins: [],
-        remotes: {},
-      },
+      }
     })
 
     await expect(runCommand([pluginName]))
@@ -148,40 +123,26 @@ describe('remove plugins', () => {
   })
 
   it('should failed remove plugin - tree has modifications', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [],
-        remotes: {},
-      },
-    })
-
-    mockCrossSpawn.setMockOutput([null, new Buffer('M test.js')])
+    mockReadConfigurationTask()
+    mockGit.getChanges.mockImplementationOnce(() => 'M test.js')
 
     await expect(runCommand([pluginName]))
       .rejects.toHaveProperty('message', 'Working tree has modifications. Cannot remove plugins')
   })
 
   it('should failed remove plugin - error during remove', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
+    mockReadConfigurationTask()
 
     const errorMessage = 'errorMessage'
-
     mockFs.setMockRemoveCallback({
-      [path.resolve(pluginsPath, `./${pluginName}`)]: () => {
+      [path.resolve(cwd, pluginsPath, `./${pluginName}`)]: () => {
         throw new Error(errorMessage)
       },
     })
 
     await expect(runCommand([pluginName]))
       .rejects.toHaveProperty('errors.0.message', errorMessage)
+
+    mockFs.setMockRemoveCallback()
   })
 })
