@@ -1,5 +1,6 @@
 const githubApi = require('../utils/githubApi')
-const { DEFAULT_PLUGIN_BRANCH, DEFAULT_PLUGIN_DEV_BRANCH, DEV_MODE, PLUGIN_ALIAS } = require('../constants')
+const { checkNotProdMode } = require('../utils/tasks')
+const { DEFAULT_PLUGIN_BRANCH, DEFAULT_PLUGIN_DEV_BRANCH, PLUGIN_ALIAS } = require('../constants')
 
 const fillPlugin = (plugin, packageJson) => Object.assign({}, plugin, {
   packageName: packageJson.name,
@@ -8,8 +9,7 @@ const fillPlugin = (plugin, packageJson) => Object.assign({}, plugin, {
 })
 
 const fetchPluginsTask = ctx => {
-  const mode = ctx.mode || ctx.configuration.mode
-  const branch = mode === DEV_MODE ? DEFAULT_PLUGIN_DEV_BRANCH : DEFAULT_PLUGIN_BRANCH
+  const branch = checkNotProdMode(ctx) ? DEFAULT_PLUGIN_DEV_BRANCH : DEFAULT_PLUGIN_BRANCH
 
   const mapPlugin = plugin => (
     githubApi.pluginPackageJson(plugin.name, branch)

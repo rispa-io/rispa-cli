@@ -12,16 +12,17 @@ const createInstallPlugin = require('../tasks/installPlugin')
 const installProjectDeps = require('../tasks/installProjectDeps')
 const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
 const resolvePluginsDeps = require('../tasks/resolvePluginsDeps')
-const { skipDevMode } = require('../utils/tasks')
+const { extendsTask, skipNotProdMode, skipTestMode } = require('../utils/tasks')
+const { findInList: findPluginInList } = require('../utils/plugin')
 
 class CreateProjectCommand extends Command {
-  constructor([projectName, remoteUrl], options) {
+  constructor([projectName, remoteUrl, ...pluginsToInstall], options) {
     super(options)
 
     this.state = {
       projectName: projectName && performProjectName(projectName),
       remoteUrl,
-      pluginsForInstall: [],
+      pluginsToInstall,
     }
 
     this.enterProjectName = this.enterProjectName.bind(this)
@@ -66,6 +67,11 @@ class CreateProjectCommand extends Command {
     return configureGenerators(ctx.projectPath)
       .getGenerator('project')
       .runActions({ projectName })
+      .then(() => {
+        ctx.pluginsPath = path.resolve(ctx.projectPath, ctx.configuration.pluginsPath)
+
+        fs.ensureDirSync(ctx.pluginsPath)
+      })
   }
 
   gitInit({ projectPath }) {
@@ -75,12 +81,11 @@ class CreateProjectCommand extends Command {
   }
 
   installPlugins(ctx) {
-    const { pluginsToInstall } = this.state
-    const { projectPath } = ctx
+    const { plugins: pluginList } = ctx
 
-    ctx.pluginsPath = path.resolve(projectPath, ctx.configuration.pluginsPath)
-
-    fs.ensureDirSync(ctx.pluginsPath)
+    const pluginsToInstall = this.state.pluginsToInstall.map(plugin =>
+      findPluginInList(plugin, pluginList)
+    ).filter(plugin => plugin.cloneUrl)
 
     return new Listr(
       pluginsToInstall.map(({ name, cloneUrl }) =>
@@ -90,7 +95,7 @@ class CreateProjectCommand extends Command {
   }
 
   init() {
-    const { projectName, remoteUrl } = this.state
+    const { projectName, remoteUrl, pluginsToInstall } = this.state
     this.add([
       {
         title: 'Enter project name',
@@ -99,7 +104,7 @@ class CreateProjectCommand extends Command {
       },
       {
         title: 'Enter remote url',
-        skip: skipDevMode,
+        skip: skipNotProdMode,
         enabled: () => !remoteUrl,
         task: this.enterRemoteUrl,
       },
@@ -109,11 +114,16 @@ class CreateProjectCommand extends Command {
       },
       {
         title: 'Git init',
+        skip: skipTestMode,
         task: this.gitInit,
       },
-      fetchPlugins,
+      extendsTask(fetchPlugins, {
+        skip: skipTestMode,
+      }),
       {
         title: 'Select plugins to install',
+        skip: skipTestMode,
+        enabled: () => pluginsToInstall.length === 0,
         task: selectPlugins.task,
         after: ctx => {
           this.state.pluginsToInstall = ctx.selectedPlugins
@@ -123,11 +133,14 @@ class CreateProjectCommand extends Command {
       {
         title: 'Install plugins',
         task: this.installPlugins,
+        skip: skipTestMode,
         before: ctx => {
           ctx.installedPlugins = []
         },
       },
-      resolvePluginsDeps,
+      extendsTask(resolvePluginsDeps, {
+        skip: skipTestMode,
+      }),
       installProjectDeps,
       {
         title: 'Create configuration',
@@ -135,6 +148,7 @@ class CreateProjectCommand extends Command {
       },
       {
         title: 'Git commit',
+        skip: skipTestMode,
         task: ({ projectPath }) => gitCommit(projectPath, 'Bootstrap deps and install plugins'),
       },
     ])

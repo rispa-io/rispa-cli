@@ -1,5 +1,5 @@
 const { isPromise } = require('./promise')
-const { DEV_MODE } = require('../constants')
+const { DEV_MODE, TEST_MODE } = require('../constants')
 
 const createTaskWrapper = ({ before, after, task }) => (context, wrapper) => {
   if (before) {
@@ -34,7 +34,15 @@ const extendsTask = (task, options) => improveTask(Object.assign({}, task, optio
 
 const checkDevMode = ctx => (ctx.mode || (ctx.configuration && ctx.configuration.mode)) === DEV_MODE
 
+const checkTestMode = ctx => (ctx.mode || (ctx.configuration && ctx.configuration.mode)) === TEST_MODE
+
+const checkNotProdMode = ctx => checkTestMode(ctx) || checkDevMode(ctx)
+
 const skipDevMode = ctx => checkDevMode(ctx) && 'Development mode'
+
+const skipTestMode = ctx => checkTestMode(ctx) && 'Testing mode'
+
+const skipNotProdMode = ctx => skipDevMode(ctx) || skipTestMode(ctx)
 
 module.exports = {
   createTaskWrapper,
@@ -42,4 +50,8 @@ module.exports = {
   extendsTask,
   checkDevMode,
   skipDevMode,
+  checkTestMode,
+  skipTestMode,
+  skipNotProdMode,
+  checkNotProdMode,
 }
