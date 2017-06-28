@@ -7,7 +7,7 @@ const spawn = require('cross-spawn')
 const path = require('path')
 const chalk = require('chalk')
 const fs = require('fs-extra')
-const createDebug = require('debug')
+const { handleError } = require('../src/utils/log')
 const { CWD, LOCAL_VERSION_PATH, PACKAGE_JSON_PATH } = require('../src/constants')
 
 const RunPluginScriptCommand = require('../src/commands/runPluginScript')
@@ -19,8 +19,6 @@ const GenerateCommand = require('../src/commands/generate')
 const CommitCommand = require('../src/commands/commit')
 const NumerateCommand = require('../src/commands/numerate')
 const AssembleCommand = require('../src/commands/assemble')
-
-const logError = createDebug('rispa:error:cli')
 
 const commands = [
   RunPluginScriptCommand,
@@ -51,18 +49,6 @@ const parseArgs = args => {
   }, {})
 
   return [argv, params]
-}
-
-const handleError = e => {
-  logError(e)
-  if (e.errors) {
-    e.errors.forEach(error => logError(error))
-  }
-  if (e.context) {
-    logError('Context:')
-    logError(e.context)
-  }
-  process.exit(1)
 }
 
 const runCommand = ([firstArg = '', ...args]) => {
