@@ -11,6 +11,7 @@ const {
   tagInfo,
   pullRepository,
   updateSubtree,
+  init,
 } = require.requireActual('../git')
 
 describe('git', () => {
@@ -66,7 +67,6 @@ describe('git', () => {
 
   describe('push', () => {
     it('should work correctly', () => {
-      mockCrossSpawn.setMockReject(false)
       push(cwd)
 
       expect(mockCrossSpawn.sync)
@@ -97,7 +97,6 @@ describe('git', () => {
 
   describe('addTag', () => {
     it('should work correctly', () => {
-      mockCrossSpawn.setMockReject(false)
       addTag(cwd, 'v1.0.0')
 
       expect(mockCrossSpawn.sync)
@@ -110,7 +109,6 @@ describe('git', () => {
   describe('tagInfo', () => {
     it('should work correctly', () => {
       const tagDescription = 'v2.4.11-2-aaaaaaaa'
-      mockCrossSpawn.setMockReject(false)
       mockCrossSpawn.setMockOutput([null, new Buffer(tagDescription)])
 
       expect(tagInfo(cwd)).toEqual({
@@ -132,7 +130,6 @@ describe('git', () => {
 
   describe('pull', () => {
     it('should work correctly', () => {
-      mockCrossSpawn.setMockReject(false)
       pullRepository(cwd)
 
       expect(mockCrossSpawn.sync)
@@ -142,8 +139,6 @@ describe('git', () => {
 
   describe('updateSubtree', () => {
     it('should work correctly', () => {
-      mockCrossSpawn.setMockReject(false)
-
       updateSubtree(cwd, 'prefix', 'remoteName', 'remoteUrl', 'ref')
 
       expect(mockCrossSpawn.sync)
@@ -156,8 +151,6 @@ describe('git', () => {
     })
 
     it('should work correctly with default ref', () => {
-      mockCrossSpawn.setMockReject(false)
-
       updateSubtree(cwd, 'prefix', 'remoteName', 'remoteUrl')
 
       expect(mockCrossSpawn.sync)
@@ -167,6 +160,35 @@ describe('git', () => {
         ['subtree', 'pull', '--prefix=prefix', 'remoteName', DEFAULT_PLUGIN_BRANCH],
         spawnOptions,
       )
+    })
+  })
+
+  describe('init', () => {
+    it('should work correctly', () => {
+      init(cwd)
+
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['init'], spawnOptions)
+    })
+
+    it('should add remote if success', () => {
+      init(cwd, 'remoteUrl')
+
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['init'], spawnOptions)
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['remote', 'add', 'origin', 'remoteUrl'], spawnOptions)
+    })
+
+    it('should not add remote if failed', () => {
+      mockCrossSpawn.setMockReject(true)
+
+      init(cwd, 'remoteUrl')
+
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['init'], spawnOptions)
+      expect(mockCrossSpawn.sync)
+        .not.toBeCalledWith('git', ['remote', 'add', 'origin', 'remoteUrl'], spawnOptions)
     })
   })
 })
