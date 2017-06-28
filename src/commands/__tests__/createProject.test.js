@@ -1,18 +1,17 @@
-jest.resetAllMocks()
-jest.resetModules()
-
-jest.mock('../../utils/githubApi', () => require.requireActual('../../utils/__mocks__/githubApi'))
 jest.mock('@rispa/generator', () => require.requireActual('../../__mocks__/generator'))
 jest.mock('cross-spawn')
 jest.mock('inquirer')
 jest.mock('fs-extra')
+jest.mock('../../utils/git.js')
+jest.mock('../../utils/githubApi')
 
 const path = require.requireActual('path')
-const { DEFAULT_PLUGIN_BRANCH, LERNA_JSON_PATH, PLUGIN_PREFIX } = require.requireActual('../../constants')
+const { LERNA_JSON_PATH, PLUGIN_PREFIX } = require.requireActual('../../constants')
 
 const mockCrossSpawn = require.requireMock('cross-spawn')
 const mockInquirer = require.requireMock('inquirer')
 const mockFs = require.requireMock('fs-extra')
+const mockGit = require.requireMock('../../utils/git.js')
 const mockGenerator = require.requireMock('@rispa/generator')
 const mockGithubApi = require.requireMock('../../utils/githubApi')
 
@@ -20,11 +19,17 @@ const CreateProjectCommand = require.requireActual('../createProject')
 
 describe('create project', () => {
   beforeEach(() => {
+    mockGit.init.mockClear()
+    mockGit.commit.mockClear()
+    mockGit.addSubtree.mockClear()
     mockCrossSpawn.sync.mockClear()
-    mockCrossSpawn.setMockOutput()
+  })
+
+  afterAll(() => {
     mockInquirer.setMockAnswers({})
     mockGithubApi.setMockPlugins([])
     mockFs.setMockFiles([])
+    mockFs.setMockJson([])
   })
 
   const cwd = '/cwd'
@@ -33,6 +38,7 @@ describe('create project', () => {
   const remoteUrl = 'https://git.com/remote-url.git'
   const pluginName = 'rispa-core'
   const pluginRemoteUrl = 'https://git.com/plugin-remote-url.git'
+  const crossSpawnOptions = { cwd: projectPath, stdio: 'inherit' }
 
   const runCommand = (args, options) => {
     const command = new CreateProjectCommand(args, { renderer: 'silent' })
@@ -42,22 +48,11 @@ describe('create project', () => {
     }, options))
   }
 
-  const crossSpawnOptions = { cwd: projectPath, stdio: 'inherit' }
-
-  const expectSuccessCreateProjectViaYarn = (crossSpawnCalls, runGeneratorActions) => {
-    expect(crossSpawnCalls[0]).toEqual(['git', ['init'], crossSpawnOptions])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'add', 'origin', remoteUrl], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[3]).toEqual(['git', ['commit', '-m', `Create project '${projectName}'`], crossSpawnOptions])
-    expect(crossSpawnCalls[4]).toEqual(['git', ['remote', 'add', pluginName, pluginRemoteUrl], crossSpawnOptions])
-    expect(crossSpawnCalls[5]).toEqual(['git', ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, DEFAULT_PLUGIN_BRANCH], crossSpawnOptions])
-    expect(crossSpawnCalls[6]).toEqual(['yarn', ['install'], crossSpawnOptions])
-    expect(crossSpawnCalls[7]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[8]).toEqual(['git', ['commit', '-m', 'Bootstrap deps and install plugins'], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(9)
-
-    expect(runGeneratorActions).toBeCalledWith({ projectName })
+  const expectSuccessGitCommands = () => {
+    expect(mockGit.init).toBeCalled()
+    expect(mockGit.commit).toBeCalledWith(projectPath, `Create project '${projectName}'`)
+    expect(mockGit.addSubtree).toBeCalledWith(projectPath, `packages/${pluginName}`, pluginName, pluginRemoteUrl, undefined)
+    expect(mockGit.commit).toBeCalledWith(projectPath, 'Bootstrap deps and install plugins')
   }
 
   it('should success create project', async () => {
@@ -92,18 +87,8 @@ describe('create project', () => {
 
     await expect(runCommand([projectName])).resolves.toBeDefined()
 
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual(['git', ['init'], crossSpawnOptions])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['commit', '-m', `Create project '${projectName}'`], crossSpawnOptions])
-    expect(crossSpawnCalls[3]).toEqual(['git', ['remote', 'add', pluginName, pluginRemoteUrl], crossSpawnOptions])
-    expect(crossSpawnCalls[4]).toEqual(['git', ['subtree', 'add', `--prefix=packages/${pluginName}`, pluginName, DEFAULT_PLUGIN_BRANCH], crossSpawnOptions])
-    expect(crossSpawnCalls[5]).toEqual(['npm', ['install'], crossSpawnOptions])
-    expect(crossSpawnCalls[6]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[7]).toEqual(['git', ['commit', '-m', 'Bootstrap deps and install plugins'], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(8)
-
+    expectSuccessGitCommands()
+    expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['install'], crossSpawnOptions)
     expect(runGeneratorActions).toBeCalledWith({ projectName })
   })
 
@@ -139,7 +124,9 @@ describe('create project', () => {
 
     await expect(runCommand([], { yarn: true })).resolves.toBeDefined()
 
-    expectSuccessCreateProjectViaYarn(mockCrossSpawn.sync.mock.calls, runGeneratorActions)
+    expectSuccessGitCommands()
+    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['install'], crossSpawnOptions)
+    expect(runGeneratorActions).toBeCalledWith({ projectName })
   })
 
   it('should success create project via yarn', async () => {
@@ -180,7 +167,9 @@ describe('create project', () => {
 
     await expect(runCommand([])).resolves.toBeDefined()
 
-    expectSuccessCreateProjectViaYarn(mockCrossSpawn.sync.mock.calls, runGeneratorActions)
+    expectSuccessGitCommands()
+    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['install'], crossSpawnOptions)
+    expect(runGeneratorActions).toBeCalledWith({ projectName })
   })
 
   it('should failed create project - project exist', async () => {
