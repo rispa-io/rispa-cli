@@ -1,18 +1,12 @@
-jest.resetAllMocks()
-jest.resetModules()
-
-jest.mock('@rispa/generator', () => require.requireActual('../../__mocks__/generator'))
-jest.mock('../../tasks/scanPlugins', () => require.requireActual('../../tasks/__mocks__/scanPlugins'))
-jest.mock('cross-spawn')
-jest.mock('inquirer')
-jest.mock('fs-extra')
-
 const path = require.requireActual('path')
-const { CONFIGURATION_PATH, DEV_MODE } = require.requireActual('../../constants')
 
-const mockCrossSpawn = require.requireMock('cross-spawn')
+jest.mock('../../tasks/readProjectConfiguration')
+jest.mock('../../utils/git')
+jest.mock('inquirer')
+
+const readProjectConfiguration = require.requireMock('../../tasks/readProjectConfiguration')
+const mockGit = require.requireMock('../../utils/git')
 const mockInquirer = require.requireMock('inquirer')
-const mockFs = require.requireMock('fs-extra')
 
 const CommitCommand = require.requireActual('../commit')
 
@@ -21,6 +15,9 @@ describe('commit', () => {
 
   beforeAll(() => {
     originalConsoleLog = console.log
+    Object.defineProperty(console, 'log', {
+      value: jest.fn(),
+    })
   })
 
   afterAll(() => {
@@ -30,249 +27,114 @@ describe('commit', () => {
   })
 
   beforeEach(() => {
-    Object.defineProperty(console, 'log', {
-      value: jest.fn(),
-    })
-
-    mockCrossSpawn.sync.mockClear()
-    mockCrossSpawn.setMockOutput()
-    mockCrossSpawn.setMockReject(false)
-    mockInquirer.setMockAnswers({})
-    mockFs.setMockFiles([])
-    mockFs.setMockJson({})
+    mockGit.commit.mockClear()
+    mockGit.push.mockClear()
   })
 
   const cwd = '/cwd'
-  const pluginName = 'rispa-core'
-  const pluginRemoteUrl = `https://git.com/${pluginName}.git`
-  const rispaJsonPath = path.resolve(cwd, CONFIGURATION_PATH)
-  const pluginsPath = path.resolve(cwd, './packages')
-  const pluginPath = path.resolve(pluginsPath, `./${pluginName}`)
+  const projectPath = '/project'
+  const changes = 'M test.js'
+  const plugins = ['rispa-core']
+  const pluginsPath = './plugins'
   const commitMessage = 'Test commit message'
-  const crossSpawnOptions = { cwd, stdio: 'inherit' }
-  const crossSpawnPluginOptions = { cwd: pluginPath, stdio: 'inherit' }
 
-  it('should commit changes', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
+  const runCommand = () => {
+    const command = new CommitCommand({ renderer: 'silent' })
+    command.init()
+    return command.run({
+      cwd,
+      projectPath,
     })
+  }
+  const mockReadConfigurationTask = mode => {
+    readProjectConfiguration.task.mockImplementation(ctx => {
+      ctx.configuration = {
+        mode,
+        plugins,
+        pluginsPath,
+      }
+    })
+  }
 
+  it('should run tasks successfully', async () => {
+    mockReadConfigurationTask()
+    mockGit.getChanges.mockImplementation(() => changes)
     mockInquirer.setMockAnswers({
       commitMessage,
     })
+    mockGit.commit.mockImplementation(() => true)
+    mockGit.push.mockImplementation(() => true)
 
-    const changes = 'M test.js'
-    mockCrossSpawn.setMockOutput([null, new Buffer(changes)])
+    await expect(runCommand()).resolves.toBeDefined()
 
-    const commitCommand = new CommitCommand([])
-    commitCommand.init()
-
-    await expect(commitCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
-
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-
-    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['commit', '-m', commitMessage], crossSpawnOptions])
-    expect(crossSpawnCalls[3]).toEqual(['git', ['push'], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(4)
+    expect(mockGit.commit).toBeCalledWith(projectPath, commitMessage)
+    expect(mockGit.push).toBeCalledWith(projectPath)
   })
 
-  it('should commit changes in dev mode', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        mode: DEV_MODE,
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
-
+  it('should run tasks successfully in dev mode', async () => {
+    mockReadConfigurationTask('dev')
+    mockGit.getChanges.mockImplementation(() => changes)
     mockInquirer.setMockAnswers({
       commitMessage,
     })
+    mockGit.commit.mockImplementation(() => true)
+    mockGit.push.mockImplementation(() => true)
 
-    const changes = 'M test.js'
-    mockCrossSpawn.setMockOutput([null, new Buffer(changes)])
+    await expect(runCommand()).resolves.toBeDefined()
 
-    const commitCommand = new CommitCommand([])
-    commitCommand.init()
+    const pluginPath = path.resolve(projectPath, pluginsPath, 'rispa-core')
 
-    await expect(commitCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
-
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-
-    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd: pluginPath, stdio: 'pipe' }])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['add', '.'], crossSpawnPluginOptions])
-    expect(crossSpawnCalls[3]).toEqual(['git', ['commit', '-m', commitMessage], crossSpawnPluginOptions])
-    expect(crossSpawnCalls[4]).toEqual(['git', ['push'], crossSpawnPluginOptions])
-    expect(crossSpawnCalls[5]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[6]).toEqual(['git', ['commit', '-m', commitMessage], crossSpawnOptions])
-    expect(crossSpawnCalls[7]).toEqual(['git', ['push'], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(8)
+    expect(mockGit.commit).toBeCalledWith(pluginPath, commitMessage)
+    expect(mockGit.push).toBeCalledWith(pluginPath)
+    expect(mockGit.commit).toBeCalledWith(projectPath, commitMessage)
+    expect(mockGit.push).toBeCalledWith(projectPath)
   })
 
-  it('should not commit if there are no changes', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        mode: DEV_MODE,
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
+  it('should skip tasks if no changes', async () => {
+    mockReadConfigurationTask('dev')
+    mockGit.getChanges.mockImplementation(() => '')
 
+    await expect(runCommand()).resolves.toBeDefined()
+
+    expect(mockGit.commit.mock.calls.length).toBe(0)
+    expect(mockGit.push.mock.calls.length).toBe(0)
+  })
+
+  it('should throw error if commit failed', async () => {
+    mockReadConfigurationTask()
+    mockGit.getChanges.mockImplementation(() => changes)
     mockInquirer.setMockAnswers({
       commitMessage,
     })
+    mockGit.commit.mockImplementation(() => false)
 
-    const commitCommand = new CommitCommand([])
-    commitCommand.init()
+    await expect(runCommand())
+      .rejects.toHaveProperty('message', 'Failed git commit')
+  })
 
-    await expect(commitCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+  it('should throw error if push failed', async () => {
+    mockReadConfigurationTask()
+    mockGit.getChanges.mockImplementation(() => changes)
+    mockInquirer.setMockAnswers({
+      commitMessage,
+    })
+    mockGit.commit.mockImplementation(() => true)
+    mockGit.push.mockImplementation(() => false)
 
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-
-    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd: pluginPath, stdio: 'pipe' }])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
-
-    expect(crossSpawnCalls.length).toBe(2)
+    await expect(runCommand())
+      .rejects.toHaveProperty('message', 'Failed git push')
   })
 
   it('should not commit if commit message is empty', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        mode: DEV_MODE,
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
-
+    mockReadConfigurationTask()
+    mockGit.getChanges.mockImplementation(() => changes)
     mockInquirer.setMockAnswers({
       commitMessage: '',
     })
 
-    const changes = 'M test.js'
-    mockCrossSpawn.setMockOutput([null, new Buffer(changes)])
+    await expect(runCommand()).resolves.toBeDefined()
 
-    const commitCommand = new CommitCommand([])
-    commitCommand.init()
-
-    await expect(commitCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
-
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-
-    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd: pluginPath, stdio: 'pipe' }])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
-
-    expect(crossSpawnCalls.length).toBe(2)
-  })
-
-  it('should failed commit changes', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
-
-    mockInquirer.setMockAnswers({
-      commitMessage,
-    })
-
-    const changes = 'M test.js'
-    mockCrossSpawn.sync
-      .mockImplementationOnce(() => ({
-        status: 0,
-        output: [null, new Buffer(changes)],
-      }))
-      .mockImplementationOnce(() => ({ status: 0 }))
-
-    mockCrossSpawn.setMockReject(true)
-
-    const commitCommand = new CommitCommand([])
-    commitCommand.init()
-
-    await expect(commitCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Failed git commit')
-
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-
-    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['commit', '-m', commitMessage], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(3)
-  })
-
-  it('should failed commit changes', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
-
-    mockInquirer.setMockAnswers({
-      commitMessage,
-    })
-
-    const changes = 'M test.js'
-    mockCrossSpawn.sync
-      .mockImplementationOnce(() => ({
-        status: 0,
-        output: [null, new Buffer(changes)],
-      }))
-      .mockImplementationOnce(() => ({ status: 0 }))
-      .mockImplementationOnce(() => ({ status: 0 }))
-
-    mockCrossSpawn.setMockReject(true)
-
-    const commitCommand = new CommitCommand([])
-    commitCommand.init()
-
-    await expect(commitCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Failed git push')
-
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-
-    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['commit', '-m', commitMessage], crossSpawnOptions])
-    expect(crossSpawnCalls[3]).toEqual(['git', ['push'], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(4)
+    expect(mockGit.commit.mock.calls.length).toBe(0)
+    expect(mockGit.push.mock.calls.length).toBe(0)
   })
 })

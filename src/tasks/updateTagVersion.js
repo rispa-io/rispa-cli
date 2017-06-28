@@ -20,6 +20,7 @@ const selectNextVersion = versions => prompt([{
 const createUpdateTagVersion = (path, { newCommitsCount, version, versionParts }) => ({
   title: 'Update tag version',
   task: () => {
+    // #TODO: add separete test to mock console.log
     console.log(chalk.dim(`${chalk.bold.blue(newCommitsCount)} new commit(s) after ${chalk.bold.green(version)}`))
 
     const { major, minor, patch } = versionParts

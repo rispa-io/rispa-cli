@@ -67,7 +67,9 @@ class ListrRender {
       cliCursor.hide()
       render(this.tasks)
     }
-    this.end = () => cliCursor.show()
+    this.end = () => {
+      cliCursor.show()
+    }
   }
 
   static get nonTTY() {

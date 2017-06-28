@@ -20,23 +20,7 @@ const mockGithubApi = require.requireMock('../../utils/githubApi')
 const AddPluginsCommand = require.requireActual('../addPlugins')
 
 describe('add plugins', () => {
-  let originalConsoleLog
-
-  beforeAll(() => {
-    originalConsoleLog = console.log
-  })
-
-  afterAll(() => {
-    Object.defineProperty(console, 'log', {
-      value: originalConsoleLog,
-    })
-  })
-
   beforeEach(() => {
-    Object.defineProperty(console, 'log', {
-      value: jest.fn(),
-    })
-
     mockCrossSpawn.sync.mockClear()
     mockCrossSpawn.setMockOutput()
     mockCrossSpawn.setMockReject(false)
@@ -57,6 +41,14 @@ describe('add plugins', () => {
   const resolvePluginPackageName = resolvePluginName.replace('rispa-', PLUGIN_PREFIX)
   const resolvePluginVersion = '1.2.3'
   const resolvePluginRemoteUrl = `https://git.com/${resolvePluginName}.git`
+
+  const runCommand = (plugins = [], options) => {
+    const command = new AddPluginsCommand(plugins, { renderer: 'silent' })
+    command.init()
+    return command.run(Object.assign({
+      cwd,
+    }, options))
+  }
 
   const rispaJsonPath = path.resolve(cwd, CONFIGURATION_PATH)
   const crossSpawnOptions = { cwd, stdio: 'inherit' }
@@ -94,13 +86,9 @@ describe('add plugins', () => {
       },
     })
 
-    const addPluginsCommand = new AddPluginsCommand([pluginName])
-    addPluginsCommand.init()
-
-    await expect(addPluginsCommand.run({
-      cwd,
-      projectPath: cwd,
-    })).resolves.toBeDefined()
+    await expect(
+      runCommand([pluginName], { projectPath: cwd })
+    ).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
@@ -164,13 +152,9 @@ describe('add plugins', () => {
       },
     })
 
-    const addPluginsCommand = new AddPluginsCommand([pluginName])
-    addPluginsCommand.init()
-
-    await expect(addPluginsCommand.run({
-      cwd,
-      projectPath: cwd,
-    })).resolves.toBeDefined()
+    await expect(
+      runCommand([pluginName], { projectPath: cwd })
+    ).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
@@ -238,13 +222,9 @@ describe('add plugins', () => {
       }],
     })
 
-    const addPluginsCommand = new AddPluginsCommand([])
-    addPluginsCommand.init()
-
-    await expect(addPluginsCommand.run({
-      cwd,
-      projectPath: cwd,
-    })).resolves.toBeDefined()
+    await expect(
+      runCommand([], { projectPath: cwd })
+    ).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
@@ -286,12 +266,9 @@ describe('add plugins', () => {
       },
     })
 
-    const addPluginsCommand = new AddPluginsCommand([pluginName])
-    addPluginsCommand.init()
-
-    await expect(addPluginsCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(
+      runCommand([pluginName])
+    ).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['clone', '--branch', DEFAULT_PLUGIN_DEV_BRANCH, pluginRemoteUrl], {
@@ -326,12 +303,9 @@ describe('add plugins', () => {
       },
     })
 
-    const addPluginsCommand = new AddPluginsCommand([pluginName])
-    addPluginsCommand.init()
-
-    await expect(addPluginsCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('errors.0.message', 'Can\'t clone repository')
+    await expect(
+      runCommand([pluginName], { projectPath: cwd })
+    ).rejects.toHaveProperty('errors.0.message', 'Can\'t clone repository')
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['clone', '--branch', DEFAULT_PLUGIN_DEV_BRANCH, pluginRemoteUrl], {
@@ -363,13 +337,9 @@ describe('add plugins', () => {
       },
     })
 
-    const addPluginsCommand = new AddPluginsCommand([pluginName])
-    addPluginsCommand.init()
-
-    await expect(addPluginsCommand.run({
-      cwd,
-      yarn: true,
-    })).resolves.toBeDefined()
+    await expect(
+      runCommand([pluginName], { yarn: true })
+    ).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
@@ -391,12 +361,9 @@ describe('add plugins', () => {
       },
     })
 
-    const addPluginsCommand = new AddPluginsCommand([`${PLUGIN_GIT_PREFIX}${pluginRemoteUrl}`])
-    addPluginsCommand.init()
-
-    await expect(addPluginsCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(
+      runCommand([`${PLUGIN_GIT_PREFIX}${pluginRemoteUrl}`])
+    ).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
@@ -431,12 +398,9 @@ describe('add plugins', () => {
       },
     })
 
-    const addPluginsCommand = new AddPluginsCommand([pluginName])
-    addPluginsCommand.init()
-
-    await expect(addPluginsCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(
+      runCommand([pluginName])
+    ).resolves.toBeDefined()
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
@@ -456,12 +420,9 @@ describe('add plugins', () => {
 
     mockGithubApi.setMockPlugins([])
 
-    const addPluginsCommand = new AddPluginsCommand([pluginName])
-    addPluginsCommand.init()
-
-    await expect(addPluginsCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', `Can't find plugins with names:\n - ${pluginName}`)
+    await expect(
+      runCommand([pluginName])
+    ).rejects.toHaveProperty('message', `Can't find plugins with names:\n - ${pluginName}`)
   })
 
   it('should failed add plugin - tree has modifications', async () => {
@@ -477,12 +438,9 @@ describe('add plugins', () => {
 
     mockCrossSpawn.setMockOutput([null, new Buffer('M test.js')])
 
-    const addPluginsCommand = new AddPluginsCommand([pluginName])
-    addPluginsCommand.init()
-
-    await expect(addPluginsCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Working tree has modifications. Cannot add plugins')
+    await expect(
+      runCommand([pluginName])
+    ).rejects.toHaveProperty('message', 'Working tree has modifications. Cannot add plugins')
   })
 
   it('should failed add plugin - cant find plugins for select', async () => {
@@ -507,12 +465,9 @@ describe('add plugins', () => {
       },
     })
 
-    const addPluginsCommand = new AddPluginsCommand([])
-    addPluginsCommand.init()
-
-    await expect(addPluginsCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Can\'t find plugins for select')
+    await expect(
+      runCommand([])
+    ).rejects.toHaveProperty('message', 'Can\'t find plugins for select')
   })
 
   it('should failed add plugin - invalid git url', async () => {
@@ -526,12 +481,9 @@ describe('add plugins', () => {
 
     const invalidRemoteUrl = '/invalid-url'
 
-    const addPluginsCommand = new AddPluginsCommand([`${PLUGIN_GIT_PREFIX}${invalidRemoteUrl}`])
-    addPluginsCommand.init()
-
-    await expect(addPluginsCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('errors.0.message', `Invalid plugin remote url ${chalk.cyan(invalidRemoteUrl)}`)
+    await expect(
+      runCommand([`${PLUGIN_GIT_PREFIX}${invalidRemoteUrl}`])
+    ).rejects.toHaveProperty('errors.0.message', `Invalid plugin remote url ${chalk.cyan(invalidRemoteUrl)}`)
 
     const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
     expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
@@ -543,11 +495,8 @@ describe('add plugins', () => {
   it('should failed add plugin - configuration not found', async () => {
     mockFs.setMockJson({})
 
-    const addPluginsCommand = new AddPluginsCommand([])
-    addPluginsCommand.init()
-
-    await expect(addPluginsCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Can\'t find rispa project config')
+    await expect(
+      runCommand([])
+    ).rejects.toHaveProperty('message', 'Can\'t find rispa project config')
   })
 })
