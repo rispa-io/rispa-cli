@@ -12,26 +12,7 @@ const cleanCache = require('../tasks/cleanCache')
 const resolvePluginsDeps = require('../tasks/resolvePluginsDeps')
 const { extendsTask, skipDevMode } = require('../utils/tasks')
 const { commit: gitCommit } = require('../utils/git')
-const { PLUGIN_GIT_PREFIX } = require('../constants')
-
-const extractPluginNameFromUrl = cloneUrl => {
-  const parts = cloneUrl.split('/')
-  return parts[parts.length - 1].replace(/\.git$/, '')
-}
-
-const findPlugin = (plugin, pluginList) => {
-  if (typeof plugin === 'object') {
-    return plugin
-  } else if (plugin.startsWith(PLUGIN_GIT_PREFIX)) {
-    return {
-      name: extractPluginNameFromUrl(plugin),
-      cloneUrl: plugin.replace(PLUGIN_GIT_PREFIX, ''),
-    }
-  }
-
-  const currentPlugin = pluginList.find(({ name }) => name === plugin)
-  return currentPlugin || { name: plugin }
-}
+const { findInList: findPluginInList } = require('../utils/plugin')
 
 class AddPluginsCommand extends Command {
   constructor([...pluginsToInstall], options) {
@@ -49,7 +30,9 @@ class AddPluginsCommand extends Command {
 
     fs.ensureDirSync(pluginsPath)
 
-    const pluginsToInstall = this.state.pluginsToInstall.map(plugin => findPlugin(plugin, pluginList))
+    const pluginsToInstall = this.state.pluginsToInstall.map(plugin =>
+      findPluginInList(plugin, pluginList)
+    )
 
     const invalidPlugins = pluginsToInstall.filter(plugin => !plugin.cloneUrl).map(plugin => plugin.name)
     if (invalidPlugins.length) {

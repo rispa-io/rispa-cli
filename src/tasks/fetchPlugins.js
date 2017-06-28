@@ -1,8 +1,9 @@
 const githubApi = require('../utils/githubApi')
-const { DEFAULT_PLUGIN_BRANCH, DEFAULT_PLUGIN_DEV_BRANCH, DEV_MODE } = require('../constants')
+const { DEFAULT_PLUGIN_BRANCH, DEFAULT_PLUGIN_DEV_BRANCH, DEV_MODE, PLUGIN_ALIAS } = require('../constants')
 
 const fillPlugin = (plugin, packageJson) => Object.assign({}, plugin, {
   packageName: packageJson.name,
+  packageAlias: packageJson[PLUGIN_ALIAS],
   packageVersion: packageJson.version,
 })
 
