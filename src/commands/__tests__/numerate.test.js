@@ -1,18 +1,12 @@
-jest.resetAllMocks()
-jest.resetModules()
-
-jest.mock('@rispa/generator', () => require.requireActual('../../__mocks__/generator'))
-jest.mock('../../tasks/scanPlugins', () => require.requireActual('../../tasks/__mocks__/scanPlugins'))
-jest.mock('cross-spawn')
-jest.mock('inquirer')
-jest.mock('fs-extra')
-
 const path = require.requireActual('path')
-const { CONFIGURATION_PATH, DEV_MODE } = require.requireActual('../../constants')
 
-const mockCrossSpawn = require.requireMock('cross-spawn')
+jest.mock('../../tasks/readProjectConfiguration')
+jest.mock('../../utils/git')
+jest.mock('inquirer')
+
+const readProjectConfiguration = require.requireMock('../../tasks/readProjectConfiguration')
+const mockGit = require.requireMock('../../utils/git')
 const mockInquirer = require.requireMock('inquirer')
-const mockFs = require.requireMock('fs-extra')
 
 const NumerateCommand = require.requireActual('../numerate')
 
@@ -21,6 +15,9 @@ describe('numerate', () => {
 
   beforeAll(() => {
     originalConsoleLog = console.log
+    Object.defineProperty(console, 'log', {
+      value: jest.fn(),
+    })
   })
 
   afterAll(() => {
@@ -30,52 +27,54 @@ describe('numerate', () => {
   })
 
   beforeEach(() => {
-    Object.defineProperty(console, 'log', {
-      value: jest.fn(),
-    })
-
-    mockCrossSpawn.sync.mockClear()
-    mockCrossSpawn.setMockOutput()
-    mockCrossSpawn.setMockReject(false)
-    mockInquirer.setMockAnswers({})
-    mockFs.setMockFiles([])
-    mockFs.setMockJson({})
+    mockGit.tagInfo.mockClear()
+    mockGit.addTag.mockClear()
   })
 
   const cwd = '/cwd'
-  const pluginName = 'rispa-core'
-  const pluginRemoteUrl = `https://git.com/${pluginName}.git`
-  const rispaJsonPath = path.resolve(cwd, CONFIGURATION_PATH)
-  const pluginsPath = path.resolve(cwd, './packages')
-  const pluginPath = path.resolve(pluginsPath, `./${pluginName}`)
-  const crossSpawnOptions = { cwd, stdio: 'inherit' }
-  const crossSpawnPluginOptions = { cwd: pluginPath, stdio: 'inherit' }
-  const tagDescription = 'v2.4.11-2-aaaaaaaa'
+  const projectPath = '/project'
+  const plugins = ['rispa-core']
+  const pluginsPath = './plugins'
+  const pluginPath = path.resolve(projectPath, pluginsPath, plugins[0])
   const nextVersion = '2.4.12'
+  const tagInfo = {
+    version: '2.4.11',
+    versionParts: {
+      major: 2,
+      minor: 4,
+      patch: 11,
+    },
+    newCommitsCount: 2,
+  }
+
+  const runCommand = () => {
+    const command = new NumerateCommand({ renderer: 'silent' })
+    command.init()
+    return command.run({
+      cwd,
+      projectPath,
+    })
+  }
+
+  const mockReadConfigurationTask = mode => {
+    readProjectConfiguration.task.mockImplementation(ctx => {
+      ctx.configuration = {
+        mode,
+        plugins,
+        pluginsPath,
+      }
+    })
+  }
 
   it('should numerate project', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
-
-    mockCrossSpawn.setMockOutput([null, new Buffer(tagDescription)])
-
+    mockReadConfigurationTask()
+    mockGit.tagInfo.mockImplementation(() => tagInfo)
     mockInquirer.setMockAnswers({
       nextVersion,
     })
+    mockGit.addTag.mockImplementation(() => true)
 
-    const numerateCommand = new NumerateCommand([])
-    numerateCommand.init()
-
-    await expect(numerateCommand.run({
-      cwd,
-    })).resolves.toBeDefined()
+    await expect(runCommand()).resolves.toBeDefined()
 
     expect(mockInquirer.prompt.mock.calls[0][0][0].choices).toEqual([
       {
@@ -95,193 +94,51 @@ describe('numerate', () => {
         value: '3.0.0',
       },
     ])
-
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual([
-      'git',
-      ['describe', '--tags', '--long', '--match', 'v*'],
-      { cwd, stdio: 'pipe' },
-    ])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['tag', `v${nextVersion}`], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['push', '--tags'], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(3)
+    expect(mockGit.addTag).toBeCalledWith(projectPath, `v${nextVersion}`)
   })
 
-  it('should numerate in dev mode ', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
-
-    mockCrossSpawn.setMockOutput([null, new Buffer(tagDescription)])
-
+  it('should numerate in dev mode', async () => {
+    mockReadConfigurationTask('dev')
+    mockGit.tagInfo.mockImplementation(() => tagInfo)
     mockInquirer.setMockAnswers({
       nextVersion,
     })
+    mockGit.addTag.mockImplementation(() => true)
 
-    const numerateCommand = new NumerateCommand([])
-    numerateCommand.init()
+    await expect(runCommand()).resolves.toBeDefined()
 
-    await expect(numerateCommand.run({
-      cwd,
-      mode: DEV_MODE,
-    }).catch(e => console.error(e))).resolves.toBeDefined()
-
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual([
-      'git',
-      ['describe', '--tags', '--long', '--match', 'v*'],
-      { cwd: pluginPath, stdio: 'pipe' },
-    ])
-    expect(crossSpawnCalls[1]).toEqual([
-      'git',
-      ['describe', '--tags', '--long', '--match', 'v*'],
-      { cwd, stdio: 'pipe' },
-    ])
-    expect(crossSpawnCalls[2]).toEqual(['git', ['tag', `v${nextVersion}`], crossSpawnPluginOptions])
-    expect(crossSpawnCalls[3]).toEqual(['git', ['push', '--tags'], crossSpawnPluginOptions])
-    expect(crossSpawnCalls[4]).toEqual(['git', ['tag', `v${nextVersion}`], crossSpawnOptions])
-    expect(crossSpawnCalls[5]).toEqual(['git', ['push', '--tags'], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(6)
+    expect(mockGit.addTag).toBeCalledWith(projectPath, `v${nextVersion}`)
+    expect(mockGit.addTag).toBeCalledWith(pluginPath, `v${nextVersion}`)
   })
 
-  it('should cancel numerate in dev mode', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
-
-    mockCrossSpawn.setMockOutput([null, new Buffer(tagDescription)])
-
+  it('should cancel numerate', async () => {
+    mockReadConfigurationTask('dev')
+    mockGit.tagInfo.mockImplementation(() => tagInfo)
     mockInquirer.setMockAnswers({
       nextVersion: false,
     })
+    mockGit.addTag.mockImplementation(() => true)
 
-    const numerateCommand = new NumerateCommand([])
-    numerateCommand.init()
-
-    await expect(numerateCommand.run({
-      cwd,
-      mode: DEV_MODE,
-    })).resolves.toBeDefined()
-
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual([
-      'git',
-      ['describe', '--tags', '--long', '--match', 'v*'],
-      { cwd: pluginPath, stdio: 'pipe' },
-    ])
-    expect(crossSpawnCalls[1]).toEqual([
-      'git',
-      ['describe', '--tags', '--long', '--match', 'v*'],
-      { cwd, stdio: 'pipe' },
-    ])
-
-    expect(crossSpawnCalls.length).toBe(2)
+    await expect(runCommand()).resolves.toBeDefined()
   })
 
   it('should failed numerate - failed git add tag', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
-
-    mockCrossSpawn.setMockOutput([null, new Buffer(tagDescription)])
-
+    mockReadConfigurationTask()
+    mockGit.tagInfo.mockImplementation(() => tagInfo)
     mockInquirer.setMockAnswers({
       nextVersion,
     })
+    mockGit.addTag.mockImplementation(() => false)
 
-    mockCrossSpawn.sync
-      .mockImplementationOnce(() => ({
-        status: 0,
-        output: [null, new Buffer(tagDescription)],
-      }))
-
-    mockCrossSpawn.setMockReject(true)
-
-    const numerateCommand = new NumerateCommand([])
-    numerateCommand.init()
-
-    await expect(numerateCommand.run({
-      cwd,
-    })).rejects.toHaveProperty('message', 'Failed git add tag')
-
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual([
-      'git',
-      ['describe', '--tags', '--long', '--match', 'v*'],
-      { cwd, stdio: 'pipe' },
-    ])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['tag', `v${nextVersion}`], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(2)
+    await expect(runCommand())
+      .rejects.toHaveProperty('message', 'Failed git add tag')
   })
 
-  it('should failed numerate in dev mode - cant find tags', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
+  it('should skip tasks if no tag description found', async () => {
+    mockReadConfigurationTask('dev')
+    mockGit.tagInfo.mockImplementation(() => null)
 
-    mockCrossSpawn.setMockOutput([null, new Buffer(tagDescription)])
-
-    mockInquirer.setMockAnswers({
-      nextVersion,
-    })
-
-    mockCrossSpawn.sync
-      .mockImplementationOnce(() => ({
-        status: 1,
-        output: [null, new Buffer('')],
-      }))
-      .mockImplementationOnce(() => ({
-        status: 0,
-        output: [null, new Buffer('')],
-      }))
-
-    const numerateCommand = new NumerateCommand([])
-    numerateCommand.init()
-
-    await expect(numerateCommand.run({
-      cwd,
-      mode: DEV_MODE,
-    })).resolves.toBeDefined()
-
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual([
-      'git',
-      ['describe', '--tags', '--long', '--match', 'v*'],
-      { cwd: pluginPath, stdio: 'pipe' },
-    ])
-    expect(crossSpawnCalls[1]).toEqual([
-      'git',
-      ['describe', '--tags', '--long', '--match', 'v*'],
-      { cwd, stdio: 'pipe' },
-    ])
-
-    expect(crossSpawnCalls.length).toBe(2)
+    await expect(runCommand()).resolves.toBeDefined()
+    expect(mockGit.addTag.mock.calls.length).toBe(0)
   })
 })

@@ -3,7 +3,7 @@ const { improveTask } = require('./utils/tasks')
 const ListrRender = require('./utils/ListrRender')
 
 class Command extends Listr {
-  constructor(options) {
+  constructor(options = {}) {
     super(Object.assign({
       renderer: ListrRender,
     }, options))

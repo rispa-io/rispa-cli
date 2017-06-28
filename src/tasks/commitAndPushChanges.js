@@ -10,6 +10,7 @@ const enterCommitMessage = () => prompt([{
 const createCommitAndPushPluginChanges = (path, changes) => ({
   title: 'Commit changes',
   task: () => {
+    // #TODO: make separete tests to mock console.log
     console.log(changes)
 
     return enterCommitMessage(path).then(({ commitMessage }) => {

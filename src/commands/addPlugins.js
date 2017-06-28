@@ -15,8 +15,8 @@ const { commit: gitCommit } = require('../utils/git')
 const { findInList: findPluginInList } = require('../utils/plugin')
 
 class AddPluginsCommand extends Command {
-  constructor([...pluginsToInstall]) {
-    super({})
+  constructor([...pluginsToInstall], options) {
+    super(options)
 
     this.state = {
       pluginsToInstall,
