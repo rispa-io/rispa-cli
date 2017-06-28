@@ -1,8 +1,12 @@
 jest.mock('cross-spawn')
 
-const { DEFAULT_PLUGIN_BRANCH } = require.requireActual('../../constants')
+const {
+  DEFAULT_PLUGIN_BRANCH,
+  DEFAULT_PLUGIN_DEV_BRANCH,
+} = require.requireActual('../../constants')
 const mockCrossSpawn = require.requireMock('cross-spawn')
 const {
+  getChanges,
   getRemotes,
   removeRemote,
   addSubtree,
@@ -12,6 +16,8 @@ const {
   pullRepository,
   updateSubtree,
   init,
+  commit,
+  cloneRepository,
 } = require.requireActual('../git')
 
 describe('git', () => {
@@ -92,6 +98,18 @@ describe('git', () => {
         .mockImplementationOnce(() => ({ status: 1 }))
 
       expect(() => addSubtree(path, prefix, remoteName, remoteUrl)).toThrow('Failed add subtree')
+    })
+
+    it('should work correctly', () => {
+      addSubtree(cwd, 'prefix', 'remoteName', 'remoteUrl', 'ref')
+
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['remote', 'add', 'remoteName', 'remoteUrl'], spawnOptions)
+      expect(mockCrossSpawn.sync).toBeCalledWith(
+        'git',
+        ['subtree', 'add', '--prefix=prefix', 'remoteName', 'ref'],
+        spawnOptions,
+      )
     })
   })
 
@@ -189,6 +207,54 @@ describe('git', () => {
         .toBeCalledWith('git', ['init'], spawnOptions)
       expect(mockCrossSpawn.sync)
         .not.toBeCalledWith('git', ['remote', 'add', 'origin', 'remoteUrl'], spawnOptions)
+    })
+  })
+
+  describe('commit', () => {
+    it('should work correctly', () => {
+      commit(cwd, 'message')
+
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['add', '.'], spawnOptions)
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['commit', '-m', 'message'], spawnOptions)
+    })
+  })
+
+  describe('getChanges', () => {
+    it('should work correctly', () => {
+      mockCrossSpawn.setMockOutput([null, new Buffer('changes')])
+
+      const result = getChanges(cwd)
+
+      expect(result).toBe('changes')
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['status', '--porcelain'], { cwd, stdio: 'pipe' })
+    })
+  })
+
+  describe('cloneRepository', () => {
+    it('should work correctly', () => {
+      cloneRepository(cwd, 'cloneUrl', 'master')
+
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['clone', '--branch', 'master', 'cloneUrl'], spawnOptions)
+    })
+
+    it('should work correctly with default branch', () => {
+      cloneRepository(cwd, 'cloneUrl', 'master')
+
+      expect(mockCrossSpawn.sync).toBeCalledWith(
+        'git',
+        ['clone', '--branch', DEFAULT_PLUGIN_DEV_BRANCH, 'cloneUrl'],
+        spawnOptions
+      )
+    })
+
+    it('should throw error', () => {
+      mockCrossSpawn.setMockReject(true)
+      expect(() => cloneRepository(cwd, 'cloneUrl'))
+        .toThrow('Can\'t clone repository')
     })
   })
 })
