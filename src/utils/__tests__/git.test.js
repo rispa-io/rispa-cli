@@ -1,8 +1,6 @@
-jest.resetAllMocks()
-jest.resetModules()
-
 jest.mock('cross-spawn')
 
+const { DEFAULT_PLUGIN_BRANCH } = require.requireActual('../../constants')
 const mockCrossSpawn = require.requireMock('cross-spawn')
 const {
   getRemotes,
@@ -11,6 +9,8 @@ const {
   push,
   addTag,
   tagInfo,
+  pullRepository,
+  updateSubtree,
 } = require.requireActual('../git')
 
 describe('git', () => {
@@ -127,6 +127,46 @@ describe('git', () => {
     it('should return null if version tag not found', () => {
       mockCrossSpawn.setMockOutput([null, new Buffer('')])
       expect(tagInfo(cwd)).toBe(null)
+    })
+  })
+
+  describe('pull', () => {
+    it('should work correctly', () => {
+      mockCrossSpawn.setMockReject(false)
+      pullRepository(cwd)
+
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['pull'], spawnOptions)
+    })
+  })
+
+  describe('updateSubtree', () => {
+    it('should work correctly', () => {
+      mockCrossSpawn.setMockReject(false)
+
+      updateSubtree(cwd, 'prefix', 'remoteName', 'remoteUrl', 'ref')
+
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['remote', 'add', 'remoteName', 'remoteUrl'], spawnOptions)
+      expect(mockCrossSpawn.sync).toBeCalledWith(
+        'git',
+        ['subtree', 'pull', '--prefix=prefix', 'remoteName', 'ref'],
+        spawnOptions,
+      )
+    })
+
+    it('should work correctly with default ref', () => {
+      mockCrossSpawn.setMockReject(false)
+
+      updateSubtree(cwd, 'prefix', 'remoteName', 'remoteUrl')
+
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['remote', 'add', 'remoteName', 'remoteUrl'], spawnOptions)
+      expect(mockCrossSpawn.sync).toBeCalledWith(
+        'git',
+        ['subtree', 'pull', '--prefix=prefix', 'remoteName', DEFAULT_PLUGIN_BRANCH],
+        spawnOptions,
+      )
     })
   })
 })

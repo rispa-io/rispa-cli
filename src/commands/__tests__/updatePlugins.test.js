@@ -1,158 +1,107 @@
-jest.resetAllMocks()
-jest.resetModules()
-
-jest.mock('cross-spawn')
 jest.mock('inquirer')
 jest.mock('fs-extra')
+jest.mock('../../tasks/readProjectConfiguration')
+jest.mock('../../tasks/saveProjectConfiguration')
+jest.mock('../../utils/git')
 
 const path = require.requireActual('path')
-const { CONFIGURATION_PATH, DEFAULT_PLUGIN_BRANCH, ALL_PLUGINS, DEV_MODE } = require.requireActual('../../constants')
+const { ALL_PLUGINS, DEV_MODE } = require.requireActual('../../constants')
 
-const mockCrossSpawn = require.requireMock('cross-spawn')
+const readProjectConfiguration = require.requireMock('../../tasks/readProjectConfiguration')
 const mockInquirer = require.requireMock('inquirer')
 const mockFs = require.requireMock('fs-extra')
+const mockGit = require.requireMock('../../utils/git')
 
 const UpdatePluginsCommand = require.requireActual('../updatePlugins')
 
 describe('update plugins', () => {
   beforeEach(() => {
-    mockCrossSpawn.sync.mockClear()
-    mockCrossSpawn.setMockOutput()
-    mockCrossSpawn.setMockReject(false)
-    mockInquirer.setMockAnswers({})
-    mockFs.setMockFiles([])
-    mockFs.setMockJson({})
-    mockFs.setMockRemoveCallback(() => {
-    })
+    mockGit.getChanges.mockClear()
+    mockGit.getChanges.mockImplementation(() => false)
+    mockGit.updateSubtree.mockClear()
+    mockGit.updateSubtree.mockImplementation(() => true)
+    mockGit.commit.mockClear()
+    mockGit.pullRepository.mockClear()
   })
 
   const cwd = '/cwd'
   const pluginName = 'rispa-core'
   const pluginRemoteUrl = `https://git.com/${pluginName}.git`
-  const rispaJsonPath = path.resolve(cwd, CONFIGURATION_PATH)
-  const crossSpawnOptions = { cwd, stdio: 'inherit' }
-  const pluginsPath = path.resolve(cwd, './packages')
-  const pluginPath = path.resolve(pluginsPath, `./${pluginName}`)
+  const pluginsPath = './packages'
+  const pluginPath = path.resolve(cwd, pluginsPath, `./${pluginName}`)
 
   const runCommand = params => {
     const command = new UpdatePluginsCommand(params, { renderer: 'silent' })
     command.init()
     return command.run({
       cwd,
+      projectPath: cwd,
     })
   }
 
-  const expectSuccessUpdateSinglePlugin = crossSpawnCalls => {
-    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'add', pluginName, pluginRemoteUrl], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual([
-      'git',
-      ['subtree', 'pull', `--prefix=packages/${pluginName}`, pluginName, DEFAULT_PLUGIN_BRANCH], crossSpawnOptions],
-    )
-    expect(crossSpawnCalls[3]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[4]).toEqual(['git', ['commit', '-m', `Update plugins: ${pluginName}`], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(5)
+  const mockReadConfigurationTask = mode => {
+    readProjectConfiguration.task.mockImplementation(ctx => {
+      ctx.configuration = {
+        mode,
+        pluginsPath,
+        plugins: [pluginName],
+        remotes: {
+          [pluginName]: pluginRemoteUrl,
+        },
+      }
+    })
   }
 
   it('should success update single plugin', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
+    mockReadConfigurationTask()
 
     await expect(runCommand([pluginName])).resolves.toBeDefined()
 
-    expectSuccessUpdateSinglePlugin(mockCrossSpawn.sync.mock.calls)
+    expect(mockGit.getChanges).toBeCalledWith(cwd)
+    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl)
+    expect(mockGit.commit).toBeCalledWith(cwd, `Update plugins: ${pluginName}`)
   })
 
   it('should failed update single plugin in dev mode', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        mode: DEV_MODE,
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
+    mockReadConfigurationTask(DEV_MODE)
 
     await expect(runCommand([pluginName]))
       .rejects.toHaveProperty('errors.0.message', 'Not a git repository: .git')
   })
 
   it('should success update single plugin in dev mode', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        mode: DEV_MODE,
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
+    mockReadConfigurationTask(DEV_MODE)
 
     mockFs.setMockFiles([path.resolve(pluginPath, './.git')])
 
     await expect(runCommand([pluginName])).resolves.toBeDefined()
-
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual(['git', ['pull'], { cwd: pluginPath, stdio: 'inherit' }])
-
-    expect(crossSpawnCalls.length).toBe(1)
+    expect(mockGit.pullRepository).toBeCalledWith(pluginPath)
   })
 
   it('should success update all plugins', async () => {
     const pluginName2 = 'rispa-config'
     const pluginRemoteUrl2 = `https://git.com/${pluginName2}.git`
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
+    readProjectConfiguration.task.mockImplementation(ctx => {
+      ctx.configuration = {
         pluginsPath,
         plugins: [pluginName, pluginName2],
         remotes: {
           [pluginName]: pluginRemoteUrl,
           [pluginName2]: pluginRemoteUrl2,
         },
-      },
+      }
     })
 
     await expect(runCommand([ALL_PLUGINS])).resolves.toBeDefined()
 
-    const crossSpawnCalls = mockCrossSpawn.sync.mock.calls
-    expect(crossSpawnCalls[0]).toEqual(['git', ['status', '--porcelain'], { cwd, stdio: 'pipe' }])
-    expect(crossSpawnCalls[1]).toEqual(['git', ['remote', 'add', pluginName, pluginRemoteUrl], crossSpawnOptions])
-    expect(crossSpawnCalls[2]).toEqual([
-      'git',
-      ['subtree', 'pull', `--prefix=packages/${pluginName}`, pluginName, DEFAULT_PLUGIN_BRANCH], crossSpawnOptions],
-    )
-    expect(crossSpawnCalls[3]).toEqual(['git', ['remote', 'add', pluginName2, pluginRemoteUrl2], crossSpawnOptions])
-    expect(crossSpawnCalls[4]).toEqual([
-      'git',
-      ['subtree', 'pull', `--prefix=packages/${pluginName2}`, pluginName2, DEFAULT_PLUGIN_BRANCH], crossSpawnOptions],
-    )
-    expect(crossSpawnCalls[5]).toEqual(['git', ['add', '.'], crossSpawnOptions])
-    expect(crossSpawnCalls[6]).toEqual(['git', ['commit', '-m', `Update plugins: ${pluginName}, ${pluginName2}`], crossSpawnOptions])
-
-    expect(crossSpawnCalls.length).toBe(7)
+    expect(mockGit.getChanges).toBeCalledWith(cwd)
+    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl)
+    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName2}`, pluginName2, pluginRemoteUrl2)
+    expect(mockGit.commit).toBeCalledWith(cwd, `Update plugins: ${pluginName}, ${pluginName2}`)
   })
 
   it('should success update selected plugins', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
+    mockReadConfigurationTask()
 
     mockInquirer.setMockAnswers({
       selectedPlugins: [pluginName],
@@ -160,49 +109,30 @@ describe('update plugins', () => {
 
     await expect(runCommand([])).resolves.toBeDefined()
 
-    expectSuccessUpdateSinglePlugin(mockCrossSpawn.sync.mock.calls)
+    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl)
+    expect(mockGit.commit).toBeCalledWith(cwd, `Update plugins: ${pluginName}`)
   })
 
   it('should failed update plugins - cant find plugin', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [],
-        remotes: {},
-      },
-    })
+    mockReadConfigurationTask()
 
-    await expect(runCommand([pluginName]))
-      .rejects.toHaveProperty('message', `Can't find plugins with names:\n - ${pluginName}`)
+    await expect(runCommand(['somePlugin']))
+      .rejects.toHaveProperty('message', 'Can\'t find plugins with names:\n - somePlugin')
   })
 
   it('should failed update plugins - tree has modifications', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [],
-        remotes: {},
-      },
-    })
+    mockReadConfigurationTask()
 
-    mockCrossSpawn.setMockOutput([null, new Buffer('M test.js')])
+    mockGit.getChanges.mockImplementation(() => true)
 
     await expect(runCommand([pluginName]))
       .rejects.toHaveProperty('message', 'Working tree has modifications. Cannot update plugins')
   })
 
   it('should failed update plugin - failed update subtree', async () => {
-    mockFs.setMockJson({
-      [rispaJsonPath]: {
-        pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
-      },
-    })
+    mockReadConfigurationTask()
 
-    mockCrossSpawn.setMockReject(true)
+    mockGit.updateSubtree.mockImplementation(() => false)
 
     await expect(runCommand([pluginName]))
       .rejects.toHaveProperty('errors.0.message', `Failed update subtree '${pluginRemoteUrl}'`)
