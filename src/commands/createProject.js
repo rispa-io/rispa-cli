@@ -67,11 +67,6 @@ class CreateProjectCommand extends Command {
     return configureGenerators(ctx.projectPath)
       .getGenerator('project')
       .runActions({ projectName })
-      .then(() => {
-        ctx.pluginsPath = path.resolve(ctx.projectPath, ctx.configuration.pluginsPath)
-
-        fs.ensureDirSync(ctx.pluginsPath)
-      })
   }
 
   gitInit({ projectPath }) {
@@ -82,6 +77,10 @@ class CreateProjectCommand extends Command {
 
   installPlugins(ctx) {
     const { plugins: pluginList } = ctx
+
+    ctx.pluginsPath = path.resolve(ctx.projectPath, ctx.configuration.pluginsPath)
+
+    fs.ensureDirSync(ctx.pluginsPath)
 
     const pluginsToInstall = this.state.pluginsToInstall.map(plugin =>
       findPluginInList(plugin, pluginList)

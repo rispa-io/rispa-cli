@@ -7,7 +7,7 @@ const spawn = require('cross-spawn')
 const path = require('path')
 const chalk = require('chalk')
 const fs = require('fs-extra')
-const { handleError } = require('../src/utils/log')
+const createDebug = require('debug')
 const { CWD, LOCAL_VERSION_PATH, PACKAGE_JSON_PATH } = require('../src/constants')
 
 const RunPluginScriptCommand = require('../src/commands/runPluginScript')
@@ -31,6 +31,20 @@ const commands = [
   NumerateCommand,
   AssembleCommand,
 ]
+
+const logError = createDebug('rispa:error:cli')
+
+const handleError = e => {
+  logError(e)
+  if (e.errors) {
+    e.errors.forEach(error => logError(error))
+  }
+  if (e.context) {
+    logError('Context:')
+    logError(e.context)
+  }
+  process.exit(1)
+}
 
 const parseArgs = args => {
   const paramRegExp = /^--([^=]+)=(.*)/
