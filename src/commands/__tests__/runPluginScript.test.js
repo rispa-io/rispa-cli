@@ -1,13 +1,15 @@
 jest.mock('../../tasks/scanPlugins')
 jest.mock('../../tasks/runPluginScript')
 jest.mock('inquirer')
+jest.mock('fs-extra')
 
 const path = require.requireActual('path')
-const { ALL_PLUGINS } = require.requireActual('../../constants')
+const { ALL_PLUGINS, CONFIGURATION_PATH } = require.requireActual('../../constants')
 
 const scanPlugins = require.requireMock('../../tasks/scanPlugins')
 const createRunPluginScript = require.requireMock('../../tasks/runPluginScript')
 const mockInquirer = require.requireMock('inquirer')
+const mockFs = require.requireMock('fs-extra')
 
 const RunPluginScriptCommand = require.requireActual('../runPluginScript')
 
@@ -17,6 +19,15 @@ describe('run plugin script', () => {
   const scriptName = 'scriptName'
   const pluginPath = path.resolve(cwd, `./${pluginName}`)
   const args = [1, 2, 'test']
+  const rispaJsonPath = path.resolve(cwd, CONFIGURATION_PATH)
+
+  mockFs.setMockJson({
+    [rispaJsonPath]: {
+      pluginsPath: '',
+      plugins: [],
+      remotes: {},
+    },
+  })
 
   const runCommand = (params, options) => {
     const command = new RunPluginScriptCommand(params, { renderer: 'silent' })
