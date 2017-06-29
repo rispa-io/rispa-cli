@@ -1,4 +1,3 @@
-jest.mock('fs-extra')
 jest.mock('../../tasks/readProjectConfiguration')
 jest.mock('../../tasks/restorePlugin')
 jest.mock('../../tasks/cleanCache')

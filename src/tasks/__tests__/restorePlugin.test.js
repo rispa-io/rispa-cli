@@ -26,8 +26,9 @@ describe('createRestorePluginTask', () => {
   })
 
   beforeEach(() => {
-    jest.resetAllMocks()
-    jest.resetModules()
+    mockGit.getRemotes.mockClear()
+    mockGit.addSubtree.mockClear()
+    mockGit.cloneRepository.mockClear()
   })
 
   it('should create task', () => {
@@ -58,8 +59,8 @@ describe('createRestorePluginTask', () => {
       const ctx = genContext()
       createRestorePluginTask('rispa-core').task(ctx)
 
-      expect(mockGit.addSubtree.mock.calls.length).toBe(0)
-      expect(mockGit.cloneRepository.mock.calls.length).toBe(0)
+      expect(mockGit.addSubtree).not.toBeCalled()
+      expect(mockGit.cloneRepository).not.toBeCalled()
     })
 
     it('should add plugin in dev mode', () => {
@@ -80,8 +81,10 @@ describe('createRestorePluginTask', () => {
       const ctx = genContext('dev')
       createRestorePluginTask('rispa-core').task(ctx)
 
-      expect(mockGit.addSubtree.mock.calls.length).toBe(0)
-      expect(mockGit.cloneRepository.mock.calls.length).toBe(0)
+      expect(mockGit.addSubtree).not.toBeCalled()
+      expect(mockGit.cloneRepository).not.toBeCalled()
+
+      mockFs.setMockFiles()
     })
   })
 })

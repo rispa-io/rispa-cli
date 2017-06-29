@@ -190,6 +190,7 @@ module.exports = {
   init,
   commit,
   push,
+  addRemote,
   removeRemote,
   getRemotes,
   getChanges,
