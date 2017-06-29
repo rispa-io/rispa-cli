@@ -22,6 +22,10 @@ const DEFAULT_PLUGIN_DEV_BRANCH = 'master'
 const DEFAULT_PLUGIN_BRANCH = 'stable'
 const DEV_MODE = 'dev'
 const TEST_MODE = 'test'
+const SKIP_REASONS = {
+  [DEV_MODE]: 'Development mode',
+  [TEST_MODE]: 'Testing mode',
+}
 const ALL_PLUGINS = 'all'
 
 module.exports = {
@@ -45,6 +49,7 @@ module.exports = {
   PLUGIN_GIT_PREFIX,
   DEV_MODE,
   TEST_MODE,
+  SKIP_REASONS,
   ALL_PLUGINS,
   DEFAULT_PLUGIN_BRANCH,
   DEFAULT_PLUGIN_DEV_BRANCH,

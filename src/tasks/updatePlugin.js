@@ -2,7 +2,8 @@ const chalk = require('chalk')
 const path = require('path')
 const fs = require('fs-extra')
 const { pullRepository, updateSubtree } = require('../utils/git')
-const { improveTask, checkNotProdMode } = require('../utils/tasks')
+const { improveTask, checkMode } = require('../utils/tasks')
+const { DEV_MODE, TEST_MODE } = require('../constants')
 
 const updatePluginRepository = pluginPath => {
   if (!fs.existsSync(path.resolve(pluginPath, './.git'))) {
@@ -34,7 +35,7 @@ const createUpdatePlugin = name => improveTask({
     const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
     const pluginPath = path.resolve(pluginsPath, `./${name}`)
 
-    if (checkNotProdMode(ctx)) {
+    if (checkMode(ctx, DEV_MODE, TEST_MODE)) {
       updatePluginRepository(pluginPath)
     } else {
       updatePluginSubtree(configuration.remotes, projectPath, pluginsPath, name)

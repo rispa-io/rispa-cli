@@ -1,10 +1,11 @@
 const path = require('path')
 const { cyan } = require('chalk')
-const { improveTask, checkDevMode, checkTestMode } = require('../utils/tasks')
+const { improveTask, checkMode } = require('../utils/tasks')
 const {
   addSubtree: gitAddSubtree,
   cloneRepository: gitCloneRepository,
 } = require('../utils/git')
+const { DEV_MODE, TEST_MODE } = require('../constants')
 
 const checkCloneUrl = cloneUrl => {
   if (!cloneUrl.endsWith('.git')) {
@@ -26,9 +27,9 @@ const createInstallPlugin = (name, cloneUrl, ref) => improveTask({
 
     checkCloneUrl(cloneUrl)
 
-    if (checkDevMode(ctx)) {
+    if (checkMode(ctx, DEV_MODE)) {
       gitCloneRepository(pluginsPath, cloneUrl)
-    } else if (checkTestMode(ctx)) {
+    } else if (checkMode(ctx, TEST_MODE)) {
       gitCloneRepository(pluginsPath, cloneUrl, { depth: 1 })
     } else {
       const pluginsRelPath = path.relative(projectPath, pluginsPath)

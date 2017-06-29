@@ -5,10 +5,13 @@ const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
 const cleanCache = require('../tasks/cleanCache')
 const createUpdatePlugin = require('../tasks/updatePlugin')
 const selectPlugins = require('../tasks/selectPlugins')
-const { extendsTask, skipNotProdMode } = require('../utils/tasks')
+const { extendsTask, skipMode } = require('../utils/tasks')
 const gitCheckChanges = require('../tasks/gitCheckChanges')
+const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
 const { commit: gitCommit } = require('../utils/git')
-const { ALL_PLUGINS } = require('../constants')
+const { ALL_PLUGINS, DEV_MODE, TEST_MODE } = require('../constants')
+
+const skipNotProdMode = skipMode(DEV_MODE, TEST_MODE)
 
 class RemovePluginsCommand extends Command {
   constructor([...pluginsToUpdate], options) {
@@ -67,6 +70,7 @@ class RemovePluginsCommand extends Command {
           }
         },
       },
+      bootstrapProjectDeps,
       saveProjectConfiguration,
       {
         title: 'Git commit',

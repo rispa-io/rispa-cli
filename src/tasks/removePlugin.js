@@ -2,7 +2,7 @@ const chalk = require('chalk')
 const path = require('path')
 const fs = require('fs-extra')
 const { removeRemote } = require('../utils/git')
-const { improveTask } = require('../utils/tasks')
+const { improveTask, checkMode } = require('../utils/tasks')
 const { DEV_MODE } = require('../constants')
 
 const createRemovePlugin = name => improveTask({
@@ -15,12 +15,11 @@ const createRemovePlugin = name => improveTask({
   task: ctx => {
     const { projectPath } = ctx
     const pluginsPath = path.resolve(projectPath, ctx.configuration.pluginsPath)
-    const mode = ctx.mode || ctx.configuration.mode
     const pluginPath = path.resolve(pluginsPath, `./${name}`)
 
     fs.removeSync(pluginPath)
 
-    if (mode !== DEV_MODE) {
+    if (!checkMode(ctx, DEV_MODE)) {
       removeRemote(projectPath, name)
     }
 

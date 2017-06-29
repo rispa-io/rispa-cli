@@ -12,8 +12,11 @@ const createInstallPlugin = require('../tasks/installPlugin')
 const installProjectDeps = require('../tasks/installProjectDeps')
 const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
 const resolvePluginsDeps = require('../tasks/resolvePluginsDeps')
-const { extendsTask, skipNotProdMode, skipTestMode } = require('../utils/tasks')
+const { extendsTask, skipMode } = require('../utils/tasks')
+const { DEV_MODE, TEST_MODE } = require('../constants')
 const { findInList: findPluginInList } = require('../utils/plugin')
+
+const skipTestMode = skipMode(TEST_MODE)
 
 class CreateProjectCommand extends Command {
   constructor([projectName, remoteUrl, ...pluginsToInstall], options) {
@@ -103,7 +106,7 @@ class CreateProjectCommand extends Command {
       },
       {
         title: 'Enter remote url',
-        skip: skipNotProdMode,
+        skip: skipMode(DEV_MODE, TEST_MODE),
         enabled: () => !remoteUrl,
         task: this.enterRemoteUrl,
       },
