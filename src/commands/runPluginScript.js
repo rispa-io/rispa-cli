@@ -4,6 +4,7 @@ const Command = require('../Command')
 const scanPlugins = require('../tasks/scanPlugins')
 const createRunPackageScriptTask = require('../tasks/runPluginScript')
 const { extendsTask } = require('../utils/tasks')
+const readProjectConfiguration = require('../tasks/readProjectConfiguration')
 const { ALL_PLUGINS } = require('../constants')
 
 class RunPluginScriptCommand extends Command {
@@ -98,10 +99,8 @@ class RunPluginScriptCommand extends Command {
   init() {
     const { pluginName, scriptName } = this.state
     this.add([
+      readProjectConfiguration,
       extendsTask(scanPlugins, {
-        before: ctx => {
-          ctx.projectPath = ctx.cwd
-        },
         after: ({ plugins }) => {
           if (Object.keys(plugins).length === 0) {
             throw new Error('Can\'t find plugins')
