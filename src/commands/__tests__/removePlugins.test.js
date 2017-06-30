@@ -111,15 +111,21 @@ describe('remove plugins', () => {
     expect(mockGit.commit).toBeCalledWith(cwd, 'Remove plugins: rispa-core, rispa-config')
   })
 
-  it('should failed remove plugin - cant find plugin', async () => {
+  it('should success remove plugin with skip one', async () => {
     readProjectConfiguration.task.mockImplementation(ctx => {
       ctx.configuration = {
-        plugins: [],
+        pluginsPath,
+        plugins: ['rispa-core'],
+        remotes: {
+          'rispa-core': 'remote1',
+        },
       }
     })
 
-    await expect(runCommand([pluginName]))
-      .rejects.toHaveProperty('message', `Can't find plugins with names:\n - ${pluginName}`)
+    await expect(runCommand(['rispa-core', 'rispa-config'])).resolves.toBeDefined()
+
+    expect(mockGit.removeRemote).toBeCalledWith(cwd, 'rispa-core')
+    expect(mockGit.commit).toBeCalledWith(cwd, 'Remove plugins: rispa-core')
   })
 
   it('should failed remove plugin - tree has modifications', async () => {
