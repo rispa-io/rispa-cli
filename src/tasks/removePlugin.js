@@ -7,6 +7,7 @@ const { DEV_MODE } = require('../constants')
 
 const createRemovePlugin = name => improveTask({
   title: `Remove plugin with name ${chalk.cyan(name)}`,
+  skip: ({ configuration: { plugins } }) => plugins.indexOf(name) === -1 && 'Can\'t find plugin',
   before: ctx => {
     if (!ctx.removedPlugins) {
       ctx.removedPlugins = []
