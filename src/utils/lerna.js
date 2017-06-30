@@ -1,6 +1,6 @@
 const path = require('path')
 const fs = require('fs-extra')
-const { LERNA_JSON_PATH } = require('../constants')
+const { LERNA_JSON_PATH, PLUGIN_PREFIX } = require('../constants')
 
 const readPluginsPaths = projectPath => {
   const lernaJsonPath = path.resolve(projectPath, LERNA_JSON_PATH)
@@ -12,7 +12,7 @@ const readPluginsPaths = projectPath => {
   const pluginsPaths = lernaPackages.reduce((paths, pluginsPath) => {
     paths.push(path.resolve(projectPath, `./${pluginsPath}`))
     return paths
-  }, [path.resolve(projectPath, './node_modules/*')])
+  }, [path.resolve(projectPath, `./node_modules/${PLUGIN_PREFIX}*`)])
 
   return pluginsPaths
 }
