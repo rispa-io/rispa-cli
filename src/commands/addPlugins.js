@@ -49,7 +49,7 @@ class AddPluginsCommand extends Command {
   init() {
     const { pluginsToInstall } = this.state
     this.add([
-      extendsTask(readProjectConfiguration),
+      readProjectConfiguration,
       extendsTask(gitCheckChanges, {
         skip: skipDevMode,
         after: ({ hasChanges }) => {

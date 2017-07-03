@@ -18,6 +18,8 @@ const {
   init,
   commit,
   cloneRepository,
+  checkout,
+  merge,
 } = require.requireActual('../git')
 
 describe('git', () => {
@@ -78,6 +80,12 @@ describe('git', () => {
       expect(mockCrossSpawn.sync)
         .toBeCalledWith('git', ['push'], spawnOptions)
     })
+
+    it('should throw error', () => {
+      mockCrossSpawn.sync.mockImplementationOnce(() => ({ status: 1 }))
+
+      expect(() => push(cwd)).toThrow('Failed git push')
+    })
   })
 
   describe('addSubtree', () => {
@@ -122,6 +130,12 @@ describe('git', () => {
       expect(mockCrossSpawn.sync)
         .toBeCalledWith('git', ['push', '--tags'], spawnOptions)
     })
+
+    it('should throw error', () => {
+      mockCrossSpawn.sync.mockImplementationOnce(() => ({ status: 1 }))
+
+      expect(() => addTag(cwd, 'v1.0.0')).toThrow('Failed git add tag')
+    })
   })
 
   describe('tagInfo', () => {
@@ -152,6 +166,12 @@ describe('git', () => {
 
       expect(mockCrossSpawn.sync)
         .toBeCalledWith('git', ['pull'], spawnOptions)
+    })
+
+    it('should throw error', () => {
+      mockCrossSpawn.sync.mockImplementationOnce(() => ({ status: 1 }))
+
+      expect(() => pullRepository(cwd)).toThrow('Failed git pull')
     })
   })
 
@@ -219,6 +239,12 @@ describe('git', () => {
       expect(mockCrossSpawn.sync)
         .toBeCalledWith('git', ['commit', '-m', 'message'], spawnOptions)
     })
+
+    it('should throw error', () => {
+      mockCrossSpawn.sync.mockImplementationOnce(() => ({ status: 1 }))
+
+      expect(() => commit(cwd, 'message')).toThrow('Failed git commit')
+    })
   })
 
   describe('getChanges', () => {
@@ -255,6 +281,37 @@ describe('git', () => {
       mockCrossSpawn.setMockReject(true)
       expect(() => cloneRepository(cwd, 'cloneUrl'))
         .toThrow('Can\'t clone repository')
+    })
+  })
+
+  describe('checkout', () => {
+    it('should work correctly', () => {
+      checkout(cwd, 'master')
+
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['checkout', 'master'], { cwd, stdio: 'inherit' })
+    })
+
+    it('should throw error', () => {
+      mockCrossSpawn.sync.mockImplementationOnce(() => ({ status: 1 }))
+
+      expect(() => checkout(cwd, 'master')).toThrow('Failed git checkout')
+    })
+  })
+
+
+  describe('merge', () => {
+    it('should work correctly', () => {
+      merge(cwd, 'master')
+
+      expect(mockCrossSpawn.sync)
+        .toBeCalledWith('git', ['merge', 'master'], { cwd, stdio: 'inherit' })
+    })
+
+    it('should throw error', () => {
+      mockCrossSpawn.sync.mockImplementationOnce(() => ({ status: 1 }))
+
+      expect(() => merge(cwd, 'master')).toThrow('Failed git merge')
     })
   })
 })

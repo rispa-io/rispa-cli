@@ -5,11 +5,11 @@ let mockJson = {}
 let mockEnsureDirCallback
 let mockRemoveCallback = {}
 
-fs.writeFileSync = (path, data) => {
+fs.writeFileSync = jest.fn((path, data) => {
   if (typeof path !== 'string' || typeof data !== 'string') {
     throw new Error()
   }
-}
+})
 
 fs.ensureDirSync = () => {
   if (mockEnsureDirCallback) {
