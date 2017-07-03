@@ -19,6 +19,7 @@ const GenerateCommand = require('../src/commands/generate')
 const CommitCommand = require('../src/commands/commit')
 const NumerateCommand = require('../src/commands/numerate')
 const AssembleCommand = require('../src/commands/assemble')
+const CleanCacheCommand = require('../src/commands/cleanCache')
 
 const commands = [
   RunPluginScriptCommand,
@@ -30,6 +31,7 @@ const commands = [
   CommitCommand,
   NumerateCommand,
   AssembleCommand,
+  CleanCacheCommand,
 ]
 
 const logError = createDebug('rispa:error:cli')

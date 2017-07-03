@@ -23,14 +23,8 @@ class RemovePluginsCommand extends Command {
     this.removePlugins = this.removePlugins.bind(this)
   }
 
-  removePlugins(ctx) {
+  removePlugins() {
     const { pluginsToRemove } = this.state
-    const { configuration: { plugins } } = ctx
-
-    const invalidPlugins = pluginsToRemove.filter(plugin => plugins.indexOf(plugin) === -1)
-    if (invalidPlugins.length) {
-      throw new Error(`Can't find plugins with names:\n - ${invalidPlugins.join(', ')}`)
-    }
 
     return new Listr(
       pluginsToRemove.map(plugin =>

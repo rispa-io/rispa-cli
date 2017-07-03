@@ -163,9 +163,7 @@ describe('scan plugins', () => {
     })
 
     mockFs.setMockJson(Object.assign({}, packageJsonFiles, {
-      [lernaJsonPath]: {
-        packages: null,
-      },
+      [lernaJsonPath]: false,
     }))
 
     mockFs.setMockFiles(pluginsFiles)

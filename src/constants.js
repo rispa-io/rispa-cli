@@ -17,6 +17,7 @@ const PLUGIN_PREFIX = '@rispa/'
 const PLUGIN_ALIAS = 'rispa:name'
 const PLUGIN_ACTIVATOR_PATH = './.rispa/activator.js'
 const PLUGIN_GENERATORS_PATH = './.rispa/generators/index.js'
+const NODE_MODULES_PLUGINS_PATH = `./node_modules/${PLUGIN_PREFIX}*`
 const PLUGIN_GIT_PREFIX = 'git:'
 const DEFAULT_PLUGIN_DEV_BRANCH = 'master'
 const DEFAULT_PLUGIN_BRANCH = 'stable'
@@ -45,6 +46,7 @@ module.exports = {
   PLUGIN_PREFIX,
   PLUGIN_ACTIVATOR_PATH,
   PLUGIN_GENERATORS_PATH,
+  NODE_MODULES_PLUGINS_PATH,
   PLUGIN_ALIAS,
   PLUGIN_GIT_PREFIX,
   DEV_MODE,
