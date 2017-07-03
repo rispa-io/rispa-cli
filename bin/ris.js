@@ -17,9 +17,8 @@ const RemovePluginsCommand = require('../src/commands/removePlugins')
 const UpdatePluginsCommand = require('../src/commands/updatePlugins')
 const GenerateCommand = require('../src/commands/generate')
 const CommitCommand = require('../src/commands/commit')
-const NumerateCommand = require('../src/commands/numerate')
 const AssembleCommand = require('../src/commands/assemble')
-const ReleaseCommand = require('../src/commands/release')
+const CleanCacheCommand = require('../src/commands/cleanCache')
 
 const logError = createDebug('rispa:error:cli')
 
@@ -31,9 +30,9 @@ const commands = [
   UpdatePluginsCommand,
   GenerateCommand,
   CommitCommand,
-  NumerateCommand,
   AssembleCommand,
   ReleaseCommand,
+  CleanCacheCommand,
 ]
 
 const parseArgs = args => {
