@@ -20,6 +20,7 @@ const {
   cloneRepository,
   checkout,
   merge,
+  clean,
 } = require.requireActual('../git')
 
 describe('git', () => {
@@ -309,7 +310,6 @@ describe('git', () => {
     })
   })
 
-
   describe('merge', () => {
     it('should work correctly', () => {
       merge(cwd, 'master')
@@ -322,6 +322,20 @@ describe('git', () => {
       mockCrossSpawn.sync.mockImplementationOnce(() => ({ status: 1 }))
 
       expect(() => merge(cwd, 'master')).toThrow('Failed git merge')
+    })
+  })
+
+  describe('clean', () => {
+    it('should work correctly', () => {
+      clean(cwd)
+
+      expect(mockCrossSpawn.sync.mock.calls[0]).toEqual(['git', ['clean', '-df'], { cwd, stdio: 'inherit' }])
+    })
+
+    it('should throw error', () => {
+      mockCrossSpawn.sync.mockImplementationOnce(() => ({ status: 1 }))
+
+      expect(() => clean(cwd)).toThrow('Failed git clean')
     })
   })
 })

@@ -5,7 +5,7 @@ jest.mock('../../tasks/saveProjectConfiguration')
 jest.mock('../../utils/git')
 
 const path = require.requireActual('path')
-const { ALL_PLUGINS, DEV_MODE } = require.requireActual('../../constants')
+const { ALL_PLUGINS, DEV_MODE, TEST_MODE } = require.requireActual('../../constants')
 
 const readProjectConfiguration = require.requireMock('../../tasks/readProjectConfiguration')
 const mockInquirer = require.requireMock('inquirer')
@@ -21,6 +21,7 @@ describe('update plugins', () => {
     mockGit.updateSubtree.mockClear()
     mockGit.updateSubtree.mockImplementation(() => true)
     mockGit.commit.mockClear()
+    mockGit.clean.mockClear()
     mockGit.pullRepository.mockClear()
   })
 
@@ -75,6 +76,16 @@ describe('update plugins', () => {
     mockFs.setMockFiles([path.resolve(pluginPath, './.git')])
 
     await expect(runCommand([pluginName])).resolves.toBeDefined()
+    expect(mockGit.pullRepository).toBeCalledWith(pluginPath)
+  })
+
+  it('should success update single plugin in test mode', async () => {
+    mockReadConfigurationTask(TEST_MODE)
+
+    mockFs.setMockFiles([path.resolve(pluginPath, './.git')])
+
+    await expect(runCommand([pluginName])).resolves.toBeDefined()
+    expect(mockGit.clean).toBeCalledWith(pluginPath)
     expect(mockGit.pullRepository).toBeCalledWith(pluginPath)
   })
 

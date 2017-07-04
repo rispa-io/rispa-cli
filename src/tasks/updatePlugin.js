@@ -1,24 +1,20 @@
 const chalk = require('chalk')
 const path = require('path')
 const fs = require('fs-extra')
-const { pullRepository, updateSubtree } = require('../utils/git')
+const {
+  pullRepository: gitPull,
+  updateSubtree: gitUpdateSubtree,
+  clean: gitClean,
+} = require('../utils/git')
 const { improveTask, checkMode } = require('../utils/tasks')
 const { DEV_MODE, TEST_MODE } = require('../constants')
-
-const updatePluginRepository = pluginPath => {
-  if (!fs.existsSync(path.resolve(pluginPath, './.git'))) {
-    throw new Error('Not a git repository: .git')
-  }
-
-  pullRepository(pluginPath)
-}
 
 const updatePluginSubtree = (remotes, projectPath, pluginsPath, pluginName) => {
   const remoteUrl = remotes[pluginName]
   const pluginsRelPath = path.relative(projectPath, pluginsPath)
   const prefix = `${pluginsRelPath}/${pluginName}`
 
-  if (!updateSubtree(projectPath, prefix, pluginName, remoteUrl)) {
+  if (!gitUpdateSubtree(projectPath, prefix, pluginName, remoteUrl)) {
     throw new Error(`Failed update subtree '${remoteUrl}'`)
   }
 }
@@ -36,7 +32,15 @@ const createUpdatePlugin = name => improveTask({
     const pluginPath = path.resolve(pluginsPath, `./${name}`)
 
     if (checkMode(ctx, DEV_MODE, TEST_MODE)) {
-      updatePluginRepository(pluginPath)
+      if (!fs.existsSync(path.resolve(pluginPath, './.git'))) {
+        throw new Error('Not a git repository: .git')
+      }
+
+      if (checkMode(ctx, TEST_MODE)) {
+        gitClean(pluginPath)
+      }
+
+      gitPull(pluginPath)
     } else {
       updatePluginSubtree(configuration.remotes, projectPath, pluginsPath, name)
     }
