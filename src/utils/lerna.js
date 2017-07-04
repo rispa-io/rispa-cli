@@ -10,12 +10,14 @@ const readPluginsPaths = projectPath => {
   }
 
   const lernaPluginsPaths = lernaPackages.map(pluginsPath => path.resolve(projectPath, `./${pluginsPath}`))
-  const pluginsPaths = lernaPluginsPaths
+  const nodeModulesPluginsPaths = lernaPluginsPaths
     .map(pluginsPath => path.resolve(pluginsPath, NODE_MODULES_PLUGINS_PATH))
     .concat(path.resolve(projectPath, NODE_MODULES_PLUGINS_PATH))
-    .concat(lernaPluginsPaths)
 
-  return pluginsPaths
+  return {
+    nodeModules: nodeModulesPluginsPaths,
+    lerna: lernaPluginsPaths,
+  }
 }
 
 module.exports = {

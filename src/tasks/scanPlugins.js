@@ -1,19 +1,14 @@
 const path = require('path')
 const fs = require('fs-extra')
 const glob = require('glob')
-const { savePluginsCache, readPluginsCache } = require('../utils/pluginsCache')
 const { readPluginsPaths } = require('../utils/lerna')
-const { PLUGIN_PREFIX, PACKAGE_JSON_PATH, PLUGIN_ALIAS, PLUGIN_ACTIVATOR_PATH, PLUGIN_GENERATORS_PATH } = require('../constants')
+const { readPackageJson } = require('../utils/plugin')
+const { savePluginsCache, readPluginsCache } = require('../utils/pluginsCache')
+const { PLUGIN_PREFIX, PLUGIN_ALIAS, PLUGIN_ACTIVATOR_PATH, PLUGIN_GENERATORS_PATH } = require('../constants')
 
-const getPluginInfo = pluginPath => {
-  const packageJson = fs.readJsonSync(path.resolve(pluginPath, PACKAGE_JSON_PATH), { throws: false })
-
-  if (!packageJson || !packageJson.name.startsWith(PLUGIN_PREFIX)) {
-    return null
-  }
-
-  const name = packageJson.name
-  const rispaName = packageJson[PLUGIN_ALIAS]
+const getPluginInfo = ([pluginPath, packageInfo]) => {
+  const name = packageInfo.name
+  const rispaName = packageInfo[PLUGIN_ALIAS]
   const activatorPath = path.resolve(pluginPath, PLUGIN_ACTIVATOR_PATH)
   const generatorsPath = path.resolve(pluginPath, PLUGIN_GENERATORS_PATH)
 
@@ -21,7 +16,7 @@ const getPluginInfo = pluginPath => {
     name,
     path: pluginPath,
     alias: rispaName,
-    scripts: packageJson.scripts ? Object.keys(packageJson.scripts) : [],
+    scripts: packageInfo.scripts ? Object.keys(packageInfo.scripts) : [],
     activator: fs.existsSync(activatorPath) && activatorPath,
     generators: fs.existsSync(generatorsPath) && generatorsPath,
   }
@@ -45,21 +40,34 @@ const getPluginsFromCache = (pluginsPath, cache) => {
     }, {})
 }
 
-const scanPluginsByPath = pluginsPath => (
-  glob.sync(pluginsPath).reduce((result, packagePath) => {
-    const pluginInfo = getPluginInfo(packagePath)
-    if (!pluginInfo) {
+const createPluginCheck = strict => ([, packageInfo]) => (
+  packageInfo.name && (!strict || (strict && packageInfo.name.startsWith(PLUGIN_PREFIX)))
+)
+
+const scanPluginsByPath = (pluginsPath, checker) => (
+  glob.sync(pluginsPath)
+    .map(pluginPath => [pluginPath, readPackageJson(pluginPath)])
+    .filter(checker)
+    .map(getPluginInfo)
+    .reduce((result, plugin) => {
+      if (plugin.alias) {
+        result[plugin.alias] = plugin
+      }
+
+      result[plugin.name] = plugin
       return result
-    }
+    }, {})
+)
 
-    if (pluginInfo.alias) {
-      result[pluginInfo.alias] = pluginInfo
-    }
-
-    result[pluginInfo.name] = pluginInfo
-
-    return result
-  }, {})
+const getPluginsByPaths = (pluginsPaths, cache, checker) => (
+  pluginsPaths.reduce((result, pluginsPath) => (
+    Object.assign(result, {
+      [pluginsPath]: (
+        getPluginsFromCache(pluginsPath, cache) ||
+        scanPluginsByPath(pluginsPath, checker)
+      ),
+    })
+  ), {})
 )
 
 const scanPluginsTask = ctx => {
@@ -67,11 +75,10 @@ const scanPluginsTask = ctx => {
   const pluginsCache = readPluginsCache(projectPath)
   const pluginsPaths = readPluginsPaths(projectPath)
 
-  const pluginsByPaths = pluginsPaths.reduce((result, pluginsPath) => (
-    Object.assign(result, {
-      [pluginsPath]: getPluginsFromCache(pluginsPath, pluginsCache) || scanPluginsByPath(pluginsPath),
-    })
-  ), {})
+  const pluginsByPaths = Object.assign(
+    getPluginsByPaths(pluginsPaths.lerna, pluginsCache, createPluginCheck(false)),
+    getPluginsByPaths(pluginsPaths.nodeModules, pluginsCache, createPluginCheck(true))
+  )
 
   const plugins = Object.values(pluginsByPaths).reduce((result, pluginsByPath) => (
     Object.assign(result, pluginsByPath)
