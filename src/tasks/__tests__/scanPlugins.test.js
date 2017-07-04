@@ -7,7 +7,14 @@ jest.mock('glob')
 
 const path = require.requireActual('path')
 const {
-  PLUGIN_PREFIX, PLUGIN_ACTIVATOR_PATH, PLUGIN_GENERATORS_PATH, LERNA_JSON_PATH, PACKAGE_JSON_PATH, PLUGIN_ALIAS, PLUGINS_CACHE_PATH,
+  PLUGIN_PREFIX,
+  PLUGIN_ACTIVATOR_PATH,
+  PLUGIN_GENERATORS_PATH,
+  LERNA_JSON_PATH,
+  PACKAGE_JSON_PATH,
+  PLUGIN_ALIAS,
+  PLUGINS_CACHE_PATH,
+  NODE_MODULES_PLUGINS_PATH,
 } = require.requireActual('../../constants')
 
 const mockFs = require.requireMock('fs-extra')
@@ -16,23 +23,7 @@ const mockGlob = require.requireMock('glob')
 const scanPlugins = require.requireActual('../scanPlugins')
 
 describe('scan plugins', () => {
-  let originalConsoleLog
-
-  beforeAll(() => {
-    originalConsoleLog = console.log
-  })
-
-  afterAll(() => {
-    Object.defineProperty(console, 'log', {
-      value: originalConsoleLog,
-    })
-  })
-
   beforeEach(() => {
-    Object.defineProperty(console, 'log', {
-      value: jest.fn(),
-    })
-
     mockFs.setMockFiles([])
     mockFs.setMockJson({})
     mockGlob.setMockPaths({})
@@ -104,6 +95,33 @@ describe('scan plugins', () => {
     })
 
     mockFs.setMockJson(Object.assign({}, packageJsonFiles, lernaJsonFile))
+
+    mockFs.setMockFiles(pluginsFiles)
+
+    const context = {
+      projectPath,
+    }
+
+    expect(() => scanPlugins.task(context)).not.toThrow()
+
+    expect(context).toHaveProperty('projectPath', projectPath)
+    expect(context).toHaveProperty('plugins', plugins)
+  })
+
+  it('should success scan plugins with invalid plugin in `node_modules`', () => {
+    const nodeModulesPluginsPath = path.resolve(projectPath, NODE_MODULES_PLUGINS_PATH)
+    const invalidPluginName = 'invalid-plugin'
+    const invalidPluginPath = path.resolve(nodeModulesPluginsPath, `./${invalidPluginName}`)
+    mockGlob.setMockPaths({
+      [pluginsScanPath]: pluginsPaths,
+      [path.resolve(projectPath, NODE_MODULES_PLUGINS_PATH)]: [invalidPluginPath],
+    })
+
+    mockFs.setMockJson(Object.assign({}, packageJsonFiles, lernaJsonFile, {
+      [path.resolve(invalidPluginPath, PACKAGE_JSON_PATH)]: {
+        name: invalidPluginName,
+      },
+    }))
 
     mockFs.setMockFiles(pluginsFiles)
 
