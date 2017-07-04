@@ -89,13 +89,6 @@ describe('run plugin script', () => {
     expect(createRunPluginScript).toBeCalledWith(pluginName, pluginPath, scriptName, args)
   })
 
-  it('should failed run script in all plugins - cant find script in plugins', async () => {
-    mockScanPlugins()
-
-    await expect(runCommand([ALL_PLUGINS, 'someScript', ...args]))
-      .rejects.toHaveProperty('message', 'Can\'t find script \'someScript\' in plugins')
-  })
-
   it('should failed run - cant find plugins', async () => {
     scanPlugins.setMockPlugins({})
 
