@@ -261,18 +261,28 @@ describe('git', () => {
 
   describe('cloneRepository', () => {
     it('should work correctly', () => {
-      cloneRepository(cwd, 'cloneUrl', 'master')
+      cloneRepository(cwd, 'cloneUrl', { ref: 'stable' })
 
       expect(mockCrossSpawn.sync)
-        .toBeCalledWith('git', ['clone', '--branch', 'master', 'cloneUrl'], spawnOptions)
+        .toBeCalledWith('git', ['clone', 'cloneUrl', '--branch', 'stable'], spawnOptions)
     })
 
     it('should work correctly with default branch', () => {
-      cloneRepository(cwd, 'cloneUrl', 'master')
+      cloneRepository(cwd, 'cloneUrl')
 
       expect(mockCrossSpawn.sync).toBeCalledWith(
         'git',
-        ['clone', '--branch', DEFAULT_PLUGIN_DEV_BRANCH, 'cloneUrl'],
+        ['clone', 'cloneUrl', '--branch', DEFAULT_PLUGIN_DEV_BRANCH],
+        spawnOptions
+      )
+    })
+
+    it('should work correctly with depth', () => {
+      cloneRepository(cwd, 'cloneUrl', { depth: 1 })
+
+      expect(mockCrossSpawn.sync).toBeCalledWith(
+        'git',
+        ['clone', 'cloneUrl', '--branch', DEFAULT_PLUGIN_DEV_BRANCH, '--depth', 1],
         spawnOptions
       )
     })

@@ -5,9 +5,12 @@ const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
 const cleanCache = require('../tasks/cleanCache')
 const createRemovePlugin = require('../tasks/removePlugin')
 const selectPlugins = require('../tasks/selectPlugins')
-const { extendsTask, skipDevMode } = require('../utils/tasks')
+const { extendsTask, skipMode } = require('../utils/tasks')
+const { DEV_MODE } = require('../constants')
 const gitCheckChanges = require('../tasks/gitCheckChanges')
 const { commit: gitCommit } = require('../utils/git')
+
+const skipDevMode = skipMode(DEV_MODE)
 
 class RemovePluginsCommand extends Command {
   constructor([...pluginsToRemove], options) {

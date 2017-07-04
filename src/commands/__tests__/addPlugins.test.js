@@ -10,6 +10,7 @@ const {
   CONFIGURATION_PATH,
   PLUGIN_GIT_PREFIX,
   DEV_MODE,
+  TEST_MODE,
   PLUGIN_PREFIX,
   PACKAGE_JSON_PATH,
 } = require.requireActual('../../constants')
@@ -184,6 +185,35 @@ describe('add plugins', () => {
     expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
   })
 
+  it('should success add plugin in test mode', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        mode: TEST_MODE,
+        pluginsPath,
+        plugins: [],
+        remotes: {},
+      },
+    })
+
+    mockGithubApi.setMockPlugins([{
+      name: pluginName,
+      cloneUrl: pluginRemoteUrl,
+    }])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginName.replace('rispa-', PLUGIN_PREFIX),
+      },
+    })
+
+    await expect(
+      runCommand([pluginName])
+    ).resolves.toBeDefined()
+
+    expect(mockGit.cloneRepository).toBeCalledWith(pluginsPath, pluginRemoteUrl, { depth: 1 })
+    expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
+  })
+
   it('should success add plugin and bootstrap via yarn', async () => {
     mockFs.setMockJson({
       [rispaJsonPath]: {
@@ -226,7 +256,6 @@ describe('add plugins', () => {
     await expect(
       runCommand([`${PLUGIN_GIT_PREFIX}${pluginRemoteUrl}`])
     ).resolves.toBeDefined()
-
 
     expect(mockGit.getChanges).toBeCalled()
     expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, undefined)
@@ -341,7 +370,6 @@ describe('add plugins', () => {
     await expect(
       runCommand([`${PLUGIN_GIT_PREFIX}${invalidRemoteUrl}`])
     ).rejects.toHaveProperty('errors.0.message', `Invalid plugin remote url ${chalk.cyan(invalidRemoteUrl)}`)
-
 
     expect(mockGit.addSubtree).not.toBeCalledWith()
     expect(mockGit.commit).not.toBeCalledWith()

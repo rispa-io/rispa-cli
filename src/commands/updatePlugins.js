@@ -5,10 +5,13 @@ const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
 const cleanCache = require('../tasks/cleanCache')
 const createUpdatePlugin = require('../tasks/updatePlugin')
 const selectPlugins = require('../tasks/selectPlugins')
-const { extendsTask, skipDevMode } = require('../utils/tasks')
+const { extendsTask, skipMode } = require('../utils/tasks')
 const gitCheckChanges = require('../tasks/gitCheckChanges')
+const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
 const { commit: gitCommit } = require('../utils/git')
-const { ALL_PLUGINS } = require('../constants')
+const { ALL_PLUGINS, DEV_MODE, TEST_MODE } = require('../constants')
+
+const skipNotProdMode = skipMode(DEV_MODE, TEST_MODE)
 
 class RemovePluginsCommand extends Command {
   constructor([...pluginsToUpdate], options) {
@@ -42,7 +45,7 @@ class RemovePluginsCommand extends Command {
     this.add([
       readProjectConfiguration,
       extendsTask(gitCheckChanges, {
-        skip: skipDevMode,
+        skip: skipNotProdMode,
         after: ({ hasChanges }) => {
           if (hasChanges) {
             throw new Error('Working tree has modifications. Cannot update plugins')
@@ -67,10 +70,11 @@ class RemovePluginsCommand extends Command {
           }
         },
       },
+      bootstrapProjectDeps,
       saveProjectConfiguration,
       {
         title: 'Git commit',
-        skip: ctx => (ctx.updatedPlugins.length === 0 && 'Plugins not updated') || skipDevMode(ctx),
+        skip: ctx => (ctx.updatedPlugins.length === 0 && 'Plugins not updated') || skipNotProdMode(ctx),
         task: ({ projectPath, updatedPlugins }) => {
           gitCommit(projectPath, `Update plugins: ${updatedPlugins.join(', ')}`)
         },

@@ -1,6 +1,3 @@
-jest.resetAllMocks()
-jest.resetModules()
-
 jest.mock('axios')
 
 const mockAxios = require.requireMock('axios')

@@ -10,9 +10,12 @@ const fetchPlugins = require('../tasks/fetchPlugins')
 const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
 const cleanCache = require('../tasks/cleanCache')
 const resolvePluginsDeps = require('../tasks/resolvePluginsDeps')
-const { extendsTask, skipDevMode } = require('../utils/tasks')
+const { extendsTask, skipMode } = require('../utils/tasks')
+const { DEV_MODE, TEST_MODE } = require('../constants')
 const { commit: gitCommit } = require('../utils/git')
 const { findInList: findPluginInList } = require('../utils/plugin')
+
+const skipNotProdMode = skipMode(DEV_MODE, TEST_MODE)
 
 class AddPluginsCommand extends Command {
   constructor([...pluginsToInstall], options) {
@@ -51,7 +54,7 @@ class AddPluginsCommand extends Command {
     this.add([
       readProjectConfiguration,
       extendsTask(gitCheckChanges, {
-        skip: skipDevMode,
+        skip: skipNotProdMode,
         after: ({ hasChanges }) => {
           if (hasChanges) {
             throw new Error('Working tree has modifications. Cannot add plugins')
@@ -62,6 +65,7 @@ class AddPluginsCommand extends Command {
       {
         title: 'Select plugins to install',
         task: selectPlugins.task,
+        skip: skipNotProdMode,
         enabled: () => pluginsToInstall.length === 0,
         before: ctx => {
           ctx.excludePluginsNames = ctx.configuration.plugins
@@ -80,7 +84,9 @@ class AddPluginsCommand extends Command {
       saveProjectConfiguration,
       {
         title: 'Git commit',
-        skip: ctx => ((!ctx.installedPlugins || !ctx.installedPlugins.length) && 'Plugins not added') || skipDevMode(ctx),
+        skip: ctx => (
+          ((!ctx.installedPlugins || !ctx.installedPlugins.length) && 'Plugins not added') || skipNotProdMode(ctx)
+        ),
         task: ({ projectPath, installedPlugins }) => {
           gitCommit(projectPath, `Add plugins: ${installedPlugins.join(', ')}`)
         },
