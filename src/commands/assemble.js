@@ -1,7 +1,8 @@
 const fs = require('fs-extra')
 const Listr = require('listr')
 const Command = require('../Command')
-const { extendsTask, skipDevMode } = require('../utils/tasks')
+const { extendsTask, skipMode } = require('../utils/tasks')
+const { DEV_MODE } = require('../constants')
 const createRestorePluginTask = require('../tasks/restorePlugin')
 const readProjectConfiguration = require('../tasks/readProjectConfiguration')
 const gitCheckChanges = require('../tasks/gitCheckChanges')
@@ -12,7 +13,7 @@ class AssembleCommand extends Command {
     this.add([
       readProjectConfiguration,
       extendsTask(gitCheckChanges, {
-        skip: skipDevMode,
+        skip: skipMode(DEV_MODE),
         after: ({ hasChanges }) => {
           if (hasChanges) {
             throw new Error('Working tree has modifications. Cannot restore plugins')

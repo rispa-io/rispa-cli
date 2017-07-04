@@ -1,11 +1,11 @@
 const path = require('path')
 const { cyan } = require('chalk')
-const { improveTask } = require('../utils/tasks')
-const { DEV_MODE } = require('../constants')
+const { improveTask, checkMode } = require('../utils/tasks')
 const {
   addSubtree: gitAddSubtree,
   cloneRepository: gitCloneRepository,
 } = require('../utils/git')
+const { DEV_MODE, TEST_MODE } = require('../constants')
 
 const checkCloneUrl = cloneUrl => {
   if (!cloneUrl.endsWith('.git')) {
@@ -24,12 +24,13 @@ const createInstallPlugin = (name, cloneUrl, ref) => improveTask({
   task: ctx => {
     const { projectPath } = ctx
     const pluginsPath = ctx.pluginsPath || path.resolve(projectPath, ctx.configuration.pluginsPath)
-    const mode = ctx.mode || ctx.configuration.mode
 
     checkCloneUrl(cloneUrl)
 
-    if (mode === DEV_MODE) {
+    if (checkMode(ctx, DEV_MODE)) {
       gitCloneRepository(pluginsPath, cloneUrl)
+    } else if (checkMode(ctx, TEST_MODE)) {
+      gitCloneRepository(pluginsPath, cloneUrl, { depth: 1 })
     } else {
       const pluginsRelPath = path.relative(projectPath, pluginsPath)
       const prefix = `${pluginsRelPath}/${name}`

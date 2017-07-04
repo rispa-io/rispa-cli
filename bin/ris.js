@@ -21,8 +21,6 @@ const NumerateCommand = require('../src/commands/numerate')
 const AssembleCommand = require('../src/commands/assemble')
 const CleanCacheCommand = require('../src/commands/cleanCache')
 
-const logError = createDebug('rispa:error:cli')
-
 const commands = [
   RunPluginScriptCommand,
   CreateProjectCommand,
@@ -35,6 +33,20 @@ const commands = [
   AssembleCommand,
   CleanCacheCommand,
 ]
+
+const logError = createDebug('rispa:error:cli')
+
+const handleError = e => {
+  logError(e)
+  if (e.errors) {
+    e.errors.forEach(error => logError(error))
+  }
+  if (e.context) {
+    logError('Context:')
+    logError(e.context)
+  }
+  process.exit(1)
+}
 
 const parseArgs = args => {
   const paramRegExp = /^--([^=]+)=(.*)/
@@ -53,18 +65,6 @@ const parseArgs = args => {
   }, {})
 
   return [argv, params]
-}
-
-const handleError = e => {
-  logError(e)
-  if (e.errors) {
-    e.errors.forEach(error => logError(error))
-  }
-  if (e.context) {
-    logError('Context:')
-    logError(e.context)
-  }
-  process.exit(1)
 }
 
 const runCommand = ([firstArg = '', ...args]) => {

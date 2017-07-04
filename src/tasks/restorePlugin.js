@@ -6,17 +6,17 @@ const {
   cloneRepository: gitCloneRepository,
   getRemotes: gitGetRemotes,
 } = require('../utils/git')
-const { improveTask } = require('../utils/tasks')
+const { improveTask, checkMode } = require('../utils/tasks')
 const { DEV_MODE } = require('../constants')
 
 const createRestorePluginTask = name => improveTask({
   title: `Restore plugin with name ${chalk.cyan(name)}`,
   task: ctx => {
     const { projectPath, configuration } = ctx
-    const { mode, remotes } = configuration
+    const { remotes } = configuration
     const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
 
-    if (mode === DEV_MODE) {
+    if (checkMode(ctx, DEV_MODE)) {
       if (!fs.existsSync(path.resolve(pluginsPath, name))) {
         gitCloneRepository(pluginsPath, remotes[name])
       }

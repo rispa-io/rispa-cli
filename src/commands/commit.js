@@ -5,7 +5,8 @@ const readProjectConfiguration = require('../tasks/readProjectConfiguration')
 const { getChanges: gitGetChanges } = require('../utils/git')
 const createCommitAndPushPluginChanges = require('../tasks/commitAndPushPluginChanges')
 const createCommitAndPushChanges = require('../tasks/commitAndPushChanges')
-const { checkDevMode } = require('../utils/tasks')
+const { checkMode } = require('../utils/tasks')
+const { DEV_MODE } = require('../constants')
 
 class CommitCommand extends Command {
   constructor(options) {
@@ -22,10 +23,9 @@ class CommitCommand extends Command {
   }
 
   getChanges(ctx) {
-    const mode = ctx.mode || ctx.configuration.mode
     const { projectPath, configuration } = ctx
 
-    if (mode === 'dev') {
+    if (checkMode(ctx, DEV_MODE)) {
       const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
 
       this.state.pluginsChanges = configuration.plugins
@@ -63,7 +63,7 @@ class CommitCommand extends Command {
       },
       {
         title: 'Commit plugins changes',
-        enabled: checkDevMode,
+        enabled: ctx => checkMode(ctx, DEV_MODE),
         skip: () => this.state.pluginsChanges.length === 0 && 'Can\'t find plugins changes',
         task: this.commitPluginsChanges,
       },

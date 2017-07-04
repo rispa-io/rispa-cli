@@ -5,10 +5,17 @@ const REMOTE_REGEXP = /([^\s]+)\s+([^\s]+)\s+\((\w+)\)/g
 
 const defaultSpawnOptions = cwd => ({ cwd, stdio: 'inherit' })
 
-const cloneRepository = (path, cloneUrl, ref = DEFAULT_PLUGIN_DEV_BRANCH) => {
+const cloneRepository = (path, cloneUrl, { ref = DEFAULT_PLUGIN_DEV_BRANCH, depth } = {}) => {
+  const options = ['--branch', ref]
+
+  if (depth) {
+    options.push('--depth')
+    options.push(depth)
+  }
+
   const result = spawn.sync(
     'git',
-    ['clone', '--branch', ref, cloneUrl],
+    ['clone', cloneUrl].concat(options),
     defaultSpawnOptions(path)
   )
 

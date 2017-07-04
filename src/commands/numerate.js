@@ -4,7 +4,7 @@ const Command = require('../Command')
 const readProjectConfiguration = require('../tasks/readProjectConfiguration')
 const createUpdatePluginTagVersion = require('../tasks/updatePluginTagVersion')
 const createUpdateTagVersion = require('../tasks/updateTagVersion')
-const { checkDevMode } = require('../utils/tasks')
+const { checkMode } = require('../utils/tasks')
 const { tagInfo: gitTagInfo } = require('../utils/git')
 const { DEV_MODE } = require('../constants')
 
@@ -23,10 +23,9 @@ class NumerateCommand extends Command {
   }
 
   getTags(ctx) {
-    const mode = ctx.mode || ctx.configuration.mode
     const { projectPath, configuration } = ctx
 
-    if (mode === DEV_MODE) {
+    if (checkMode(ctx, DEV_MODE)) {
       const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
 
       this.state.pluginsTags = configuration.plugins
@@ -64,7 +63,7 @@ class NumerateCommand extends Command {
       },
       {
         title: 'Update plugins tag version',
-        enabled: checkDevMode,
+        enabled: ctx => checkMode(ctx, DEV_MODE),
         skip: () => this.state.pluginsTags.length === 0,
         task: this.updatePluginsTagVersion,
       },
