@@ -106,7 +106,9 @@ describe('commit', () => {
     mockInquirer.setMockAnswers({
       commitMessage,
     })
-    mockGit.commit.mockImplementation(() => false)
+    mockGit.commit.mockImplementation(() => {
+      throw new Error('Failed git commit')
+    })
 
     await expect(runCommand())
       .rejects.toHaveProperty('message', 'Failed git commit')
@@ -119,7 +121,9 @@ describe('commit', () => {
       commitMessage,
     })
     mockGit.commit.mockImplementation(() => true)
-    mockGit.push.mockImplementation(() => false)
+    mockGit.push.mockImplementation(() => {
+      throw new Error('Failed git push')
+    })
 
     await expect(runCommand())
       .rejects.toHaveProperty('message', 'Failed git push')

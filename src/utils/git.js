@@ -26,13 +26,19 @@ const cloneRepository = (path, cloneUrl, { ref = DEFAULT_PLUGIN_DEV_BRANCH, dept
   return result
 }
 
-const pullRepository = path => (
-  spawn.sync(
+const pullRepository = path => {
+  const result = spawn.sync(
     'git',
     ['pull'],
     defaultSpawnOptions(path)
-  ).status === 0
-)
+  )
+
+  if (result.status !== 0) {
+    throw new Error('Failed git pull changes')
+  }
+
+  return result
+}
 
 const addRemote = (path, remoteName, remoteUrl) => (
   spawn.sync(
@@ -119,17 +125,27 @@ const init = (path, remoteUrl) => {
 
 const commit = (path, message) => {
   const options = defaultSpawnOptions(path)
-  return spawn.sync('git', ['add', '.'], options).status === 0 &&
+  const success = spawn.sync('git', ['add', '.'], options).status === 0 &&
     spawn.sync('git', ['commit', '-m', message], options).status === 0
+
+  if (!success) {
+    throw new Error('Failed git commit')
+  }
 }
 
-const push = path => (
-  spawn.sync(
+const push = path => {
+  const result = spawn.sync(
     'git',
     ['push'],
     defaultSpawnOptions(path)
-  ).status === 0
-)
+  )
+
+  if (result.status !== 0) {
+    throw new Error('Failed git push')
+  }
+
+  return result
+}
 
 const getChanges = path => {
   const result = spawn.sync(
@@ -178,8 +194,32 @@ const tagInfo = path => {
 
 const addTag = (path, tag) => {
   const spawnOptions = defaultSpawnOptions(path)
-  return spawn.sync('git', ['tag', tag], spawnOptions).status === 0 &&
+  const success = spawn.sync('git', ['tag', tag], spawnOptions).status === 0 &&
     spawn.sync('git', ['push', '--tags'], spawnOptions).status === 0
+
+  if (!success) {
+    throw new Error('Failed git add tag')
+  }
+}
+
+const checkout = (path, branch) => {
+  const spawnOptions = defaultSpawnOptions(path)
+  const result = spawn.sync('git', ['checkout', branch], spawnOptions)
+  if (result.status !== 0) {
+    throw new Error('Failed git checkout')
+  }
+
+  return result
+}
+
+const merge = (path, branch) => {
+  const spawnOptions = defaultSpawnOptions(path)
+  const result = spawn.sync('git', ['merge', branch], spawnOptions)
+  if (result.status !== 0) {
+    throw new Error('Failed git merge')
+  }
+
+  return result
 }
 
 module.exports = {
@@ -196,4 +236,6 @@ module.exports = {
   getChanges,
   tagInfo,
   addTag,
+  checkout,
+  merge,
 }

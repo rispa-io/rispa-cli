@@ -15,13 +15,9 @@ const createCommitAndPushPluginChanges = (path, changes) => ({
 
     return enterCommitMessage(path).then(({ commitMessage }) => {
       if (commitMessage) {
-        if (!gitCommit(path, commitMessage)) {
-          throw new Error('Failed git commit')
-        }
+        gitCommit(path, commitMessage)
 
-        if (!gitPush(path)) {
-          throw new Error('Failed git push')
-        }
+        gitPush(path)
       }
     })
   },
