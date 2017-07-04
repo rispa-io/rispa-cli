@@ -37,10 +37,6 @@ class RunPluginScriptCommand extends Command {
     ctx.plugins = Object.values(ctx.plugins)
       .filter((value, idx, values) => values.indexOf(value) === idx)
       .filter(({ scripts }) => scripts.indexOf(scriptName) !== -1)
-
-    if (ctx.plugins.length === 0) {
-      throw new Error(`Can't find script '${scriptName}' in plugins`)
-    }
   }
 
   checkingSingle(ctx) {
