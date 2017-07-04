@@ -17,6 +17,8 @@ const { findInList: findPluginInList } = require('../utils/plugin')
 
 const skipNotProdMode = skipMode(DEV_MODE, TEST_MODE)
 
+const skipTestMode = skipMode(TEST_MODE)
+
 class AddPluginsCommand extends Command {
   constructor([...pluginsToInstall], options) {
     super(options)
@@ -65,7 +67,7 @@ class AddPluginsCommand extends Command {
       {
         title: 'Select plugins to install',
         task: selectPlugins.task,
-        skip: skipNotProdMode,
+        skip: skipTestMode,
         enabled: () => pluginsToInstall.length === 0,
         before: ctx => {
           ctx.excludePluginsNames = ctx.configuration.plugins
