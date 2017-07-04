@@ -5,7 +5,7 @@ const RemovePluginsCommand = require('./src/commands/removePlugins')
 const UpdatePluginsCommand = require('./src/commands/updatePlugins')
 const GenerateCommand = require('./src/commands/generate')
 const CommitCommand = require('./src/commands/commit')
-const NumerateCommand = require('./src/commands/numerate')
+const ReleaseCommand = require('./src/commands/release')
 const AssembleCommand = require('./src/commands/assemble')
 
 const commands = [
@@ -16,8 +16,8 @@ const commands = [
   UpdatePluginsCommand,
   GenerateCommand,
   CommitCommand,
-  NumerateCommand,
   AssembleCommand,
+  ReleaseCommand,
 ]
 
 const runCommand = (commandName, argv, params, options) => {

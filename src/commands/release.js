@@ -7,8 +7,8 @@ const readProjectConfiguration = require('../tasks/readProjectConfiguration')
 const scanPluginsVersion = require('../tasks/scanPluginsVersion')
 const createCheckoutPlugin = require('../tasks/checkoutPlugin')
 const updatePluginsVersion = require('../tasks/updatePluginsVersion')
-const { checkDevMode } = require('../utils/tasks')
-const { DEFAULT_PLUGIN_DEV_BRANCH, PLUGIN_PREFIX } = require('../constants')
+const { checkMode } = require('../utils/tasks')
+const { DEFAULT_PLUGIN_DEV_BRANCH, PLUGIN_PREFIX, DEV_MODE } = require('../constants')
 
 const selectNextVersion = versions => prompt([{
   type: 'list',
@@ -38,7 +38,7 @@ class ReleaseCommand extends Command {
       {
         title: 'Checkout plugins',
         before: ctx => {
-          if (!checkDevMode(ctx)) {
+          if (!checkMode(ctx, DEV_MODE)) {
             throw new Error('Release available only in development mode')
           }
         },
@@ -72,7 +72,10 @@ class ReleaseCommand extends Command {
 
           const notFoundDependencies = dependencies.filter(dependency => pluginNames.indexOf(dependency) === -1)
           if (notFoundDependencies.length) {
-            console.log(chalk.bold.red('Can\'t find dependencies in project:\n'), chalk.cyan(notFoundDependencies.join(', ')))
+            console.log(
+              chalk.bold.red('Can\'t find dependencies in project:\n'),
+              chalk.cyan(notFoundDependencies.join(', '))
+            )
             return askWantToContinue()
               .then(({ confirm }) =>
                 !confirm && Promise.reject(new Error('Interrupt command'))
