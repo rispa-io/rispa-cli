@@ -222,6 +222,16 @@ const merge = (path, branch) => {
   return result
 }
 
+const clean = path => {
+  const spawnOptions = defaultSpawnOptions(path)
+  const result = spawn.sync('git', ['clean', '-df'], spawnOptions)
+  if (result.status !== 0) {
+    throw new Error('Failed git clean')
+  }
+
+  checkout(path, '.')
+}
+
 module.exports = {
   cloneRepository,
   pullRepository,
@@ -238,4 +248,5 @@ module.exports = {
   addTag,
   checkout,
   merge,
+  clean,
 }
