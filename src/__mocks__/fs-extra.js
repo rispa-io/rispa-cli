@@ -43,4 +43,8 @@ fs.setMockFiles = newMockFiles => {
   mockFiles = newMockFiles
 }
 
+fs.lstatSync = () => ({
+  isSymbolicLink: jest.fn(() => false),
+})
+
 module.exports = fs
