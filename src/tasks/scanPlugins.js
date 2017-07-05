@@ -44,10 +44,11 @@ const createPluginCheck = strict => ([, packageInfo]) => (
   packageInfo.name && (!strict || (strict && packageInfo.name.startsWith(PLUGIN_PREFIX)))
 )
 
-const scanPluginsByPath = (pluginsPath, checker) => (
+const scanPluginsByPath = (pluginsPath, checker) =>
   glob.sync(pluginsPath)
     .map(pluginPath => [pluginPath, readPackageJson(pluginPath)])
     .filter(checker)
+    .filter(([ pluginPath ]) => !fs.lstatSync(pluginPath).isSymbolicLink())
     .map(getPluginInfo)
     .reduce((result, plugin) => {
       if (plugin.alias) {
@@ -57,7 +58,6 @@ const scanPluginsByPath = (pluginsPath, checker) => (
       result[plugin.name] = plugin
       return result
     }, {})
-)
 
 const getPluginsByPaths = (pluginsPaths, cache, checker) => (
   pluginsPaths.reduce((result, pluginsPath) => (
