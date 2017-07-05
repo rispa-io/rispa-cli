@@ -48,7 +48,7 @@ const scanPluginsByPath = (pluginsPath, checker) =>
   glob.sync(pluginsPath)
     .map(pluginPath => [pluginPath, readPackageJson(pluginPath)])
     .filter(checker)
-    .filter(([ pluginPath ]) => !fs.lstatSync(pluginPath).isSymbolicLink())
+    .filter(([pluginPath]) => !fs.lstatSync(pluginPath).isSymbolicLink())
     .map(getPluginInfo)
     .reduce((result, plugin) => {
       if (plugin.alias) {
