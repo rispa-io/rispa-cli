@@ -46,9 +46,9 @@ const createPluginCheck = strict => ([, packageInfo]) => (
 
 const scanPluginsByPath = (pluginsPath, checker) =>
   glob.sync(pluginsPath)
+    .filter(pluginPath => !fs.lstatSync(pluginPath).isSymbolicLink())
     .map(pluginPath => [pluginPath, readPackageJson(pluginPath)])
     .filter(checker)
-    .filter(([pluginPath]) => !fs.lstatSync(pluginPath).isSymbolicLink())
     .map(getPluginInfo)
     .reduce((result, plugin) => {
       if (plugin.alias) {
