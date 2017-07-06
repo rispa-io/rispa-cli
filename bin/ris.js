@@ -92,7 +92,7 @@ const inGlobalModules = fullpath => {
 }
 
 const isGlobalRun = () => {
-  const execPath = fs.realpathSync(process.argv[1]);
+  const execPath = fs.realpathSync(process.argv[1])
 
   return inGlobalModules(execPath)
 }
