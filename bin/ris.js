@@ -8,6 +8,7 @@ const path = require('path')
 const chalk = require('chalk')
 const fs = require('fs-extra')
 const createDebug = require('debug')
+const globalPrefix = require('global-prefix')
 const { CWD, LOCAL_VERSION_PATH, PACKAGE_JSON_PATH } = require('../src/constants')
 
 const RunPluginScriptCommand = require('../src/commands/runPluginScript')
@@ -20,7 +21,6 @@ const CommitCommand = require('../src/commands/commit')
 const AssembleCommand = require('../src/commands/assemble')
 const CleanCacheCommand = require('../src/commands/cleanCache')
 const ReleaseCommand = require('../src/commands/release')
-const globalPrefix = require('global-prefix')
 
 const commands = [
   RunPluginScriptCommand,
