@@ -28,6 +28,7 @@ const SKIP_REASONS = {
   [TEST_MODE]: 'Testing mode',
 }
 const ALL_PLUGINS = 'all'
+const CLI_PLUGIN_NAME = 'rispa-cli'
 
 module.exports = {
   CWD,
@@ -55,4 +56,5 @@ module.exports = {
   ALL_PLUGINS,
   DEFAULT_PLUGIN_BRANCH,
   DEFAULT_PLUGIN_DEV_BRANCH,
+  CLI_PLUGIN_NAME,
 }
