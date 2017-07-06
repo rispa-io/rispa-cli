@@ -103,7 +103,7 @@ class GenerateCommand extends Command {
     generators.setPlopfilePath(destPath)
 
     return generator.runPrompts()
-      .then(generator.runActions)
+      .then(data => generator.runActions(Object.assign({ pluginName }, data)))
       .then(result => {
         if (result.failures && result.failures.length) {
           const error = result.failures
