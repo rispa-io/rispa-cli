@@ -123,8 +123,8 @@ const runLocalVersion = args => {
   console.log(chalk.bold.green('Switch to use local version'))
 
   const result = spawn.sync(
-    'node',
-    [LOCAL_VERSION_PATH].concat(args),
+    LOCAL_VERSION_PATH,
+    args,
     {
       cwd: process.cwd(),
       stdio: 'inherit',
