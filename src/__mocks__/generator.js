@@ -4,6 +4,7 @@ let mockGenerators = {}
 
 const defaultGenerator = {
   runActions: () => Promise.resolve(),
+  runPrompts: () => Promise.resolve(),
 }
 
 function mockGenerator() {
@@ -11,6 +12,7 @@ function mockGenerator() {
     getGenerator: name => name in mockGenerators ? mockGenerators[name] : defaultGenerator,
     containsGenerator: name => name in mockGenerators,
     getGeneratorList: () => Object.values(mockGenerators),
+    setPlopfilePath: jest.fn(),
   }
 }
 

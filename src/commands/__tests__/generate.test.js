@@ -18,7 +18,6 @@ describe('generate', () => {
   const cwd = '/cwd'
   const pluginName = 'rispa-core'
   const pluginRemoteUrl = `https://git.com/${pluginName}.git`
-  const args = [1, 2, 'test']
   const pluginsPath = path.resolve(cwd, './packages')
   const pluginPath = path.resolve(pluginsPath, `./${pluginName}`)
   const generatorName = 'generatorName'
@@ -58,9 +57,10 @@ describe('generate', () => {
   }
 
   const mockGeneratorRun = () => {
-    const run = jest.fn()
+    const run = jest.fn(() => Promise.resolve({}))
     mockGenerator.setMockGenerators({
       [generatorName]: {
+        runPrompts: jest.fn(() => Promise.resolve({})),
         runActions: run,
       },
     })
@@ -73,12 +73,34 @@ describe('generate', () => {
 
     const generatorRun = mockGeneratorRun()
 
-    await expect(runCommand([pluginName, generatorName, ...args]))
+    await expect(runCommand([generatorName, pluginName]))
       .resolves.toBeDefined()
 
-    expect(generatorRun.mock.calls[0][0]).toHaveProperty('configuration', configuration)
-    expect(generatorRun.mock.calls[0][0]).toHaveProperty('projectPath', cwd)
-    expect(generatorRun.mock.calls[0][0]).toHaveProperty('args', args)
+    expect(generatorRun).toBeCalled()
+  })
+
+  it('should success feature generator', async () => {
+    mockReadConfigurationTask()
+    mockScanPlugins()
+
+    mockInquirer.setMockAnswers({
+      pluginName,
+      generatorName,
+    })
+
+    const run = jest.fn(() => Promise.resolve({}))
+    mockGenerator.setMockGenerators({
+      [generatorName]: {
+        isFeatureGenerator: true,
+        runPrompts: jest.fn(() => Promise.resolve({})),
+        runActions: run,
+      },
+    })
+
+    await expect(runCommand([]))
+      .resolves.toBeDefined()
+
+    expect(run).toBeCalled()
   })
 
   it('should success run selected generator', async () => {
@@ -104,7 +126,7 @@ describe('generate', () => {
       generatorName,
     })
 
-    await expect(runCommand(['other-plugin', generatorName]))
+    await expect(runCommand([generatorName, 'other-plugin']))
       .rejects.toHaveProperty('message', `Can't find plugin with name ${chalk.cyan('other-plugin')}`)
   })
 
@@ -113,7 +135,7 @@ describe('generate', () => {
     mockScanPlugins()
     mockGenerator.setMockGenerators({})
 
-    await expect(runCommand([pluginName, generatorName]))
+    await expect(runCommand([generatorName, pluginName]))
       .rejects.toHaveProperty('message', 'Can\'t find generators')
   })
 
@@ -122,7 +144,23 @@ describe('generate', () => {
     mockScanPlugins()
     mockGeneratorRun()
 
-    await expect(runCommand([pluginName, 'unknown-generator']))
+    await expect(runCommand(['unknown-generator', pluginName]))
       .rejects.toHaveProperty('message', `Can't find generator with name ${chalk.cyan('unknown-generator')}`)
+  })
+
+  it('should catch error from plop', async () => {
+    mockReadConfigurationTask()
+    mockScanPlugins()
+
+    const failure = { path: 'path', error: 'error' }
+    mockGenerator.setMockGenerators({
+      [generatorName]: {
+        runPrompts: jest.fn(() => Promise.resolve({})),
+        runActions: jest.fn(() => Promise.resolve({ failures: [failure] })),
+      },
+    })
+
+    await expect(runCommand([generatorName, pluginName]))
+      .rejects.toHaveProperty('message', 'path: error')
   })
 })
