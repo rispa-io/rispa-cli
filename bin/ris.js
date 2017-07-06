@@ -20,6 +20,7 @@ const CommitCommand = require('../src/commands/commit')
 const AssembleCommand = require('../src/commands/assemble')
 const CleanCacheCommand = require('../src/commands/cleanCache')
 const ReleaseCommand = require('../src/commands/release')
+const globalPrefix = require('global-prefix')
 
 const commands = [
   RunPluginScriptCommand,
@@ -83,10 +84,17 @@ const runCommand = ([firstArg = '', ...args]) => {
   })).catch(handleError)
 }
 
+const inGlobalModules = fullpath => {
+  // Check if script is executed from yarn global dir
+  const isYarnGlobal = fullpath.indexOf(['config', 'global', 'node_modules'].join(path.sep)) >= 0
+
+  return fullpath.indexOf(globalPrefix) === 0 || isYarnGlobal
+}
+
 const isGlobalRun = () => {
-  const execPath = process.argv[1]
-  return execPath.indexOf(['node_modules', '.bin'].join(path.sep)) === -1 &&
-    execPath.indexOf(['node_modules', '@rispa', 'cli'].join(path.sep)) === -1
+  const execPath = fs.realpathSync(process.argv[1]);
+
+  return inGlobalModules(execPath)
 }
 
 const canRunLocalVersion = () => {
