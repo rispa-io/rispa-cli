@@ -101,6 +101,7 @@ describe('add plugins', () => {
         },
         peerDependencies: {
           'rispa-test': '0.0.1',
+          'other-package': '0.0.1',
         },
       },
     })
@@ -140,6 +141,9 @@ describe('add plugins', () => {
       [pluginPackageJsonPath]: {
         name: pluginName,
         version: pluginVersion,
+        dependencies: {
+          [pluginName2]: plugin2Version,
+        },
       },
       [plugin2PackageJsonPath]: {
         name: pluginName2,

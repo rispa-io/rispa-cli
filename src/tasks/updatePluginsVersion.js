@@ -1,6 +1,6 @@
 const Listr = require('listr')
 const chalk = require('chalk')
-const { PLUGIN_PREFIX, DEFAULT_PLUGIN_BRANCH, DEFAULT_PLUGIN_DEV_BRANCH } = require('../constants')
+const { DEFAULT_PLUGIN_BRANCH, DEFAULT_PLUGIN_DEV_BRANCH } = require('../constants')
 const { savePackageJson, publishToNpm } = require('../utils/plugin')
 const {
   commit: gitCommit,
@@ -10,10 +10,12 @@ const {
   checkout: gitCheckout,
 } = require('../utils/git')
 
-const updateDepsToVersion = (dependencies, nextVersion) => (
+const updateDepsToVersion = (dependencies, toUpdate, nextVersion) => (
   Object.entries(dependencies).reduce((result, [name, version]) =>
     Object.assign(result, {
-      [name]: name.startsWith(PLUGIN_PREFIX) ? nextVersion : version,
+      [name]: (
+        toUpdate.indexOf(name) === -1 ? version : nextVersion
+      ),
     }), {}
   )
 )
@@ -38,6 +40,8 @@ const createUpdatePluginVersion = (name, path, packageInfo) => ({
 const updatePluginsVersionTask = ctx => {
   const { nextVersion, plugins } = ctx
 
+  const dependenciesToUpdate = plugins.map(plugin => plugin.packageInfo.name)
+
   const updatedPlugins = plugins.map(plugin => {
     const {
       packageInfo: {
@@ -47,13 +51,19 @@ const updatePluginsVersionTask = ctx => {
 
     plugin.packageInfo.version = nextVersion
     if (dependencies) {
-      plugin.packageInfo.dependencies = updateDepsToVersion(dependencies, nextVersion)
+      plugin.packageInfo.dependencies = updateDepsToVersion(
+        dependencies, dependenciesToUpdate, nextVersion
+      )
     }
     if (devDependencies) {
-      plugin.packageInfo.devDependencies = updateDepsToVersion(devDependencies, nextVersion)
+      plugin.packageInfo.devDependencies = updateDepsToVersion(
+        devDependencies, dependenciesToUpdate, nextVersion
+      )
     }
     if (peerDependencies) {
-      plugin.packageInfo.peerDependencies = updateDepsToVersion(peerDependencies, nextVersion)
+      plugin.packageInfo.peerDependencies = updateDepsToVersion(
+        peerDependencies, dependenciesToUpdate, nextVersion
+      )
     }
 
     return plugin
