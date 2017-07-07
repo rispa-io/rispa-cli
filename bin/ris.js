@@ -7,8 +7,10 @@ const spawn = require('cross-spawn')
 const path = require('path')
 const chalk = require('chalk')
 const fs = require('fs-extra')
+const os = require('os')
 const createDebug = require('debug')
-const { CWD, LOCAL_VERSION_PATH, PACKAGE_JSON_PATH } = require('../src/constants')
+const globalPrefix = require('global-prefix')
+const { CONFIGURATION_PATH, CLI_PLUGIN_NAME, CWD, LOCAL_VERSION_PATH, PACKAGE_JSON_PATH } = require('../src/constants')
 
 const RunPluginScriptCommand = require('../src/commands/runPluginScript')
 const CreateProjectCommand = require('../src/commands/createProject')
@@ -83,10 +85,23 @@ const runCommand = ([firstArg = '', ...args]) => {
   })).catch(handleError)
 }
 
+const getYarnPrefix = () => {
+  // Source: https://github.com/yarnpkg/yarn/blob/3901ba4e17edf0a835fb17a42e4da15238d6cd58/src/constants.js#L60
+  if (process.platform === 'win32' && process.env.LOCALAPPDATA) {
+    return path.join(process.env.LOCALAPPDATA, 'Yarn', 'config', 'global')
+  }
+
+  return path.join(os.homedir(), '.config', 'yarn', 'global')
+}
+
+const inGlobalYarn = fullpath => fullpath.indexOf(getYarnPrefix()) === 0
+
+const inGlobalNpm = fullpath => fullpath.indexOf(globalPrefix) === 0
+
 const isGlobalRun = () => {
-  const execPath = process.argv[1]
-  return execPath.indexOf(['node_modules', '.bin'].join(path.sep)) === -1 &&
-    execPath.indexOf(['node_modules', '@rispa', 'cli'].join(path.sep)) === -1
+  const execPath = fs.realpathSync(process.argv[1])
+
+  return inGlobalNpm(execPath) || inGlobalYarn(execPath)
 }
 
 const canRunLocalVersion = () => {
@@ -111,12 +126,58 @@ const canRunLocalVersion = () => {
   return false
 }
 
-const runLocalVersion = args => {
+const readLocalPluginPath = () => {
+  const rispaJsonPath = path.resolve(CWD, CONFIGURATION_PATH)
+  const { pluginsPath } = fs.readJsonSync(rispaJsonPath)
+
+  const pluginPackageJsonPath = path.resolve(CWD, pluginsPath, CLI_PLUGIN_NAME, PACKAGE_JSON_PATH)
+  const { bin = {} } = fs.readJsonSync(pluginPackageJsonPath)
+
+  return path.resolve(CWD, pluginsPath, CLI_PLUGIN_NAME, bin.ris)
+}
+
+const pluginBinExists = pluginPath => {
+  const pluginPackageJsonPath = path.resolve(CWD, pluginPath, PACKAGE_JSON_PATH)
+
+  if (!fs.existsSync(pluginPackageJsonPath)) {
+    return false
+  }
+
+  const { bin = {} } = fs.readJsonSync(pluginPackageJsonPath)
+  if (!bin.ris) {
+    return false
+  }
+
+  return fs.existsSync(path.resolve(CWD, pluginPath, bin.ris))
+}
+
+const canRunPlugin = () => {
+  const rispaJsonPath = path.resolve(CWD, CONFIGURATION_PATH)
+
+  if (!fs.existsSync(rispaJsonPath)) {
+    return false
+  }
+
+  const { plugins = [], pluginsPath } = fs.readJsonSync(rispaJsonPath)
+
+  if (plugins.indexOf(CLI_PLUGIN_NAME) !== -1) {
+    if (pluginBinExists(path.join(pluginsPath, CLI_PLUGIN_NAME))) {
+      return true
+    }
+
+    console.log(chalk.red(`Can't find local version of CLI in ${chalk.cyan(pluginsPath)}`))
+    process.exit(1)
+  }
+
+  return false
+}
+
+const runLocalVersion = (execPath, args) => {
   console.log(chalk.bold.green('Switch to use local version'))
 
   const result = spawn.sync(
-    'node',
-    [LOCAL_VERSION_PATH].concat(args),
+    execPath,
+    args,
     {
       cwd: process.cwd(),
       stdio: 'inherit',
@@ -128,8 +189,14 @@ const runLocalVersion = args => {
 
 const args = process.argv.slice(2)
 
-if (isGlobalRun() && canRunLocalVersion()) {
-  runLocalVersion(args)
+const globalRun = isGlobalRun()
+
+if (globalRun && canRunLocalVersion()) {
+  // Run local version from node_modules directly - on Windows it will be shell script, on other systems - js file with execute permission
+  runLocalVersion(LOCAL_VERSION_PATH, args)
+} else if (globalRun && canRunPlugin()) {
+  // Run local version from plugin with node - on all systems it will be js file
+  runLocalVersion('node', [readLocalPluginPath()].concat(args))
 } else {
   runCommand(args)
 }
