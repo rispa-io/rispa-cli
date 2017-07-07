@@ -91,7 +91,7 @@ const getYarnPrefix = () => {
     return path.join(process.env.LOCALAPPDATA, 'Yarn', 'config', 'global')
   }
 
-  return path.join(os.homedir(), 'config', 'yarn', 'global')
+  return path.join(os.homedir(), '.config', 'yarn', 'global')
 }
 
 const inGlobalYarn = fullpath => fullpath.indexOf(getYarnPrefix()) === 0
