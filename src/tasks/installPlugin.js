@@ -15,7 +15,8 @@ const checkCloneUrl = cloneUrl => {
 
 const createInstallPlugin = (name, cloneUrl, ref) => improveTask({
   title: `Install plugin with name ${cyan(name)}`,
-  skip: ({ configuration: { plugins } }) => plugins.indexOf(name) !== -1 && 'Plugin already installed',
+  skip: ({ configuration: { plugins } }) =>
+    (plugins.indexOf(name) !== -1 && 'Plugin already installed') || (!cloneUrl && 'Can\'t find plugin'),
   before: ctx => {
     if (!ctx.installedPlugins) {
       ctx.installedPlugins = []

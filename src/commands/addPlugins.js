@@ -39,11 +39,6 @@ class AddPluginsCommand extends Command {
       findPluginInList(plugin, pluginList)
     )
 
-    const invalidPlugins = pluginsToInstall.filter(plugin => !plugin.cloneUrl).map(plugin => plugin.name)
-    if (invalidPlugins.length) {
-      throw new Error(`Can't find plugins with names:\n - ${invalidPlugins.join(', ')}`)
-    }
-
     return new Listr(
       pluginsToInstall.map(({ name, cloneUrl }) =>
         createInstallPlugin(name, cloneUrl)
