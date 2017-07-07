@@ -1,5 +1,4 @@
 const Listr = require('listr')
-const chalk = require('chalk')
 const fs = require('fs-extra')
 const createInstallPlugin = require('../tasks/installPlugin')
 const Command = require('../Command')

@@ -295,7 +295,7 @@ describe('add plugins', () => {
     expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
   })
 
-  it('should failed add plugin - cant find plugin', async () => {
+  it('should success skip add plugin', async () => {
     mockFs.setMockJson({
       [rispaJsonPath]: {
         pluginsPath,
@@ -308,7 +308,7 @@ describe('add plugins', () => {
 
     await expect(
       runCommand([pluginName])
-    ).rejects.toHaveProperty('message', `Can't find plugins with names:\n - ${pluginName}`)
+    ).resolves.toBeDefined()
   })
 
   it('should failed add plugin - tree has modifications', async () => {
