@@ -1,45 +1,62 @@
+const path = require('path')
 const chalk = require('chalk')
 const { prompt } = require('inquirer')
 const configureGenerators = require('@rispa/generator')
 const Command = require('../Command')
 const readProjectConfiguration = require('../tasks/readProjectConfiguration')
 const scanPlugins = require('../tasks/scanPlugins')
+const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
+
+const initGenerators = ctx => {
+  const generatorsPaths = Object.values(ctx.plugins)
+    .map(({ generators }) => generators)
+    .filter((generatorsPath, idx, values) => generatorsPath && values.indexOf(generatorsPath) === idx)
+
+  const generators = configureGenerators(ctx.projectPath, generatorsPaths)
+
+  if (generators.getGeneratorList().length === 0) {
+    throw new Error('Can\'t find generators')
+  }
+
+  ctx.generators = generators
+}
 
 class GenerateCommand extends Command {
-  constructor([pluginName, generatorName, ...args], options) {
+  constructor([generatorName, pluginName], options) {
     super(options)
 
     this.state = {
       pluginName,
       generatorName,
-      args,
     }
 
-    this.initGenerators = this.initGenerators.bind(this)
     this.selectPlugin = this.selectPlugin.bind(this)
     this.selectGenerator = this.selectGenerator.bind(this)
     this.runGenerator = this.runGenerator.bind(this)
+    this.checkPlugin = this.checkPlugin.bind(this)
+    this.checkGenerator = this.checkGenerator.bind(this)
+    this.enterPluginName = this.enterPluginName.bind(this)
   }
 
-  initGenerators(ctx) {
+  checkPlugin(ctx) {
     const { pluginName } = this.state
     const plugin = ctx.plugins[pluginName]
 
     if (!plugin) {
       throw new Error(`Can't find plugin with name ${chalk.cyan(pluginName)}`)
     }
+  }
 
-    const generatorsPaths = Object.values(ctx.plugins)
-      .map(({ generators }) => generators)
-      .filter((generatorsPath, idx, values) => generatorsPath && values.indexOf(generatorsPath) === idx)
+  checkGenerator(ctx) {
+    const { generatorName } = this.state
+    const { generators } = ctx
 
-    const generators = configureGenerators(plugin.path, generatorsPaths)
-
-    if (generators.getGeneratorList().length === 0) {
-      throw new Error('Can\'t find generators')
+    if (!generators.containsGenerator(generatorName)) {
+      throw new Error(`Can't find generator with name ${chalk.cyan(generatorName)}`)
     }
 
-    ctx.generators = generators
+    const generator = generators.getGenerator(generatorName)
+    ctx.generator = generator
   }
 
   selectPlugin(ctx) {
@@ -49,6 +66,16 @@ class GenerateCommand extends Command {
       message: 'Select plugin:',
       paginated: true,
       choices: [...new Set(Object.keys(ctx.plugins).map(key => ctx.plugins[key].name))],
+    }]).then(({ pluginName }) => {
+      this.state.pluginName = pluginName
+    })
+  }
+
+  enterPluginName() {
+    return prompt([{
+      type: 'input',
+      name: 'pluginName',
+      message: 'Enter plugin name:',
     }]).then(({ pluginName }) => {
       this.state.pluginName = pluginName
     })
@@ -67,15 +94,26 @@ class GenerateCommand extends Command {
   }
 
   runGenerator(ctx) {
-    const { generatorName, args } = this.state
-    const { generators } = ctx
+    const { pluginName } = this.state
+    const { projectPath, generators, generator, configuration } = ctx
 
-    if (!generators.containsGenerator(generatorName)) {
-      throw new Error(`Can't find generator with name ${chalk.cyan(generatorName)}`)
-    }
+    // # nasty hack to set destination folder for generator
+    const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
+    const destPath = path.resolve(pluginsPath, pluginName, './plopfile.js')
+    generators.setPlopfilePath(destPath)
 
-    return generators.getGenerator(generatorName)
-      .runActions(Object.assign({}, ctx, { args }))
+    return generator.runPrompts()
+      .then(data => generator.runActions(Object.assign({ pluginName }, data)))
+      .then(result => {
+        if (result.failures && result.failures.length) {
+          const error = result.failures
+            .map(failure => `${failure.path}: ${failure.error}`)
+            .join('\n')
+          throw new Error(error)
+        } else {
+          return Promise.resolve()
+        }
+      })
   }
 
   init() {
@@ -84,13 +122,13 @@ class GenerateCommand extends Command {
       readProjectConfiguration,
       scanPlugins,
       {
-        title: 'Select plugin',
-        enabled: () => !pluginName,
-        task: this.selectPlugin,
+        title: 'Check plugin',
+        enabled: () => pluginName,
+        task: this.checkPlugin,
       },
       {
         title: 'Init generators',
-        task: this.initGenerators,
+        task: initGenerators,
       },
       {
         title: 'Select generator',
@@ -98,8 +136,29 @@ class GenerateCommand extends Command {
         task: this.selectGenerator,
       },
       {
+        title: 'Check generator',
+        task: this.checkGenerator,
+      },
+      {
+        title: 'Select plugin',
+        enabled: () => !pluginName,
+        skip: ctx => ctx.generator.isFeatureGenerator,
+        task: this.selectPlugin,
+      },
+      {
+        title: 'Enter plugin name',
+        enabled: () => !pluginName,
+        skip: ctx => !ctx.generator.isFeatureGenerator,
+        task: this.enterPluginName,
+      },
+      {
         title: 'Run generator',
         task: this.runGenerator,
+      },
+      {
+        title: 'Bootstrap plugin dependencies',
+        skip: ctx => !ctx.generator.isFeatureGenerator,
+        task: bootstrapProjectDeps.task,
       },
     ])
   }
