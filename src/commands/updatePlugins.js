@@ -13,7 +13,7 @@ const { ALL_PLUGINS, DEV_MODE, TEST_MODE } = require('../constants')
 
 const skipNotProdMode = skipMode(DEV_MODE, TEST_MODE)
 
-class RemovePluginsCommand extends Command {
+class UpdatePluginsCommand extends Command {
   constructor([...pluginsToUpdate], options) {
     super(options)
 
@@ -32,6 +32,8 @@ class RemovePluginsCommand extends Command {
     if (invalidPlugins.length) {
       throw new Error(`Can't find plugins with names:\n - ${invalidPlugins.join(', ')}`)
     }
+
+    ctx.updatedPlugins = []
 
     return new Listr(
       pluginsToUpdate.map(plugin =>
@@ -74,7 +76,7 @@ class RemovePluginsCommand extends Command {
       saveProjectConfiguration,
       {
         title: 'Git commit',
-        skip: ctx => (ctx.updatedPlugins.length === 0 && 'Plugins not updated') || skipNotProdMode(ctx),
+        skip: ctx => skipNotProdMode(ctx) || (ctx.updatedPlugins.length === 0 && 'Plugins not updated'),
         task: ({ projectPath, updatedPlugins }) => {
           gitCommit(projectPath, `Update plugins: ${updatedPlugins.join(', ')}`)
         },
@@ -84,7 +86,7 @@ class RemovePluginsCommand extends Command {
   }
 }
 
-RemovePluginsCommand.commandName = 'update'
-RemovePluginsCommand.commandDescription = 'Update plugins'
+UpdatePluginsCommand.commandName = 'update'
+UpdatePluginsCommand.commandDescription = 'Update plugins'
 
-module.exports = RemovePluginsCommand
+module.exports = UpdatePluginsCommand

@@ -21,11 +21,6 @@ const updatePluginSubtree = (remotes, projectPath, pluginsPath, pluginName) => {
 
 const createUpdatePlugin = name => improveTask({
   title: `Update plugin with name ${chalk.cyan(name)}`,
-  before: ctx => {
-    if (!ctx.updatedPlugins) {
-      ctx.updatedPlugins = []
-    }
-  },
   task: ctx => {
     const { projectPath, configuration } = ctx
     const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
