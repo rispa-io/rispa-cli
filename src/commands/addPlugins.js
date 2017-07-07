@@ -1,4 +1,5 @@
 const Listr = require('listr')
+const chalk = require('chalk')
 const fs = require('fs-extra')
 const createInstallPlugin = require('../tasks/installPlugin')
 const Command = require('../Command')
@@ -38,11 +39,6 @@ class AddPluginsCommand extends Command {
     const pluginsToInstall = this.state.pluginsToInstall.map(plugin =>
       findPluginInList(plugin, pluginList)
     )
-
-    const invalidPlugins = pluginsToInstall.filter(plugin => !plugin.cloneUrl).map(plugin => plugin.name)
-    if (invalidPlugins.length) {
-      throw new Error(`Can't find plugins with names:\n - ${invalidPlugins.join(', ')}`)
-    }
 
     return new Listr(
       pluginsToInstall.map(({ name, cloneUrl }) =>
