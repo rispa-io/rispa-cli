@@ -7,6 +7,7 @@ const spawn = require('cross-spawn')
 const path = require('path')
 const chalk = require('chalk')
 const fs = require('fs-extra')
+const os = require('os')
 const createDebug = require('debug')
 const globalPrefix = require('global-prefix')
 const { CONFIGURATION_PATH, CLI_PLUGIN_NAME, CWD, LOCAL_VERSION_PATH, PACKAGE_JSON_PATH } = require('../src/constants')
@@ -84,17 +85,23 @@ const runCommand = ([firstArg = '', ...args]) => {
   })).catch(handleError)
 }
 
-const inGlobalModules = fullpath => {
-  // Check if script is executed from yarn global dir
-  const isYarnGlobal = fullpath.indexOf(['config', 'global', 'node_modules'].join(path.sep)) >= 0
+const getYarnPrefix = () => {
+  // Source: https://github.com/yarnpkg/yarn/blob/3901ba4e17edf0a835fb17a42e4da15238d6cd58/src/constants.js#L60
+  if (process.platform === 'win32' && process.env.LOCALAPPDATA) {
+    return path.join(process.env.LOCALAPPDATA, 'Yarn', 'config', 'global')
+  }
 
-  return fullpath.indexOf(globalPrefix) === 0 || isYarnGlobal
+  return path.join(os.homedir(), 'config', 'yarn', 'global')
 }
+
+const inGlobalYarn = fullpath => fullpath.indexOf(getYarnPrefix()) === 0
+
+const inGlobalNpm = fullpath => fullpath.indexOf(globalPrefix) === 0
 
 const isGlobalRun = () => {
   const execPath = fs.realpathSync(process.argv[1])
 
-  return inGlobalModules(execPath)
+  return inGlobalNpm(execPath) || inGlobalYarn(execPath)
 }
 
 const canRunLocalVersion = () => {
