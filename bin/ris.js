@@ -172,28 +172,12 @@ const canRunPlugin = () => {
   return false
 }
 
-const runLocalVersion = args => {
-  console.log(chalk.bold.green('Switch to use local package version'))
+const runLocalVersion = (execPath, args) => {
+  console.log(chalk.bold.green('Switch to use local version'))
 
   const result = spawn.sync(
-    LOCAL_VERSION_PATH,
+    execPath,
     args,
-    {
-      cwd: process.cwd(),
-      stdio: 'inherit',
-    }
-  ).status
-
-  process.exit(result)
-}
-
-const runPluginVersion = args => {
-  console.log(chalk.bold.green('Switch to use local plugin version'))
-  const localPluginPath = readLocalPluginPath()
-
-  const result = spawn.sync(
-    'node',
-    [localPluginPath].concat(args),
     {
       cwd: process.cwd(),
       stdio: 'inherit',
@@ -208,9 +192,11 @@ const args = process.argv.slice(2)
 const globalRun = isGlobalRun()
 
 if (globalRun && canRunLocalVersion()) {
-  runLocalVersion(args)
+  // Run local version from node_modules directly - on Windows it will be shell script, on other systems - js file with execute permission
+  runLocalVersion(LOCAL_VERSION_PATH, args)
 } else if (globalRun && canRunPlugin()) {
-  runPluginVersion(args)
+  // Run local version from plugin with node - on all systems it will be js file
+  runLocalVersion('node', [readLocalPluginPath()].concat(args))
 } else {
   runCommand(args)
 }
