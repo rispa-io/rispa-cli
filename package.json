@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/rispa-io/rispa-cli#readme",
   "dependencies": {
-    "@rispa/generator": "1.0.0",
+    "@rispa/generator": "latest",
     "axios": "^0.16.1",
     "chalk": "^1.1.3",
     "cli-cursor": "^2.1.0",
