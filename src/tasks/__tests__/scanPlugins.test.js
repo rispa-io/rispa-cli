@@ -38,6 +38,7 @@ describe('scan plugins', () => {
   const pluginList = pluginNames.map((pluginName, idx) => {
     const plugin = {
       name: pluginName.replace('rispa-', PLUGIN_PREFIX),
+      dirName: pluginName,
       path: path.resolve(pluginsPath, `./${pluginName}`),
     }
 

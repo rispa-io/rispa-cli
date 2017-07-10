@@ -24,7 +24,7 @@ describe('run plugin script', () => {
   mockFs.setMockJson({
     [rispaJsonPath]: {
       pluginsPath: '',
-      plugins: [],
+      plugins: [pluginName],
       remotes: {},
     },
   })
@@ -41,6 +41,7 @@ describe('run plugin script', () => {
     scanPlugins.setMockPlugins({
       [pluginName]: {
         name: pluginName,
+        dirName: pluginName,
         scripts: [scriptName],
         path: pluginPath,
       },
