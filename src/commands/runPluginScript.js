@@ -34,9 +34,11 @@ class RunPluginScriptCommand extends Command {
   checkingAll(ctx) {
     const { scriptName } = this.state
 
+    const { plugins: installedPlugins } = ctx.configuration
+
     ctx.plugins = Object.values(ctx.plugins)
       .filter((value, idx, values) => values.indexOf(value) === idx)
-      .filter(({ scripts }) => scripts.indexOf(scriptName) !== -1)
+      .filter(({ scripts, dirName }) => scripts.indexOf(scriptName) !== -1 && installedPlugins.indexOf(dirName) !== -1)
   }
 
   checkingSingle(ctx) {
