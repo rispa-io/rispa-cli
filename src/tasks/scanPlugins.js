@@ -14,6 +14,7 @@ const getPluginInfo = ([pluginPath, packageInfo]) => {
 
   return {
     name,
+    dirName: path.basename(pluginPath),
     path: pluginPath,
     alias: rispaName,
     scripts: packageInfo.scripts ? Object.keys(packageInfo.scripts) : [],
