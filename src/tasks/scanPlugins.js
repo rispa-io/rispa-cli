@@ -6,7 +6,7 @@ const { readPackageJson } = require('../utils/plugin')
 const { savePluginsCache, readPluginsCache } = require('../utils/pluginsCache')
 const { PLUGIN_PREFIX, PLUGIN_ALIAS, PLUGIN_ACTIVATOR_PATH, PLUGIN_GENERATORS_PATH } = require('../constants')
 
-const getPluginInfo = ([pluginPath, packageInfo]) => {
+const getPluginInfo = ([pluginPath, packageInfo, npm]) => {
   const name = packageInfo.name
   const rispaName = packageInfo[PLUGIN_ALIAS]
   const activatorPath = path.resolve(pluginPath, PLUGIN_ACTIVATOR_PATH)
@@ -14,7 +14,7 @@ const getPluginInfo = ([pluginPath, packageInfo]) => {
 
   return {
     name,
-    dirName: path.basename(pluginPath),
+    npm,
     path: pluginPath,
     alias: rispaName,
     scripts: packageInfo.scripts ? Object.keys(packageInfo.scripts) : [],
@@ -45,11 +45,11 @@ const createPluginCheck = strict => ([, packageInfo]) => (
   packageInfo.name && (!strict || (strict && packageInfo.name.startsWith(PLUGIN_PREFIX)))
 )
 
-const scanPluginsByPath = (pluginsPath, checker) =>
+const scanPluginsByPath = (pluginsPath, { npm }) =>
   glob.sync(pluginsPath)
     .filter(pluginPath => !fs.lstatSync(pluginPath).isSymbolicLink())
-    .map(pluginPath => [pluginPath, readPackageJson(pluginPath)])
-    .filter(checker)
+    .map(pluginPath => [pluginPath, readPackageJson(pluginPath), npm])
+    .filter(createPluginCheck(npm))
     .map(getPluginInfo)
     .reduce((result, plugin) => {
       if (plugin.alias) {
@@ -60,12 +60,12 @@ const scanPluginsByPath = (pluginsPath, checker) =>
       return result
     }, {})
 
-const getPluginsByPaths = (pluginsPaths, cache, checker) => (
+const getPluginsByPaths = (pluginsPaths, cache, options) => (
   pluginsPaths.reduce((result, pluginsPath) => (
     Object.assign(result, {
       [pluginsPath]: (
         getPluginsFromCache(pluginsPath, cache) ||
-        scanPluginsByPath(pluginsPath, checker)
+        scanPluginsByPath(pluginsPath, options)
       ),
     })
   ), {})
@@ -77,8 +77,8 @@ const scanPluginsTask = ctx => {
   const pluginsPaths = readPluginsPaths(projectPath)
 
   const pluginsByPaths = Object.assign(
-    getPluginsByPaths(pluginsPaths.lerna, pluginsCache, createPluginCheck(false)),
-    getPluginsByPaths(pluginsPaths.nodeModules, pluginsCache, createPluginCheck(true))
+    getPluginsByPaths(pluginsPaths.lerna, pluginsCache, { npm: false }),
+    getPluginsByPaths(pluginsPaths.nodeModules, pluginsCache, { npm: true })
   )
 
   const plugins = Object.values(pluginsByPaths).reduce((result, pluginsByPath) => (
