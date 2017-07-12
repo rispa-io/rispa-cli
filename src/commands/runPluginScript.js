@@ -33,10 +33,16 @@ class RunPluginScriptCommand extends Command {
 
   checkingAll(ctx) {
     const { scriptName } = this.state
+    const { skip: skipPlugins = [] } = ctx
 
     ctx.plugins = Object.values(ctx.plugins)
       .filter((value, idx, values) => values.indexOf(value) === idx)
-      .filter(({ scripts, npm }) => !npm && scripts.indexOf(scriptName) !== -1)
+      .filter((({ npm, scripts, name, alias }) =>
+          !npm &&
+          scripts.indexOf(scriptName) !== -1 &&
+          skipPlugins.indexOf(name) === -1 &&
+          skipPlugins.indexOf(alias) === -1
+      ))
   }
 
   checkingSingle(ctx) {
@@ -88,7 +94,7 @@ class RunPluginScriptCommand extends Command {
   runScripts({ plugins }) {
     const { scriptName, args } = this.state
     return new Listr(plugins.map(plugin =>
-      createRunPackageScriptTask(plugin.name, plugin.path, scriptName, args)
+      createRunPackageScriptTask(plugin.name, plugin.path, scriptName, args),
     ), { exitOnError: false })
   }
 

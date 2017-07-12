@@ -160,6 +160,11 @@ For force use *Yarn* or not, run for example:
 ```sh
 ris run all lint --yarn=true
 ```
+##### Skip
+For skip plugins, run for example:
+```sh
+ris run all lint --skip=@rispa/ui-kit,feature-plugin
+```
 
 ### Launch generator
 ### `ris g`
