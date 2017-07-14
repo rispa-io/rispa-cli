@@ -1,4 +1,5 @@
 const Listr = require('listr')
+const { prompt } = require('inquirer')
 const chalk = require('chalk')
 const { DEFAULT_PLUGIN_BRANCH, DEFAULT_PLUGIN_DEV_BRANCH } = require('../constants')
 const { savePackageJson, publishToNpm } = require('../utils/plugin')
@@ -8,7 +9,16 @@ const {
   addTag: gitAddTag,
   merge: gitMerge,
   checkout: gitCheckout,
+  pullRepository: gitPull,
+  pushTags: gitPushTags,
 } = require('../utils/git')
+
+const askWantToPublish = name => prompt([{
+  type: 'publish',
+  name: 'publish',
+  message: `Want to publish ${chalk.cyan(name)}?`,
+  default: false,
+}])
 
 const updateDepsToVersion = (dependencies, toUpdate, nextVersion) => (
   Object.entries(dependencies).reduce((result, [name, version]) =>
@@ -16,26 +26,79 @@ const updateDepsToVersion = (dependencies, toUpdate, nextVersion) => (
       [name]: (
         toUpdate.indexOf(name) === -1 ? version : nextVersion
       ),
-    }), {}
+    }), {},
   )
 )
 
-const taskOf = (title, task) => ({ title, task })
+const chainPlugins = (name, mapper) =>
+  plugins => ({
+    title: name,
+    task: () => new Listr(
+      plugins.map(plugin => ({
+        title: chalk.cyan(plugin.name),
+        task: mapper(plugin),
+      })),
+    ),
+  })
 
-const createUpdatePluginVersion = (name, path, packageInfo) => ({
-  title: `Update ${chalk.cyan(name)} version`,
-  task: () => new Listr([
-    taskOf('Save package.json', () => savePackageJson(path, packageInfo)),
-    taskOf('Commit version', () => gitCommit(path, `Version ${packageInfo.version}`)),
-    taskOf('Add version tag', () => gitAddTag(path, `v${packageInfo.version}`)),
-    taskOf('Push changes', () => gitPush(path)),
-    taskOf('Switch to stable branch', () => gitCheckout(path, DEFAULT_PLUGIN_BRANCH)),
-    taskOf('Merge master to stable', () => gitMerge(path, DEFAULT_PLUGIN_DEV_BRANCH)),
-    taskOf('Push changes', () => gitPush(path)),
-    taskOf('Switch to dev branch', () => gitCheckout(path, DEFAULT_PLUGIN_DEV_BRANCH)),
-    taskOf('Publish to npm', () => publishToNpm(path)),
-  ]),
-})
+const createSavePackage = chainPlugins(
+  'Save package.json',
+  ({ path, packageInfo }) =>
+    () => savePackageJson(path, packageInfo),
+)
+
+const createCommitVersion = chainPlugins(
+  'Commit version',
+  ({ path, packageInfo }) =>
+    () => gitCommit(path, `Version ${packageInfo.version}`),
+)
+
+const createAddVersionTag = chainPlugins(
+  'Add version tag',
+  ({ path, packageInfo }) =>
+    () => gitAddTag(path, `v${packageInfo.version}`),
+)
+
+const createPublishToNpm = chainPlugins(
+  'Publish to npm',
+  ({ name, path }) =>
+    () => askWantToPublish(name)
+      .then(({ publish }) => {
+        if (publish) {
+          publishToNpm(path)
+        }
+      }),
+)
+
+const createPushChanges = chainPlugins(
+  'Push changes',
+  ({ path }) =>
+    () => {
+      gitPushTags(path)
+      gitPush(path)
+    },
+)
+
+const createSwitchToStableBranch = chainPlugins(
+  'Switch to stable branch',
+  ({ path }) =>
+    () => {
+      gitCheckout(path, DEFAULT_PLUGIN_BRANCH)
+      gitPull(path)
+    },
+)
+
+const createMergeMasterToStable = chainPlugins(
+  'Merge master to stable',
+  ({ path }) =>
+    () => gitMerge(path, DEFAULT_PLUGIN_DEV_BRANCH),
+)
+
+const createSwitchToDevBranch = chainPlugins(
+  'Switch to dev branch',
+  ({ path }) =>
+    () => gitCheckout(path, DEFAULT_PLUGIN_DEV_BRANCH),
+)
 
 const updatePluginsVersionTask = ctx => {
   const { nextVersion, plugins } = ctx
@@ -52,26 +115,34 @@ const updatePluginsVersionTask = ctx => {
     plugin.packageInfo.version = nextVersion
     if (dependencies) {
       plugin.packageInfo.dependencies = updateDepsToVersion(
-        dependencies, dependenciesToUpdate, nextVersion
+        dependencies, dependenciesToUpdate, nextVersion,
       )
     }
     if (devDependencies) {
       plugin.packageInfo.devDependencies = updateDepsToVersion(
-        devDependencies, dependenciesToUpdate, nextVersion
+        devDependencies, dependenciesToUpdate, nextVersion,
       )
     }
     if (peerDependencies) {
       plugin.packageInfo.peerDependencies = updateDepsToVersion(
-        peerDependencies, dependenciesToUpdate, nextVersion
+        peerDependencies, dependenciesToUpdate, nextVersion,
       )
     }
 
     return plugin
   })
 
-  return new Listr(updatedPlugins.map(plugin =>
-    createUpdatePluginVersion(plugin.name, plugin.path, plugin.packageInfo)
-  ))
+  return new Listr([
+    createSavePackage(updatedPlugins),
+    createCommitVersion(updatedPlugins),
+    createAddVersionTag(updatedPlugins),
+    createPublishToNpm(updatedPlugins),
+    createPushChanges(updatedPlugins),
+    createSwitchToStableBranch(updatedPlugins),
+    createMergeMasterToStable(updatedPlugins),
+    createPushChanges(updatedPlugins),
+    createSwitchToDevBranch(updatedPlugins),
+  ])
 }
 
 const updatePluginsVersion = {

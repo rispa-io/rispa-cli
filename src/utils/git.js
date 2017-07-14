@@ -194,11 +194,19 @@ const tagInfo = path => {
 
 const addTag = (path, tag) => {
   const spawnOptions = defaultSpawnOptions(path)
-  const success = spawn.sync('git', ['tag', tag], spawnOptions).status === 0 &&
-    spawn.sync('git', ['push', '--tags'], spawnOptions).status === 0
+  const success = spawn.sync('git', ['tag', tag], spawnOptions).status === 0
 
   if (!success) {
     throw new Error('Failed git add tag')
+  }
+}
+
+const pushTags = path => {
+  const spawnOptions = defaultSpawnOptions(path)
+  const success = spawn.sync('git', ['push', '--tags'], spawnOptions).status === 0
+
+  if (!success) {
+    throw new Error('Failed git push tags')
   }
 }
 
@@ -240,6 +248,7 @@ module.exports = {
   init,
   commit,
   push,
+  pushTags,
   addRemote,
   removeRemote,
   getRemotes,
