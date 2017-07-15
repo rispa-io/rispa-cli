@@ -97,9 +97,16 @@ class GenerateCommand extends Command {
     const { pluginName } = this.state
     const { projectPath, generators, generator, configuration } = ctx
 
+    let destPath
+    if (generator.isFeatureGenerator) {
+      const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
+      destPath = path.resolve(pluginsPath, pluginName, './plopfile.js')
+    } else {
+      const plugin = ctx.plugins[pluginName]
+      destPath = path.resolve(plugin.path, './plopfile.js')
+    }
+
     // # nasty hack to set destination folder for generator
-    const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
-    const destPath = path.resolve(pluginsPath, pluginName, './plopfile.js')
     generators.setPlopfilePath(destPath)
 
     return generator.runPrompts()
