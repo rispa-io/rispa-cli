@@ -106,7 +106,7 @@ describe('add plugins', () => {
       },
     })
 
-    mockInquirer.setMockAnswers({ nextVersion })
+    mockInquirer.setMockAnswers({ nextVersion, publish: true })
 
     await expect(runCommand()).resolves.toBeDefined()
 
@@ -115,6 +115,11 @@ describe('add plugins', () => {
     expect(mockFs.writeFileSync.mock.calls[0][0]).toEqual(pluginPackageJsonPath)
     expect(mockGit.commit.mock.calls[0]).toEqual([pluginPath, `Version ${nextVersion}`])
     expect(mockGit.addTag.mock.calls[0]).toEqual([pluginPath, `v${nextVersion}`])
+    expect(mockCrossSpawn.sync.mock.calls[0]).toEqual([
+      'npm',
+      ['publish', './', '--access=public'],
+      { cwd: pluginPath, stdio: 'inherit' },
+    ])
     expect(mockGit.push.mock.calls[0]).toEqual([pluginPath])
     expect(mockGit.checkout.mock.calls[1]).toEqual([pluginPath, DEFAULT_PLUGIN_BRANCH])
     expect(mockGit.merge.mock.calls[0]).toEqual([pluginPath, DEFAULT_PLUGIN_DEV_BRANCH])
@@ -122,7 +127,7 @@ describe('add plugins', () => {
     expect(mockGit.checkout.mock.calls[2]).toEqual([pluginPath, DEFAULT_PLUGIN_DEV_BRANCH])
   })
 
-  it('should success run with different versions', async () => {
+  it('should success run with different versions without publish', async () => {
     const pluginName2 = 'rispa-plugin'
     const plugin2Version = '2.0.0'
     const plugin2Path = path.resolve(pluginsPath, `./${pluginName2}`)
@@ -151,7 +156,7 @@ describe('add plugins', () => {
       },
     })
 
-    mockInquirer.setMockAnswers({ nextVersion })
+    mockInquirer.setMockAnswers({ nextVersion, publish: false })
 
     await expect(runCommand().catch(e => console.error(e))).resolves.toBeDefined()
 
@@ -162,22 +167,30 @@ describe('add plugins', () => {
     expect(mockGit.pullRepository.mock.calls[1]).toEqual([plugin2Path])
 
     expect(mockFs.writeFileSync.mock.calls[0][0]).toEqual(pluginPackageJsonPath)
-    expect(mockGit.commit.mock.calls[0]).toEqual([pluginPath, `Version ${nextVersion}`])
-    expect(mockGit.addTag.mock.calls[0]).toEqual([pluginPath, `v${nextVersion}`])
-    expect(mockGit.push.mock.calls[0]).toEqual([pluginPath])
-    expect(mockGit.checkout.mock.calls[2]).toEqual([pluginPath, DEFAULT_PLUGIN_BRANCH])
-    expect(mockGit.merge.mock.calls[0]).toEqual([pluginPath, DEFAULT_PLUGIN_DEV_BRANCH])
-    expect(mockGit.push.mock.calls[1]).toEqual([pluginPath])
-    expect(mockGit.checkout.mock.calls[3]).toEqual([pluginPath, DEFAULT_PLUGIN_DEV_BRANCH])
-
     expect(mockFs.writeFileSync.mock.calls[1][0]).toEqual(plugin2PackageJsonPath)
+
+    expect(mockGit.commit.mock.calls[0]).toEqual([pluginPath, `Version ${nextVersion}`])
     expect(mockGit.commit.mock.calls[1]).toEqual([plugin2Path, `Version ${nextVersion}`])
+
+    expect(mockGit.addTag.mock.calls[0]).toEqual([pluginPath, `v${nextVersion}`])
     expect(mockGit.addTag.mock.calls[1]).toEqual([plugin2Path, `v${nextVersion}`])
-    expect(mockGit.push.mock.calls[2]).toEqual([plugin2Path])
-    expect(mockGit.checkout.mock.calls[4]).toEqual([plugin2Path, DEFAULT_PLUGIN_BRANCH])
+
+    expect(mockGit.push.mock.calls[0]).toEqual([pluginPath])
+    expect(mockGit.push.mock.calls[1]).toEqual([plugin2Path])
+
+    expect(mockGit.checkout.mock.calls[2]).toEqual([pluginPath, DEFAULT_PLUGIN_BRANCH])
+    expect(mockGit.checkout.mock.calls[3]).toEqual([plugin2Path, DEFAULT_PLUGIN_BRANCH])
+
+    expect(mockGit.merge.mock.calls[0]).toEqual([pluginPath, DEFAULT_PLUGIN_DEV_BRANCH])
     expect(mockGit.merge.mock.calls[1]).toEqual([plugin2Path, DEFAULT_PLUGIN_DEV_BRANCH])
+
+    expect(mockGit.push.mock.calls[2]).toEqual([pluginPath])
     expect(mockGit.push.mock.calls[3]).toEqual([plugin2Path])
+
+    expect(mockGit.checkout.mock.calls[4]).toEqual([pluginPath, DEFAULT_PLUGIN_DEV_BRANCH])
     expect(mockGit.checkout.mock.calls[5]).toEqual([plugin2Path, DEFAULT_PLUGIN_DEV_BRANCH])
+
+    expect(mockCrossSpawn.sync.mock.calls.length).toBe(0)
   })
 
   it('should failed run in non dev mode', async () => {

@@ -21,6 +21,7 @@ const {
   checkout,
   merge,
   clean,
+  pushTags,
 } = require.requireActual('../git')
 
 describe('git', () => {
@@ -128,6 +129,19 @@ describe('git', () => {
 
       expect(mockCrossSpawn.sync)
         .toBeCalledWith('git', ['tag', 'v1.0.0'], spawnOptions)
+    })
+
+    it('should throw error', () => {
+      mockCrossSpawn.sync.mockImplementationOnce(() => ({ status: 1 }))
+
+      expect(() => addTag(cwd, 'v1.0.0')).toThrow('Failed git add tag')
+    })
+  })
+
+  describe('pushTags', () => {
+    it('should work correctly', () => {
+      pushTags(cwd)
+
       expect(mockCrossSpawn.sync)
         .toBeCalledWith('git', ['push', '--tags'], spawnOptions)
     })
@@ -135,7 +149,7 @@ describe('git', () => {
     it('should throw error', () => {
       mockCrossSpawn.sync.mockImplementationOnce(() => ({ status: 1 }))
 
-      expect(() => addTag(cwd, 'v1.0.0')).toThrow('Failed git add tag')
+      expect(() => pushTags(cwd)).toThrow('Failed git push tags')
     })
   })
 
