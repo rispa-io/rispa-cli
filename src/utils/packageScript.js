@@ -1,25 +1,25 @@
 const spawn = require('cross-spawn')
 
 const callPluginScriptByYarn = (runPath, scriptName, args) => (
-  spawn.sync(
+  spawn(
     'yarn',
     [scriptName].concat(args),
     {
       cwd: runPath,
       stdio: 'inherit',
     }
-  ).status
+  )
 )
 
 const callPluginScriptByNpm = (runPath, scriptName, args) => (
-  spawn.sync(
+  spawn(
     'npm',
     ['run', scriptName].concat(args),
     {
       cwd: runPath,
       stdio: 'inherit',
     }
-  ).status
+  )
 )
 
 const createCallPluginScript = useYarn => useYarn ? callPluginScriptByYarn : callPluginScriptByNpm

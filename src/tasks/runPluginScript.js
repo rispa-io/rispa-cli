@@ -10,10 +10,20 @@ const createRunPluginScriptTask = (name, path, scriptName, args) => ({
     }
 
     const callPluginScript = createCallPluginScript(ctx.yarn)
-    const status = callPluginScript(path, scriptName, args)
-    if (status !== 0) {
-      throw new Error('Failed run plugin script')
-    }
+    const script = callPluginScript(path, scriptName, args)
+
+    return new Promise((resolve, reject) => {
+      script.on('error', () => {
+        reject('Failed to start script')
+      })
+      script.on('close', status => {
+        if (status !== 0) {
+          reject('Failed run plugin script')
+        }
+
+        resolve()
+      })
+    })
   },
 })
 
