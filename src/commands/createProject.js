@@ -143,11 +143,11 @@ class CreateProjectCommand extends Command {
       extendsTask(resolvePluginsDeps, {
         skip: skipTestMode,
       }),
-      installProjectDeps,
       {
         title: 'Create configuration',
         task: saveProjectConfiguration.task,
       },
+      installProjectDeps,
       {
         title: 'Git commit',
         skip: skipTestMode,

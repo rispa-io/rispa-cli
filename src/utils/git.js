@@ -102,6 +102,7 @@ const addSubtree = (path, prefix, remoteName, remoteUrl, ref = DEFAULT_PLUGIN_BR
 }
 
 const updateSubtree = (path, prefix, remoteName, remoteUrl, ref = DEFAULT_PLUGIN_BRANCH) => (
+  removeRemote(path, remoteName) &&
   addRemote(path, remoteName, remoteUrl) &&
   spawn.sync(
     'git',
