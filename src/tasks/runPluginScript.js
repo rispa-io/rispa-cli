@@ -14,11 +14,11 @@ const createRunPluginScriptTask = (name, path, scriptName, args) => ({
 
     return new Promise((resolve, reject) => {
       script.on('error', () => {
-        reject('Failed to start script')
+        reject(new Error('Failed to start script'))
       })
       script.on('close', status => {
         if (status !== 0) {
-          reject('Failed run plugin script')
+          reject(new Error('Failed run plugin script'))
         }
 
         resolve()
