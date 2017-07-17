@@ -63,11 +63,27 @@ describe('update plugins', () => {
     expect(mockGit.commit).toBeCalledWith(cwd, `Update plugins: ${pluginName}`)
   })
 
+  it('should success run update with empty plugins list', async () => {
+    readProjectConfiguration.task.mockImplementation(ctx => {
+      ctx.configuration = {
+        pluginsPath,
+        plugins: [],
+        remotes: {},
+      }
+    })
+
+    await expect(runCommand([ALL_PLUGINS])).resolves.toBeDefined()
+
+    expect(mockGit.getChanges).toBeCalledWith(cwd)
+    expect(mockGit.updateSubtree).not.toBeCalled()
+    expect(mockGit.commit).not.toBeCalled()
+  })
+
   it('should failed update single plugin in dev mode', async () => {
     mockReadConfigurationTask(DEV_MODE)
 
     await expect(runCommand([pluginName]))
-      .rejects.toHaveProperty('errors.0.message', 'Not a git repository: .git')
+      .rejects.toHaveProperty('message', 'Not a git repository: .git')
   })
 
   it('should success update single plugin in dev mode', async () => {
@@ -146,6 +162,6 @@ describe('update plugins', () => {
     mockGit.updateSubtree.mockImplementation(() => false)
 
     await expect(runCommand([pluginName]))
-      .rejects.toHaveProperty('errors.0.message', `Failed update subtree '${pluginRemoteUrl}'`)
+      .rejects.toHaveProperty('message', `Failed update subtree '${pluginRemoteUrl}'`)
   })
 })
