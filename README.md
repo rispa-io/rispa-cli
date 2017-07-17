@@ -1,4 +1,4 @@
-# Rispa CLI [![Build Status](https://api.travis-ci.org/rispa-io/rispa-cli.svg?branch=master)](https://travis-ci.org/rispa-io/rispa-cli)
+# Rispa CLI [![Build Status](https://api.travis-ci.org/rispa-io/rispa-cli.svg?branch=master)](https://travis-ci.org/rispa-io/rispa-cli) [![Dependency Status](https://www.versioneye.com/user/projects/5963d41d368b080049d4b331/badge.svg?style=flat-square)](https://www.versioneye.com/user/projects/5963d41d368b080049d4b331)
 
 `ris` is the Rispa CLI command line utility allowing the creation of project structure, managing plugins, run generators.
 
