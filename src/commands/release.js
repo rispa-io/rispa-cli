@@ -86,10 +86,11 @@ class ReleaseCommand extends Command {
         },
       },
       {
-        title: 'Select next version',
+        title: 'Select version',
         task: ctx => {
           const { major, minor, patch } = ctx.maxVersion
           const versions = {
+            CURRENT: `${major}.${minor}.${patch}`,
             PATCH: `${major}.${minor}.${+patch + 1}`,
             MINOR: `${major}.${+minor + 1}.0`,
             MAJOR: `${+major + 1}.0.0`,
