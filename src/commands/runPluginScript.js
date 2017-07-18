@@ -6,6 +6,7 @@ const createRunPackageScriptTask = require('../tasks/runPluginScript')
 const { extendsTask } = require('../utils/tasks')
 const readProjectConfiguration = require('../tasks/readProjectConfiguration')
 const { ALL_PLUGINS } = require('../constants')
+const { initDotenv } = require('../utils/env')
 
 class RunPluginScriptCommand extends Command {
   constructor([pluginName, scriptName, ...args], options) {
@@ -24,6 +25,8 @@ class RunPluginScriptCommand extends Command {
   }
 
   checking(ctx) {
+    initDotenv()
+
     if (this.state.pluginName === ALL_PLUGINS) {
       this.checkingAll(ctx)
     } else {
