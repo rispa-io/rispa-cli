@@ -1,28 +1,15 @@
+jest.mock('../../tasks/readProjectConfiguration')
+jest.mock('../../tasks/scanPlugins')
 jest.mock('cross-spawn')
-jest.mock('fs-extra')
 
-const path = require.requireActual('path')
-const {
-  PACKAGE_JSON_PATH,
-  LERNA_JSON_PATH,
-} = require.requireActual('../../constants')
-
+const readProjectConfiguration = require.requireMock('../../tasks/readProjectConfiguration')
+const scanPlugins = require.requireMock('../../tasks/scanPlugins')
 const mockCrossSpawn = require.requireMock('cross-spawn')
-const mockFs = require.requireMock('fs-extra')
 
 const PostinstallCommand = require.requireActual('../postinstall')
 
 describe('postinstall', () => {
-  beforeEach(() => {
-    mockCrossSpawn.sync.mockClear()
-    mockFs.setMockFiles([])
-    mockFs.setMockJson({})
-  })
-
-  const cwd = '/project/packages/plugin'
-  const lernaJsonPath = path.resolve('/project', LERNA_JSON_PATH)
-  const pluginPackageJsonPath = path.resolve(cwd, PACKAGE_JSON_PATH)
-  const postinstallScript = 'command1 param1 param2 && command2 param3'
+  const cwd = '/cwd'
 
   const runCommand = options => {
     const command = new PostinstallCommand({ renderer: 'silent' })
@@ -32,42 +19,18 @@ describe('postinstall', () => {
     }, options))
   }
 
-  it('should report error `rispa-postinstall script not found`', async () => {
-    mockFs.setMockJson({
-      [pluginPackageJsonPath]: {
-        scripts: {},
-      },
-    })
-
-    await expect(runCommand())
-      .rejects
-      .toHaveProperty('message', 'Can\'t find rispa-postinstall script')
-  })
-
-  it('should report error `project root not found`', async () => {
-    mockFs.setMockJson({
-      [pluginPackageJsonPath]: {
-        scripts: {
-          'rispa-postinstall': postinstallScript,
-        },
-      },
-    })
-
-    await expect(runCommand())
-      .rejects
-      .toHaveProperty('message', 'Can\'t find rispa project root')
-  })
-
-
   it('should run rispa-postinstall script commands', async () => {
-    mockFs.setMockFiles([
-      lernaJsonPath,
-    ])
-    mockFs.setMockJson({
-      [pluginPackageJsonPath]: {
-        scripts: {
-          'rispa-postinstall': postinstallScript,
-        },
+    readProjectConfiguration.task.mockImplementation(ctx => {
+      ctx.configuration = {}
+    })
+
+    scanPlugins.setMockPlugins({
+      plugin1: {
+        postinstall: 'command1 param1 param2 && command2 param3',
+      },
+      plugin2: {},
+      plugin3: {
+        postinstall: 'command3 param4 && command4 param5 param6',
       },
     })
 
@@ -76,12 +39,22 @@ describe('postinstall', () => {
     expect(mockCrossSpawn.sync).toBeCalledWith(
       'command1',
       ['param1', 'param2'],
-      { cwd: '/project', stdio: 'inherit' }
+      { cwd, stdio: 'inherit' }
     )
     expect(mockCrossSpawn.sync).toBeCalledWith(
       'command2',
       ['param3'],
-      { cwd: '/project', stdio: 'inherit' }
+      { cwd, stdio: 'inherit' }
+    )
+    expect(mockCrossSpawn.sync).toBeCalledWith(
+      'command3',
+      ['param4'],
+      { cwd, stdio: 'inherit' }
+    )
+    expect(mockCrossSpawn.sync).toBeCalledWith(
+      'command4',
+      ['param5', 'param6'],
+      { cwd, stdio: 'inherit' }
     )
   })
 })

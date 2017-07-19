@@ -4,17 +4,25 @@ const glob = require('glob')
 const { readPluginsPaths } = require('../utils/lerna')
 const { readPackageJson } = require('../utils/plugin')
 const { savePluginsCache, readPluginsCache } = require('../utils/pluginsCache')
-const { PLUGIN_PREFIX, PLUGIN_ALIAS, PLUGIN_ACTIVATOR_PATH, PLUGIN_GENERATORS_PATH } = require('../constants')
+const {
+  PLUGIN_PREFIX,
+  PLUGIN_ALIAS,
+  PLUGIN_ACTIVATOR_PATH,
+  PLUGIN_GENERATORS_PATH,
+  PLUGIN_POSTINSTALL,
+} = require('../constants')
 
 const getPluginInfo = ([pluginPath, packageInfo, npm]) => {
   const name = packageInfo.name
   const rispaName = packageInfo[PLUGIN_ALIAS]
+  const postinstall = packageInfo[PLUGIN_POSTINSTALL]
   const activatorPath = path.resolve(pluginPath, PLUGIN_ACTIVATOR_PATH)
   const generatorsPath = path.resolve(pluginPath, PLUGIN_GENERATORS_PATH)
 
   return {
     name,
     npm,
+    postinstall,
     path: pluginPath,
     alias: rispaName,
     scripts: packageInfo.scripts ? Object.keys(packageInfo.scripts) : [],
