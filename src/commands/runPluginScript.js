@@ -94,7 +94,7 @@ class RunPluginScriptCommand extends Command {
   runScripts({ plugins }) {
     const { scriptName, args } = this.state
     return new Listr(plugins.map(plugin =>
-      createRunPackageScriptTask(plugin.name, plugin.path, scriptName, args),
+      createRunPackageScriptTask(plugin.name, plugin.path, scriptName, args)
     ), { exitOnError: false })
   }
 
