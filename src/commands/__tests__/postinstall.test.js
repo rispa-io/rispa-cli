@@ -21,6 +21,7 @@ describe('postinstall', () => {
 
   it('should run rispa-postinstall script commands', async () => {
     readProjectConfiguration.task.mockImplementation(ctx => {
+      ctx.projectPath = cwd
       ctx.configuration = {}
     })
 

@@ -1,8 +1,28 @@
-const { postinstall } = require('../utils/postinstall')
+const spawn = require('cross-spawn')
 
-const postinstallTask = {
-  title: 'Run postinstall scripts',
-  task: ctx => postinstall(ctx.projectPath),
+const postinstallTask = ({ plugins, projectPath }) => {
+  Object.keys(plugins).forEach(pluginName => {
+    const { postinstall } = plugins[pluginName]
+    if (postinstall) {
+      const commands = postinstall.split('&&')
+      commands.forEach(command => {
+        const args = command.trim().split(/\s+/)
+        spawn.sync(
+          args[0],
+          args.slice(1),
+          {
+            cwd: projectPath,
+            stdio: 'inherit',
+          }
+        )
+      })
+    }
+  })
 }
 
-module.exports = postinstallTask
+const postinstall = {
+  title: 'Run postinstall scripts',
+  task: postinstallTask,
+}
+
+module.exports = postinstall
