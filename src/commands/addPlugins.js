@@ -10,6 +10,7 @@ const fetchPlugins = require('../tasks/fetchPlugins')
 const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
 const cleanCache = require('../tasks/cleanCache')
 const resolvePluginsDeps = require('../tasks/resolvePluginsDeps')
+const postinstall = require('../tasks/postinstall')
 const { extendsTask, skipMode } = require('../utils/tasks')
 const { DEV_MODE, TEST_MODE } = require('../constants')
 const { commit: gitCommit } = require('../utils/git')
@@ -89,6 +90,7 @@ class AddPluginsCommand extends Command {
         },
       },
       cleanCache,
+      postinstall,
     ])
   }
 }
