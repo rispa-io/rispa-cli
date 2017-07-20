@@ -40,11 +40,7 @@ const getPluginsFromCache = (pluginsPath, cache) => {
     .map(pluginName => cache.plugins[pluginName])
     .filter(item => item)
     .reduce((result, packageInfo) => {
-      if (packageInfo.alias) {
-        result[packageInfo.alias] = packageInfo
-      }
       result[packageInfo.name] = packageInfo
-
       return result
     }, {})
 }
@@ -60,10 +56,6 @@ const scanPluginsByPath = (pluginsPath, { npm }) =>
     .filter(createPluginCheck(npm))
     .map(getPluginInfo)
     .reduce((result, plugin) => {
-      if (plugin.alias) {
-        result[plugin.alias] = plugin
-      }
-
       result[plugin.name] = plugin
       return result
     }, {})

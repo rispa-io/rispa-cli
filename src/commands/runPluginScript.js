@@ -36,7 +36,6 @@ class RunPluginScriptCommand extends Command {
     const { skip: skipPlugins = [] } = ctx
 
     ctx.plugins = Object.values(ctx.plugins)
-      .filter((value, idx, values) => values.indexOf(value) === idx)
       .filter((({ npm, scripts, name, alias }) =>
           !npm &&
           scripts.indexOf(scriptName) !== -1 &&
@@ -59,7 +58,6 @@ class RunPluginScriptCommand extends Command {
     const plugins = Object.values(ctx.plugins)
       .filter(plugin => plugin.scripts && plugin.scripts.length)
       .map(plugin => plugin.name)
-      .filter((pluginName, idx, array) => array.indexOf(pluginName) === idx)
 
     if (plugins.length === 0) {
       throw new Error('Can\'t find plugins with scripts')
@@ -103,12 +101,22 @@ class RunPluginScriptCommand extends Command {
     this.add([
       readProjectConfiguration,
       extendsTask(scanPlugins, {
-        after: ({ plugins }) => {
-          if (Object.keys(plugins).length === 0) {
+        after: ctx => {
+          ctx.plugins = Object.values(ctx.plugins).reduce((result, plugin) => {
+            if (plugin.alias) {
+              result[plugin.alias] = plugin
+            }
+
+            result[plugin.name] = plugin
+
+            return result
+          }, {})
+
+          if (Object.keys(ctx.plugins).length === 0) {
             throw new Error('Can\'t find plugins')
           }
 
-          if (pluginName && pluginName !== ALL_PLUGINS && !plugins[pluginName]) {
+          if (pluginName && pluginName !== ALL_PLUGINS && !ctx.plugins[pluginName]) {
             throw new Error('Can\'t find plugin')
           }
         },
