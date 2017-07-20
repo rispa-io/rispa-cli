@@ -40,9 +40,7 @@ class AddPluginsCommand extends Command {
     )
 
     return new Listr(
-      pluginsToInstall.map(({ name, cloneUrl }) =>
-        createInstallPlugin(name, cloneUrl)
-      ), { exitOnError: false }
+      pluginsToInstall.map(createInstallPlugin), { exitOnError: false }
     )
   }
 
