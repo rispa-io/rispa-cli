@@ -1,6 +1,3 @@
-jest.resetAllMocks()
-jest.resetModules()
-
 const { isPromise } = require.requireActual('../promise')
 
 describe('promise utils', () => {

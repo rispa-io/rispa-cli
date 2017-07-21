@@ -4,8 +4,10 @@ const path = require('path')
 const { readDependencies } = require('./plugin')
 const { readConfiguration } = require('./project')
 
+const createSpawnOptions = projectPath => ({ cwd: projectPath, stdio: 'inherit' })
+
 const installPresetYarn = (preset, projectPath) => {
-  const result = spawn.sync('yarn', ['add', preset], { cwd: projectPath, stdio: 'inherit' })
+  const result = spawn.sync('yarn', ['add', preset], createSpawnOptions(projectPath))
 
   if (result.status !== 0) {
     throw new Error('Failed install preset via yarn')
@@ -15,7 +17,7 @@ const installPresetYarn = (preset, projectPath) => {
 }
 
 const installPresetNpm = (preset, projectPath) => {
-  const result = spawn.sync('npm', ['install', preset, '--save'], { cwd: projectPath, stdio: 'inherit' })
+  const result = spawn.sync('npm', ['install', preset, '--save'], createSpawnOptions(projectPath))
 
   if (result.status !== 0) {
     throw new Error('Failed install preset via npm')

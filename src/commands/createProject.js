@@ -22,9 +22,10 @@ const installPreset = require('../tasks/installPreset')
 const skipTestMode = skipMode(TEST_MODE)
 
 const fillPlugins = (pluginNames, pluginList) =>
-  pluginNames.map(pluginName =>
-    findPluginInList(pluginName, pluginList),
-  ).filter(plugin => plugin.cloneUrl)
+  R.compose(
+    R.filter(R.prop('cloneUrl')),
+    R.map(pluginName => findPluginInList(pluginName, pluginList))
+  )(pluginNames)
 
 const getPreset = R.propOr(false, 'preset')
 

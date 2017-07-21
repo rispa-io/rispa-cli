@@ -1,6 +1,3 @@
-jest.resetAllMocks()
-jest.resetModules()
-
 jest.mock('cli-cursor', () => ({ show: jest.fn(), hide: jest.fn() }))
 
 const ListrRender = require.requireActual('../ListrRender')

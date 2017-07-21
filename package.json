@@ -51,8 +51,8 @@
     "test": "jest",
     "test:update": "jest -u",
     "test:coverage": "jest --coverage",
-    "lint": "rispa-eslint",
-    "lint:fix": "rispa-eslint --fix"
+    "lint": "rispa-eslint . ",
+    "lint:fix": "rispa-eslint . --fix"
   },
   "jest": {
     "collectCoverageFrom": [

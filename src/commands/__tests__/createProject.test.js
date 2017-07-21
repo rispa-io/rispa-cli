@@ -4,6 +4,12 @@ jest.mock('inquirer')
 jest.mock('fs-extra')
 jest.mock('../../utils/git.js')
 jest.mock('../../utils/githubApi')
+jest.mock('../../utils/preset')
+jest.mock('../../tasks/installPreset', () => Object.assign(
+  {},
+  require.requireActual('../../tasks/installPreset'),
+  { task: jest.fn() },
+))
 
 const path = require.requireActual('path')
 const { LERNA_JSON_PATH, PLUGIN_PREFIX } = require.requireActual('../../constants')
@@ -14,6 +20,8 @@ const mockFs = require.requireMock('fs-extra')
 const mockGit = require.requireMock('../../utils/git.js')
 const mockGenerator = require.requireMock('@rispa/generator')
 const mockGithubApi = require.requireMock('../../utils/githubApi')
+const mockPreset = require.requireMock('../../utils/preset')
+const mockInstallPreset = require.requireMock('../../tasks/installPreset')
 
 const CreateProjectCommand = require.requireActual('../createProject')
 
@@ -39,6 +47,7 @@ describe('create project', () => {
   const pluginName = 'rispa-core'
   const pluginRemoteUrl = 'https://git.com/plugin-remote-url.git'
   const crossSpawnOptions = { cwd: projectPath, stdio: 'inherit' }
+  const preset = 'react'
 
   const runCommand = (args, options) => {
     const command = new CreateProjectCommand(args, { renderer: 'silent' })
@@ -129,25 +138,14 @@ describe('create project', () => {
     expect(runGeneratorActions).toBeCalledWith({ projectName })
   })
 
-  it('should success create project via yarn', async () => {
+  it('should success create project with preset', async () => {
     mockFs.setMockFiles([])
 
-    mockGithubApi.setMockPlugins([{
-      name: pluginName,
-      cloneUrl: pluginRemoteUrl,
-    }])
+    mockGithubApi.setMockPlugins([])
 
-    mockGithubApi.setMockPluginNamePackageJson({
-      [pluginName]: {
-        name: pluginName.replace('rispa-', PLUGIN_PREFIX),
-      },
-    })
+    mockGithubApi.setMockPluginNamePackageJson({})
 
     mockInquirer.setMockAnswers({
-      selectedPlugins: [{
-        name: pluginName,
-        cloneUrl: pluginRemoteUrl,
-      }],
       projectName,
       remoteUrl,
     })
@@ -165,11 +163,24 @@ describe('create project', () => {
       },
     })
 
-    await expect(runCommand([])).resolves.toBeDefined()
+    mockPreset.readPresetConfiguration.mockImplementation(() => ({
+      plugins: [pluginName],
+      remotes: {
+        [pluginName]: pluginRemoteUrl,
+      },
+    }))
+
+    mockInstallPreset.task.mockImplementationOnce(ctx => {
+      ctx.configuration.extends = preset
+    })
+
+    await expect(runCommand([], { preset }).catch(console.error)).resolves.toBeDefined()
 
     expectSuccessGitCommands()
     expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['install'], crossSpawnOptions)
     expect(runGeneratorActions).toBeCalledWith({ projectName })
+
+    expect(mockInstallPreset.task).toBeCalled()
   })
 
   it('should failed create project - project exist', async () => {
@@ -178,7 +189,7 @@ describe('create project', () => {
     await expect(runCommand([projectName]))
       .rejects.toHaveProperty(
         'message',
-        `The directory '${projectName}' already exist.\nTry using a new project name.`
+        `The directory '${projectName}' already exist.\nTry using a new project name.`,
       )
   })
 })
