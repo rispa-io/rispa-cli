@@ -39,6 +39,7 @@ describe('scan plugins', () => {
     const plugin = {
       name: pluginName.replace('rispa-', PLUGIN_PREFIX),
       npm: false,
+      postinstall: undefined,
       path: path.resolve(pluginsPath, `./${pluginName}`),
     }
 
@@ -57,9 +58,6 @@ describe('scan plugins', () => {
     return plugin
   })
   const plugins = pluginList.reduce((result, plugin) => {
-    if (plugin.alias) {
-      result[plugin.alias] = plugin
-    }
     result[plugin.name] = plugin
     return result
   }, {})

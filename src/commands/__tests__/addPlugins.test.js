@@ -3,6 +3,7 @@ jest.mock('inquirer')
 jest.mock('fs-extra')
 jest.mock('../../utils/githubApi')
 jest.mock('../../utils/git')
+jest.mock('../../tasks/scanPlugins')
 
 const path = require.requireActual('path')
 const chalk = require.requireActual('chalk')
@@ -20,12 +21,14 @@ const mockInquirer = require.requireMock('inquirer')
 const mockFs = require.requireMock('fs-extra')
 const mockGithubApi = require.requireMock('../../utils/githubApi')
 const mockGit = require.requireMock('../../utils/git')
+const scanPlugins = require.requireMock('../../tasks/scanPlugins')
 
 const AddPluginsCommand = require.requireActual('../addPlugins')
 
 describe('add plugins', () => {
   beforeAll(() => {
     mockGit.getChanges.mockImplementation(() => false)
+    scanPlugins.setMockPlugins({})
   })
 
   beforeEach(() => {

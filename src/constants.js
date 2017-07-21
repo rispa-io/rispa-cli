@@ -15,6 +15,7 @@ const GITHUB_SEARCH_PLUGINS_QUERY = 'q=org:rispa-io+topic:rispa-plugin'
 const GITHUB_SEARCH_PLUGINS_EXTENDABLE_QUERY = 'q=org:rispa-io+topic:extendable'
 const PLUGIN_PREFIX = '@rispa/'
 const PLUGIN_ALIAS = 'rispa:name'
+const PLUGIN_POSTINSTALL = 'rispa:postinstall'
 const PLUGIN_ACTIVATOR_PATH = './.rispa/activator.js'
 const PLUGIN_GENERATORS_PATH = './.rispa/generators/index.js'
 const NODE_MODULES_PLUGINS_PATH = `./node_modules/${PLUGIN_PREFIX}*`
@@ -49,6 +50,7 @@ module.exports = {
   PLUGIN_GENERATORS_PATH,
   NODE_MODULES_PLUGINS_PATH,
   PLUGIN_ALIAS,
+  PLUGIN_POSTINSTALL,
   PLUGIN_GIT_PREFIX,
   DEV_MODE,
   TEST_MODE,
