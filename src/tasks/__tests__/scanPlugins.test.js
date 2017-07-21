@@ -1,6 +1,3 @@
-jest.resetAllMocks()
-jest.resetModules()
-
 jest.mock('cross-spawn')
 jest.mock('fs-extra')
 jest.mock('glob')

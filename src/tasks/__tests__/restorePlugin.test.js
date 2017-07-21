@@ -1,10 +1,10 @@
-const path = require('path')
-
 jest.mock('fs-extra')
 jest.mock('../../utils/git')
 
 const mockFs = require.requireMock('fs-extra')
 const mockGit = require.requireMock('../../utils/git')
+
+const path = require.requireActual('path')
 
 const createRestorePluginTask = require.requireActual('../restorePlugin')
 
