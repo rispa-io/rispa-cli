@@ -1,5 +1,6 @@
 const Listr = require('listr')
 const path = require('path')
+const R = require('ramda')
 const fs = require('fs-extra')
 const { prompt } = require('inquirer')
 const configureGenerators = require('@rispa/generator')
@@ -15,8 +16,25 @@ const resolvePluginsDeps = require('../tasks/resolvePluginsDeps')
 const { extendsTask, skipMode } = require('../utils/tasks')
 const { DEV_MODE, TEST_MODE } = require('../constants')
 const { findInList: findPluginInList } = require('../utils/plugin')
+const { readPresetConfiguration } = require('../utils/preset')
+const installPreset = require('../tasks/installPreset')
 
 const skipTestMode = skipMode(TEST_MODE)
+
+const fillPlugins = (pluginNames, pluginList) =>
+  R.compose(
+    R.filter(R.prop('cloneUrl')),
+    R.map(pluginName => findPluginInList(pluginName, pluginList))
+  )(pluginNames)
+
+const getPreset = R.propOr(false, 'preset')
+
+const getPresetPlugins = R.compose(
+  R.map(([name, cloneUrl]) => ({ name, cloneUrl, preset: true })),
+  Object.entries,
+  R.prop('remotes'),
+  readPresetConfiguration,
+)
 
 class CreateProjectCommand extends Command {
   constructor([projectName, remoteUrl, ...pluginsToInstall], options) {
@@ -80,19 +98,17 @@ class CreateProjectCommand extends Command {
 
   installPlugins(ctx) {
     const { plugins: pluginList } = ctx
+    const preset = getPreset(ctx)
 
     ctx.pluginsPath = path.resolve(ctx.projectPath, ctx.configuration.pluginsPath)
 
     fs.ensureDirSync(ctx.pluginsPath)
 
-    const pluginsToInstall = this.state.pluginsToInstall.map(plugin =>
-      findPluginInList(plugin, pluginList)
-    ).filter(plugin => plugin.cloneUrl)
+    const pluginsToInstall = fillPlugins(this.state.pluginsToInstall, pluginList)
+      .concat(preset ? getPresetPlugins(preset, ctx.projectPath) : [])
 
     return new Listr(
-      pluginsToInstall.map(({ name, cloneUrl }) =>
-        createInstallPlugin(name, cloneUrl)
-      ), { exitOnError: false }
+      pluginsToInstall.map(createInstallPlugin), { exitOnError: false },
     )
   }
 
@@ -125,12 +141,19 @@ class CreateProjectCommand extends Command {
       {
         title: 'Select plugins to install',
         skip: skipTestMode,
-        enabled: () => pluginsToInstall.length === 0,
+        enabled: ctx => !getPreset(ctx) && pluginsToInstall.length === 0,
         task: selectPlugins.task,
         after: ctx => {
           this.state.pluginsToInstall = ctx.selectedPlugins
           delete ctx.selectedPlugins
         },
+      },
+      installPreset,
+      {
+        title: 'Git commit',
+        enabled: getPreset,
+        skip: skipTestMode,
+        task: ({ projectPath }) => gitCommit(projectPath, 'Add preset'),
       },
       {
         title: 'Install plugins',
