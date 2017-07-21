@@ -30,7 +30,7 @@ const AddPluginsCommand = require.requireActual('../addPlugins')
 describe('add plugins', () => {
   beforeAll(() => {
     mockGit.getChanges.mockImplementation(() => false)
-    
+
     scanPlugins.setMockPlugins({})
 
     mockPreset.readPresetConfiguration.mockImplementation(() => ({
