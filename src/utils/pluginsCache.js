@@ -16,18 +16,10 @@ const savePluginsCache = (pluginsByPaths, plugins, projectPath) => {
   fs.writeFileSync(pluginsCachePath, JSON.stringify({
     paths: Object.keys(pluginsByPaths)
       .reduce((result, pluginsPath) => {
-        const pluginsByPath = pluginsByPaths[pluginsPath]
-        result[pluginsPath] = Object.keys(pluginsByPath)
-          .filter((key, idx, keys) => keys.indexOf(plugins[key].name) === idx)
+        result[pluginsPath] = Object.keys(pluginsByPaths[pluginsPath])
         return result
       }, {}),
-
-    plugins: Object.keys(plugins)
-      .filter((key, idx, keys) => keys.indexOf(plugins[key].name) === idx)
-      .reduce((result, key) => {
-        result[key] = plugins[key]
-        return result
-      }, {}),
+    plugins,
   }, null, 2))
 }
 

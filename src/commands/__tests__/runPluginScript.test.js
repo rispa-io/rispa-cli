@@ -41,6 +41,7 @@ describe('run plugin script', () => {
     scanPlugins.setMockPlugins({
       [pluginName]: {
         name: pluginName,
+        alias: pluginName,
         dirName: pluginName,
         scripts: [scriptName],
         path: pluginPath,
