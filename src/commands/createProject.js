@@ -33,7 +33,7 @@ const getPresetPlugins = R.compose(
   R.map(([name, cloneUrl]) => ({ name, cloneUrl, preset: true })),
   Object.entries,
   R.prop('remotes'),
-  readPresetConfiguration,
+  readPresetConfiguration
 )
 
 class CreateProjectCommand extends Command {
