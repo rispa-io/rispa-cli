@@ -39,11 +39,12 @@ class RunPluginScriptCommand extends Command {
     const { skip: skipPlugins = [] } = ctx
 
     ctx.plugins = Object.values(ctx.plugins)
-      .filter((({ npm, scripts, name, alias }) =>
-          !npm &&
-          scripts.indexOf(scriptName) !== -1 &&
-          skipPlugins.indexOf(name) === -1 &&
-          skipPlugins.indexOf(alias) === -1
+      .filter(((plugin, idx, plugins) =>
+          plugins.indexOf(plugin) === idx &&
+          !plugin.npm &&
+          plugin.scripts.indexOf(scriptName) !== -1 &&
+          skipPlugins.indexOf(plugin.name) === -1 &&
+          skipPlugins.indexOf(plugin.alias) === -1
       ))
   }
 
@@ -95,7 +96,7 @@ class RunPluginScriptCommand extends Command {
   runScripts({ plugins }) {
     const { scriptName, args } = this.state
     return new Listr(plugins.map(plugin =>
-      createRunPackageScriptTask(plugin.name, plugin.path, scriptName, args)
+      createRunPackageScriptTask(plugin.name, plugin.path, scriptName, args),
     ), { exitOnError: false })
   }
 

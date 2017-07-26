@@ -9,6 +9,7 @@ const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
 
 const initGenerators = ctx => {
   const generatorsPaths = Object.values(ctx.plugins)
+    .filter((plugin, idx, plugins) => plugins.indexOf(plugin) === idx)
     .map(({ generators }) => generators)
 
   const generators = configureGenerators(ctx.projectPath, generatorsPaths)
