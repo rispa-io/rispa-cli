@@ -187,7 +187,7 @@ To commit project or plugins changes, run inside project directory:
 ris commit
 ```
 
-It will get project changes and ask you enter commit message.
+It will get project changes and ask you enter commit message and then it will push the current branch.
 
 <img width="682" alt="2017-06-26 13 01 18" src="https://user-images.githubusercontent.com/6418302/27534441-ad43721c-5a6f-11e7-8787-e2e7619b0a8b.png">
 
