@@ -33,7 +33,7 @@ const getPresetPlugins = R.compose(
   R.map(([name, cloneUrl]) => ({ name, cloneUrl, preset: true })),
   Object.entries,
   R.prop('remotes'),
-  readPresetConfiguration,
+  readPresetConfiguration
 )
 
 class CreateProjectCommand extends Command {
@@ -108,7 +108,7 @@ class CreateProjectCommand extends Command {
       .concat(preset ? getPresetPlugins(preset, ctx.projectPath) : [])
 
     return new Listr(
-      pluginsToInstall.map(createInstallPlugin), { exitOnError: false },
+      pluginsToInstall.map(createInstallPlugin), { exitOnError: false }
     )
   }
 
