@@ -4,7 +4,7 @@ const { readPresetConfiguration } = require('../utils/preset')
 
 const getExtendsPlugins = R.compose(
   R.prop('plugins'),
-  readPresetConfiguration,
+  readPresetConfiguration
 )
 
 const prepareConfiguration = (projectPath, configuration) => {
@@ -18,18 +18,18 @@ const prepareConfiguration = (projectPath, configuration) => {
     plugins: R.filter(
       R.compose(
         R.not,
-        R.contains(R.__, extendsPlugins),
+        R.contains(R.__, extendsPlugins)
       ),
-      configuration.plugins,
+      configuration.plugins
     ),
     remotes: R.compose(
       R.fromPairs,
       R.filter(R.compose(
         R.not,
         R.contains(R.__, extendsPlugins),
-        R.head,
+        R.head
       )),
-      R.toPairs,
+      R.toPairs
     )(configuration.remotes),
   })
 }

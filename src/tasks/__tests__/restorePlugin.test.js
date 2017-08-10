@@ -47,7 +47,7 @@ describe('createRestorePluginTask', () => {
         projectPath,
         'plugins/rispa-core',
         'rispa-core',
-        'https://remote',
+        'https://remote'
       )
     })
 
@@ -71,7 +71,7 @@ describe('createRestorePluginTask', () => {
 
       expect(mockGit.cloneRepository).toBeCalledWith(
         pluginsPath,
-        'https://remote',
+        'https://remote'
       )
     })
 

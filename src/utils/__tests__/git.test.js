@@ -118,7 +118,7 @@ describe('git', () => {
       expect(mockCrossSpawn.sync).toBeCalledWith(
         'git',
         ['subtree', 'add', '--prefix=prefix', 'remoteName', 'ref'],
-        spawnOptions,
+        spawnOptions
       )
     })
   })
@@ -199,7 +199,7 @@ describe('git', () => {
       expect(mockCrossSpawn.sync).toBeCalledWith(
         'git',
         ['subtree', 'pull', '--prefix=prefix', 'remoteName', 'ref'],
-        spawnOptions,
+        spawnOptions
       )
     })
 
@@ -211,7 +211,7 @@ describe('git', () => {
       expect(mockCrossSpawn.sync).toBeCalledWith(
         'git',
         ['subtree', 'pull', '--prefix=prefix', 'remoteName', DEFAULT_PLUGIN_BRANCH],
-        spawnOptions,
+        spawnOptions
       )
     })
   })

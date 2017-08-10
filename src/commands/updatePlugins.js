@@ -36,7 +36,7 @@ class UpdatePluginsCommand extends Command {
     ctx.updatedPlugins = []
 
     return new Listr(pluginsToUpdate.map(plugin =>
-      createUpdatePlugin(plugin),
+      createUpdatePlugin(plugin)
     ))
   }
 

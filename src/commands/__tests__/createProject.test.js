@@ -8,7 +8,7 @@ jest.mock('../../utils/preset')
 jest.mock('../../tasks/installPreset', () => Object.assign(
   {},
   require.requireActual('../../tasks/installPreset'),
-  { task: jest.fn() },
+  { task: jest.fn() }
 ))
 
 const path = require.requireActual('path')
@@ -189,7 +189,7 @@ describe('create project', () => {
     await expect(runCommand([projectName]))
       .rejects.toHaveProperty(
         'message',
-        `The directory '${projectName}' already exist.\nTry using a new project name.`,
+        `The directory '${projectName}' already exist.\nTry using a new project name.`
       )
   })
 })

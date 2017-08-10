@@ -7,8 +7,8 @@ const createInstallPlugin = require('../tasks/installPlugin')
 const pluginsDependencies = (pluginsPath, plugins) => (
   Object.entries(
     plugins.reduce((deps, plugin) => Object.assign(
-      deps, readDependencies(path.resolve(pluginsPath, `./${plugin.name}`)),
-    ), {}),
+      deps, readDependencies(path.resolve(pluginsPath, `./${plugin.name}`))
+    ), {})
   ).filter(([name]) => name.startsWith(PLUGIN_PREFIX))
     .map(([name, dependencyVersion]) => ({
       name,
