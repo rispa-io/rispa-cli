@@ -32,7 +32,7 @@ const findPresetInDependencies = (presetName, projectPath) => {
   const preset = R.compose(
     R.propOr(null, 0),
     R.find(([name, version]) => name === presetName || R.contains(presetName, version)),
-    Object.entries,
+    Object.entries
   )(dependencies)
 
   return preset
