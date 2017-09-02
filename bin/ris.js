@@ -23,6 +23,7 @@ const AssembleCommand = require('../src/commands/assemble')
 const CleanCacheCommand = require('../src/commands/cleanCache')
 const ReleaseCommand = require('../src/commands/release')
 const PostinstallCommand = require('../src/commands/postinstall')
+const VersionCommand = require('../src/commands/version')
 
 const commands = [
   RunPluginScriptCommand,
@@ -36,6 +37,7 @@ const commands = [
   ReleaseCommand,
   CleanCacheCommand,
   PostinstallCommand,
+  VersionCommand,
 ]
 
 const logError = createDebug('rispa:error:cli')
