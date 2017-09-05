@@ -5,6 +5,7 @@ const mockFs = require.requireMock('fs-extra')
 const mockGit = require.requireMock('../../utils/git')
 
 const path = require.requireActual('path')
+const { PACKAGE_JSON_PATH } = require.requireActual('../../constants')
 
 const createRestorePluginTask = require.requireActual('../restorePlugin')
 
@@ -76,7 +77,7 @@ describe('createRestorePluginTask', () => {
     })
 
     it('should not add plugin if exists in dev mode', () => {
-      mockFs.setMockFiles([path.resolve(pluginsPath, 'rispa-core')])
+      mockFs.setMockFiles([path.resolve(pluginsPath, 'rispa-core', PACKAGE_JSON_PATH)])
 
       const ctx = genContext('dev')
       createRestorePluginTask('rispa-core').task(ctx)

@@ -27,7 +27,7 @@ describe('assemble command', () => {
   it('should init successfully', () => {
     const command = new AssembleCommand()
     command.init()
-    expect(command.tasks.length).toBe(4)
+    expect(command.tasks.length).toBe(5)
   })
 
   it('should run tasks successfully', async () => {
