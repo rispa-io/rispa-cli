@@ -5,6 +5,7 @@ const { extendsTask, skipMode } = require('../utils/tasks')
 const { DEV_MODE } = require('../constants')
 const createRestorePluginTask = require('../tasks/restorePlugin')
 const readProjectConfiguration = require('../tasks/readProjectConfiguration')
+const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
 const gitCheckChanges = require('../tasks/gitCheckChanges')
 const cleanCache = require('../tasks/cleanCache')
 
@@ -31,6 +32,7 @@ class AssembleCommand extends Command {
         },
       },
       cleanCache,
+      bootstrapProjectDeps,
     ])
   }
 }
