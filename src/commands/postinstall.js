@@ -2,18 +2,22 @@ const Command = require('../Command')
 const readProjectConfiguration = require('../tasks/readProjectConfiguration')
 const scanPlugins = require('../tasks/scanPlugins')
 const postinstall = require('../tasks/postinstall')
+const cleanCache = require('../tasks/cleanCache')
+const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
 
-class CommitCommand extends Command {
+class PostinstallCommand extends Command {
   init() {
     this.add([
       readProjectConfiguration,
+      bootstrapProjectDeps,
+      cleanCache,
       scanPlugins,
       postinstall,
     ])
   }
 }
 
-CommitCommand.commandName = 'postinstall'
-CommitCommand.commandDescription = 'Postinstall script'
+PostinstallCommand.commandName = 'postinstall'
+PostinstallCommand.commandDescription = 'Postinstall script'
 
-module.exports = CommitCommand
+module.exports = PostinstallCommand
