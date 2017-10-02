@@ -8,7 +8,7 @@ const selectPlugins = require('../tasks/selectPlugins')
 const { extendsTask, skipMode } = require('../utils/tasks')
 const gitCheckChanges = require('../tasks/gitCheckChanges')
 const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
-const { commit: gitCommit } = require('../utils/git')
+const { commit: gitCommit, getChanges: gitGetChanges } = require('../utils/git')
 const { ALL_PLUGINS, DEV_MODE, TEST_MODE } = require('../constants')
 
 const skipNotProdMode = skipMode(DEV_MODE, TEST_MODE)
@@ -74,7 +74,11 @@ class UpdatePluginsCommand extends Command {
       saveProjectConfiguration,
       {
         title: 'Git commit',
-        skip: ctx => skipNotProdMode(ctx) || (ctx.updatedPlugins.length === 0 && 'Plugins not updated'),
+        skip: ctx => (
+          skipNotProdMode(ctx) ||
+          (ctx.updatedPlugins.length === 0 && 'Plugins not updated') ||
+          (!gitGetChanges(ctx.projectPath) && 'Nothing to commit')
+        ),
         task: ({ projectPath, updatedPlugins }) => {
           gitCommit(projectPath, `Update plugins: ${updatedPlugins.join(', ')}`)
         },

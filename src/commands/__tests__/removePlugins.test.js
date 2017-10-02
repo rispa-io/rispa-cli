@@ -19,12 +19,15 @@ const RemovePluginsCommand = require.requireActual('../removePlugins')
 
 describe('remove plugins', () => {
   beforeEach(() => {
-    mockGit.getChanges.mockClear()
     mockGit.removeRemote.mockClear()
     mockGit.commit.mockClear()
     saveProjectConfiguration.task.mockClear()
     selectPlugins.task.mockClear()
     cleanCache.task.mockClear()
+    mockGit.getChanges.mockClear()
+    mockGit.getChanges.mockReset()
+    mockGit.getChanges.mockImplementationOnce(() => false)
+    mockGit.getChanges.mockImplementationOnce(() => true)
   })
 
   const cwd = '/cwd'
@@ -66,6 +69,24 @@ describe('remove plugins', () => {
     expect(mockGit.commit).toBeCalledWith(cwd, `Remove plugins: ${pluginName}`)
     expect(cleanCache.task).toBeCalled()
   })
+
+  it('should success remove plugin with skip commit', async () => {
+    mockReadConfigurationTask()
+
+    mockGit.getChanges.mockReset()
+    mockGit.getChanges.mockImplementationOnce(() => false)
+    mockGit.getChanges.mockImplementationOnce(() => false)
+
+
+    await expect(runCommand([pluginName])).resolves.toBeDefined()
+
+    expect(saveProjectConfiguration.task).toBeCalled()
+    expect(mockGit.getChanges).toBeCalled()
+    expect(mockGit.removeRemote).toBeCalledWith(cwd, pluginName)
+    expect(mockGit.commit).not.toBeCalled()
+    expect(cleanCache.task).toBeCalled()
+  })
+
 
   it('should success remove plugin in dev mode', async () => {
     mockReadConfigurationTask(DEV_MODE)
@@ -130,6 +151,7 @@ describe('remove plugins', () => {
 
   it('should failed remove plugin - tree has modifications', async () => {
     mockReadConfigurationTask()
+    mockGit.getChanges.mockReset()
     mockGit.getChanges.mockImplementationOnce(() => 'M test.js')
 
     await expect(runCommand([pluginName]))

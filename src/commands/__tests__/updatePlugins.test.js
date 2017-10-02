@@ -17,7 +17,9 @@ const UpdatePluginsCommand = require.requireActual('../updatePlugins')
 describe('update plugins', () => {
   beforeEach(() => {
     mockGit.getChanges.mockClear()
-    mockGit.getChanges.mockImplementation(() => false)
+    mockGit.getChanges.mockReset()
+    mockGit.getChanges.mockImplementationOnce(() => false)
+    mockGit.getChanges.mockImplementationOnce(() => true)
     mockGit.updateSubtree.mockClear()
     mockGit.updateSubtree.mockImplementation(() => true)
     mockGit.commit.mockClear()
@@ -61,6 +63,19 @@ describe('update plugins', () => {
     expect(mockGit.getChanges).toBeCalledWith(cwd)
     expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl)
     expect(mockGit.commit).toBeCalledWith(cwd, `Update plugins: ${pluginName}`)
+  })
+
+  it('should success update single plugin with skip commit', async () => {
+    mockReadConfigurationTask()
+
+    mockGit.getChanges.mockReset()
+    mockGit.getChanges.mockImplementationOnce(() => false)
+
+    await expect(runCommand([pluginName])).resolves.toBeDefined()
+
+    expect(mockGit.getChanges).toBeCalledWith(cwd)
+    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl)
+    expect(mockGit.commit).not.toBeCalled()
   })
 
   it('should success run update with empty plugins list', async () => {
@@ -150,6 +165,7 @@ describe('update plugins', () => {
   it('should failed update plugins - tree has modifications', async () => {
     mockReadConfigurationTask()
 
+    mockGit.getChanges.mockReset()
     mockGit.getChanges.mockImplementation(() => true)
 
     await expect(runCommand([pluginName]))
