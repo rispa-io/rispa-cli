@@ -48,6 +48,7 @@ describe('add plugins', () => {
     mockFs.setMockFiles([])
     mockFs.setMockJson({})
     mockGit.getChanges.mockClear()
+    mockGit.getChanges.mockReset()
     mockGit.commit.mockClear()
     mockGit.addSubtree.mockClear()
     mockGit.cloneRepository.mockClear()
@@ -110,6 +111,9 @@ describe('add plugins', () => {
       },
     })
 
+    mockGit.getChanges.mockImplementationOnce(() => false)
+    mockGit.getChanges.mockImplementationOnce(() => true)
+
     await expect(
       runCommand([pluginName], { projectPath: cwd })
     ).resolves.toBeDefined()
@@ -157,6 +161,9 @@ describe('add plugins', () => {
         cloneUrl: pluginRemoteUrl,
       }],
     })
+
+    mockGit.getChanges.mockImplementationOnce(() => false)
+    mockGit.getChanges.mockImplementationOnce(() => true)
 
     await expect(
       runCommand([], { projectPath: cwd })
@@ -246,6 +253,9 @@ describe('add plugins', () => {
       },
     })
 
+    mockGit.getChanges.mockImplementationOnce(() => false)
+    mockGit.getChanges.mockImplementationOnce(() => true)
+
     await expect(
       runCommand([pluginName], { yarn: true })
     ).resolves.toBeDefined()
@@ -256,6 +266,28 @@ describe('add plugins', () => {
     expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['bs'], crossSpawnOptions)
   })
 
+  it('should success add plugin with skip commit', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath,
+        plugins: [],
+        remotes: {},
+      },
+    })
+
+    mockGit.getChanges.mockImplementationOnce(() => false)
+    mockGit.getChanges.mockImplementationOnce(() => false)
+
+    await expect(
+      runCommand([`${PLUGIN_GIT_PREFIX}${pluginRemoteUrl}`])
+    ).resolves.toBeDefined()
+
+    expect(mockGit.getChanges).toBeCalled()
+    expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, undefined)
+    expect(mockGit.commit).not.toBeCalledWith()
+    expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
+  })
+
   it('should success add plugin via git url', async () => {
     mockFs.setMockJson({
       [rispaJsonPath]: {
@@ -264,6 +296,9 @@ describe('add plugins', () => {
         remotes: {},
       },
     })
+
+    mockGit.getChanges.mockImplementationOnce(() => false)
+    mockGit.getChanges.mockImplementationOnce(() => true)
 
     await expect(
       runCommand([`${PLUGIN_GIT_PREFIX}${pluginRemoteUrl}`])
@@ -296,6 +331,9 @@ describe('add plugins', () => {
         name: pluginName.replace('rispa-', PLUGIN_PREFIX),
       },
     })
+
+    mockGit.getChanges.mockImplementationOnce(() => false)
+    mockGit.getChanges.mockImplementationOnce(() => true)
 
     await expect(
       runCommand([pluginName])
