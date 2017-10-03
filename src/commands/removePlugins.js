@@ -8,7 +8,7 @@ const selectPlugins = require('../tasks/selectPlugins')
 const { extendsTask, skipMode } = require('../utils/tasks')
 const { DEV_MODE } = require('../constants')
 const gitCheckChanges = require('../tasks/gitCheckChanges')
-const { commit: gitCommit } = require('../utils/git')
+const { commit: gitCommit, getChanges: gitGetChanges } = require('../utils/git')
 
 const skipDevMode = skipMode(DEV_MODE)
 
@@ -63,7 +63,8 @@ class RemovePluginsCommand extends Command {
         title: 'Git commit',
         skip: ctx => (
           (ctx.removedPlugins.length === 0 && 'Plugins not removed') ||
-          skipDevMode(ctx)
+          skipDevMode(ctx) ||
+          (!gitGetChanges(ctx.projectPath) && 'Nothing to commit')
         ),
         task: ({ projectPath, removedPlugins }) => {
           gitCommit(projectPath, `Remove plugins: ${removedPlugins.join(', ')}`)

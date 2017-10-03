@@ -14,7 +14,7 @@ const scanPlugins = require('../tasks/scanPlugins')
 const postinstall = require('../tasks/postinstall')
 const { extendsTask, skipMode } = require('../utils/tasks')
 const { DEV_MODE, TEST_MODE } = require('../constants')
-const { commit: gitCommit } = require('../utils/git')
+const { commit: gitCommit, getChanges: gitGetChanges } = require('../utils/git')
 const { findInList: findPluginInList } = require('../utils/plugin')
 
 const skipNotProdMode = skipMode(DEV_MODE, TEST_MODE)
@@ -82,7 +82,9 @@ class AddPluginsCommand extends Command {
       {
         title: 'Git commit',
         skip: ctx => (
-          ((!ctx.installedPlugins || !ctx.installedPlugins.length) && 'Plugins not added') || skipNotProdMode(ctx)
+          ((!ctx.installedPlugins || !ctx.installedPlugins.length) && 'Plugins not added') ||
+          skipNotProdMode(ctx) ||
+          (!gitGetChanges(ctx.projectPath) && 'Nothing to commit')
         ),
         task: ({ projectPath, installedPlugins }) => {
           gitCommit(projectPath, `Add plugins: ${installedPlugins.join(', ')}`)
