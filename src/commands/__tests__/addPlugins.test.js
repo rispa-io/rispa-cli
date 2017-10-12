@@ -3,7 +3,6 @@ jest.mock('inquirer')
 jest.mock('fs-extra')
 jest.mock('../../utils/githubApi')
 jest.mock('../../utils/git')
-jest.mock('../../utils/preset')
 jest.mock('../../tasks/scanPlugins')
 
 const path = require.requireActual('path')
@@ -22,7 +21,6 @@ const mockInquirer = require.requireMock('inquirer')
 const mockFs = require.requireMock('fs-extra')
 const mockGithubApi = require.requireMock('../../utils/githubApi')
 const mockGit = require.requireMock('../../utils/git')
-const mockPreset = require.requireMock('../../utils/preset')
 const scanPlugins = require.requireMock('../../tasks/scanPlugins')
 
 const AddPluginsCommand = require.requireActual('../addPlugins')
@@ -82,7 +80,6 @@ describe('add plugins', () => {
         pluginsPath,
         plugins: [],
         remotes: {},
-        extends: 'example',
       },
       [pluginPackageJsonPath]: {
         dependencies: {
