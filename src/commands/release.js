@@ -33,7 +33,7 @@ class ReleaseCommand extends Command {
   }
 
   init() {
-    this.add([
+    return [
       readProjectConfiguration,
       {
         title: 'Checkout plugins',
@@ -103,7 +103,7 @@ class ReleaseCommand extends Command {
         },
       },
       updatePluginsVersion,
-    ])
+    ]
   }
 }
 

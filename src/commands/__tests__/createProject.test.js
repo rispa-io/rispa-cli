@@ -51,7 +51,6 @@ describe('create project', () => {
 
   const runCommand = (args, options) => {
     const command = new CreateProjectCommand(args, { renderer: 'silent' })
-    command.init()
     return command.run(Object.assign({
       cwd,
     }, options))

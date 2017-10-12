@@ -35,7 +35,8 @@ class RemovePluginsCommand extends Command {
 
   init() {
     const { pluginsToRemove } = this.state
-    this.add([
+
+    return [
       readProjectConfiguration,
       extendsTask(gitCheckChanges, {
         skip: skipDevMode,
@@ -71,7 +72,7 @@ class RemovePluginsCommand extends Command {
         },
       },
       cleanCache,
-    ])
+    ]
   }
 }
 

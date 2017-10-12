@@ -37,7 +37,6 @@ describe('remove plugins', () => {
 
   const runCommand = params => {
     const command = new RemovePluginsCommand(params, { renderer: 'silent' })
-    command.init()
     return command.run({
       cwd,
       projectPath: cwd,

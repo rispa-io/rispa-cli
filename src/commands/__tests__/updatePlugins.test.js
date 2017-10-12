@@ -35,7 +35,6 @@ describe('update plugins', () => {
 
   const runCommand = params => {
     const command = new UpdatePluginsCommand(params, { renderer: 'silent' })
-    command.init()
     return command.run({
       cwd,
       projectPath: cwd,

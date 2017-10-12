@@ -31,7 +31,6 @@ describe('run plugin script', () => {
 
   const runCommand = (params, options) => {
     const command = new RunPluginScriptCommand(params, { renderer: 'silent' })
-    command.init()
     return command.run(Object.assign({
       cwd,
     }, options))

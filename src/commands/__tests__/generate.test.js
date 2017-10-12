@@ -32,7 +32,6 @@ describe('generate', () => {
 
   const runCommand = params => {
     const command = new GenerateCommand(params, { renderer: 'silent' })
-    command.init()
     return command.run({
       cwd,
       projectPath: cwd,

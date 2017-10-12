@@ -6,13 +6,12 @@ const cleanCache = require.requireMock('../../tasks/cleanCache')
 
 const CleanCacheCommand = require.requireActual('../cleanCache')
 
-describe('assemble command', () => {
+describe('clean cache command', () => {
   const projectPath = '/path'
 
   it('should init successfully', () => {
     const command = new CleanCacheCommand()
-    command.init()
-    expect(command.tasks.length).toBe(2)
+    expect(command.init().length).toBe(2)
   })
 
   it('should run tasks successfully', async () => {
@@ -24,7 +23,6 @@ describe('assemble command', () => {
     const command = new CleanCacheCommand({
       renderer: 'silent',
     })
-    command.init()
     const result = await command.run({
       cwd: '/cwd',
     })

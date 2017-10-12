@@ -4,10 +4,10 @@ const cleanCache = require('../tasks/cleanCache')
 
 class CleanCacheCommand extends Command {
   init() {
-    this.add([
+    return [
       readProjectConfiguration,
       cleanCache,
-    ])
+    ]
   }
 }
 

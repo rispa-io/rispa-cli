@@ -114,7 +114,7 @@ class CreateProjectCommand extends Command {
 
   init() {
     const { projectName, remoteUrl, pluginsToInstall } = this.state
-    this.add([
+    return [
       {
         title: 'Enter project name',
         enabled: () => !projectName,
@@ -176,7 +176,7 @@ class CreateProjectCommand extends Command {
         skip: skipTestMode,
         task: ({ projectPath }) => gitCommit(projectPath, 'Bootstrap deps and install plugins'),
       },
-    ])
+    ]
   }
 }
 

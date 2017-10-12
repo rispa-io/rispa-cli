@@ -7,13 +7,13 @@ const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
 
 class PostinstallCommand extends Command {
   init() {
-    this.add([
+    return [
       readProjectConfiguration,
       bootstrapProjectDeps,
       cleanCache,
       scanPlugins,
       postinstall,
-    ])
+    ]
   }
 }
 

@@ -72,7 +72,6 @@ describe('add plugins', () => {
 
   const runCommand = options => {
     const command = new ReleaseCommand([], { renderer: 'silent' })
-    command.init()
     return command.run(Object.assign({
       cwd,
     }, options))

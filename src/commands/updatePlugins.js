@@ -14,7 +14,7 @@ const { ALL_PLUGINS, DEV_MODE, TEST_MODE } = require('../constants')
 const skipNotProdMode = skipMode(DEV_MODE, TEST_MODE)
 
 class UpdatePluginsCommand extends Command {
-  constructor([...pluginsToUpdate], options) {
+  constructor(pluginsToUpdate, options) {
     super(options)
 
     this.state = {
@@ -42,7 +42,8 @@ class UpdatePluginsCommand extends Command {
 
   init() {
     const { pluginsToUpdate } = this.state
-    this.add([
+
+    return [
       readProjectConfiguration,
       extendsTask(gitCheckChanges, {
         skip: skipNotProdMode,
@@ -84,7 +85,7 @@ class UpdatePluginsCommand extends Command {
         },
       },
       cleanCache,
-    ])
+    ]
   }
 }
 

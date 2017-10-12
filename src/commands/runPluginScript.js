@@ -103,7 +103,8 @@ class RunPluginScriptCommand extends Command {
 
   init() {
     const { pluginName, scriptName } = this.state
-    this.add([
+
+    return [
       readProjectConfiguration,
       extendsTask(scanPlugins, {
         after: ctx => {
@@ -144,7 +145,7 @@ class RunPluginScriptCommand extends Command {
         title: 'Run scripts',
         task: this.runScripts,
       },
-    ])
+    ]
   }
 }
 

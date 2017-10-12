@@ -16,7 +16,6 @@ const runCommand = () => {
   const command = new AssembleCommand({
     renderer: 'silent',
   })
-  command.init()
   return command.run({
     cwd: '/cwd',
     projectPath: '/cwd',
@@ -26,8 +25,7 @@ const runCommand = () => {
 describe('assemble command', () => {
   it('should init successfully', () => {
     const command = new AssembleCommand()
-    command.init()
-    expect(command.tasks.length).toBe(5)
+    expect(command.init().length).toBe(5)
   })
 
   it('should run tasks successfully', async () => {
@@ -51,11 +49,6 @@ describe('assemble command', () => {
 
   it('should throw error working tree has modifications', async () => {
     mockGit.getChanges.mockImplementation(() => ('changes'))
-
-    const command = new AssembleCommand({
-      renderer: 'silent',
-    })
-    command.init()
 
     await expect(runCommand())
       .rejects.toHaveProperty(

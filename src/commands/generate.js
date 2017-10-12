@@ -125,7 +125,8 @@ class GenerateCommand extends Command {
 
   init() {
     const { pluginName, generatorName } = this.state
-    this.add([
+
+    return [
       readProjectConfiguration,
       scanPlugins,
       {
@@ -167,7 +168,7 @@ class GenerateCommand extends Command {
         skip: ctx => !ctx.generator.isFeatureGenerator,
         task: bootstrapProjectDeps.task,
       },
-    ])
+    ]
   }
 }
 

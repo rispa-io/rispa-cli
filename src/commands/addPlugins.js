@@ -22,7 +22,7 @@ const skipNotProdMode = skipMode(DEV_MODE, TEST_MODE)
 const skipTestMode = skipMode(TEST_MODE)
 
 class AddPluginsCommand extends Command {
-  constructor([...pluginsToInstall], options) {
+  constructor(pluginsToInstall, options) {
     super(options)
 
     this.state = {
@@ -48,7 +48,8 @@ class AddPluginsCommand extends Command {
 
   init() {
     const { pluginsToInstall } = this.state
-    this.add([
+
+    return [
       readProjectConfiguration,
       extendsTask(gitCheckChanges, {
         skip: skipNotProdMode,
@@ -93,7 +94,7 @@ class AddPluginsCommand extends Command {
       cleanCache,
       scanPlugins,
       postinstall,
-    ])
+    ]
   }
 }
 

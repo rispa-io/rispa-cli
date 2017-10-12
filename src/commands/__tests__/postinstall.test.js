@@ -13,7 +13,6 @@ describe('postinstall', () => {
 
   const runCommand = options => {
     const command = new PostinstallCommand({ renderer: 'silent' })
-    command.init()
     return command.run(Object.assign({
       cwd,
     }, options))

@@ -68,7 +68,6 @@ describe('add plugins', () => {
 
   const runCommand = (plugins = [], options) => {
     const command = new AddPluginsCommand(plugins, { renderer: 'silent' })
-    command.init()
     return command.run(Object.assign({
       cwd,
     }, options))

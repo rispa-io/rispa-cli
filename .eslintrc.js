@@ -4,6 +4,7 @@ module.exports = {
     'no-console': 'off',
     'global-require': 'off',
     'import/no-dynamic-require': 'off',
+    'class-methods-use-this': 'off',
     'comma-dangle': ['error', {
         'arrays': 'ignore',
         'objects': 'ignore',
