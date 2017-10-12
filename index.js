@@ -27,8 +27,6 @@ const runCommand = (commandName, argv, params, options) => {
   }
 
   const command = new Command(argv, options)
-  command.init()
-
   return command.run(params)
 }
 
