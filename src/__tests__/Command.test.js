@@ -3,10 +3,6 @@ const Listr = require.requireActual('listr')
 
 describe('Command', () => {
   it('should success run tasks', async () => {
-    const command = new Command({
-      renderer: 'silent',
-    })
-
     const context = {
       cwd: '/test',
     }
@@ -17,6 +13,18 @@ describe('Command', () => {
       task: jest.fn(),
       after: jest.fn(),
     }
+
+    class ExampleCommand extends Command {
+      init() {
+        return [
+          task,
+        ]
+      }
+    }
+
+    const command = new ExampleCommand({
+      renderer: 'silent',
+    })
 
     const subtask = {
       title: 'Subtask task',
@@ -38,5 +46,13 @@ describe('Command', () => {
     expect(task.after.mock.calls[0][0]).toBe(context)
     expect(subtask.task.mock.calls[0][0]).toBe(context)
     expect(taskWithSubtasks.task.mock.calls[0][0]).toBe(context)
+  })
+
+  it('should failed run without override init method', async () => {
+    const command = new Command({
+      renderer: 'silent',
+    })
+
+    await expect(command.run({})).rejects.toBeInstanceOf(Error)
   })
 })
