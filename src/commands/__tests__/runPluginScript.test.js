@@ -57,6 +57,18 @@ describe('run plugin script', () => {
     }))
   }
 
+  it('should success run with skip plugin', async () => {
+    mockScanPlugins()
+    mockRunScriptTask()
+
+    await expect(runCommand([ALL_PLUGINS, scriptName, ...args], {
+      skip: [pluginName],
+    }))
+      .resolves.toBeDefined()
+
+    expect(createRunPluginScript).not.toBeCalled()
+  })
+
   it('should success run', async () => {
     mockScanPlugins()
     mockRunScriptTask()

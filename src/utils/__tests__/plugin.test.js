@@ -4,7 +4,13 @@ const mockCrossSpawn = require.requireMock('cross-spawn')
 
 const { DEFAULT_PLUGIN_BRANCH } = require.requireActual('../../constants')
 
-const { parseDependencyVersion, publishToNpm, compareVersions } = require.requireActual('../plugin')
+const {
+  parseDependencyVersion,
+  publishToNpm,
+  compareVersions,
+  getPluginName,
+  findPluginForInstall,
+} = require.requireActual('../plugin')
 
 describe('plugin utils', () => {
   const cwd = '/cwd'
@@ -71,6 +77,22 @@ describe('plugin utils', () => {
         patch: 1,
       }
       expect(compareVersions(version1, version2)).toBeLessThan(0)
+    })
+  })
+
+  describe('getPluginName', () => {
+    it('should failed get name - invalid type', () => {
+      expect(() => getPluginName('')).toThrowError('Invalid plugin type')
+    })
+
+    it('should failed get name - cant find name', () => {
+      expect(() => getPluginName({})).toThrowError('Plugin does not contain name')
+    })
+  })
+
+  describe('findPluginForInstall', () => {
+    it('should failed find plugin - invalid type', () => {
+      expect(() => findPluginForInstall(10, [])).toThrowError('Invalid plugin type')
     })
   })
 })

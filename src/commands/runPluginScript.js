@@ -69,7 +69,7 @@ class RunPluginScriptCommand extends Command {
       .filter(plugin =>
         !plugin.npm &&
         plugin.scripts.indexOf(scriptName) !== -1 &&
-        !skipPlugins.some(skipPluginName => equalPluginName(skipPluginName, plugin)),
+        !skipPlugins.some(skipPluginName => equalPluginName(skipPluginName, plugin))
       )
 
     return pluginsToRun

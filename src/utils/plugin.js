@@ -35,7 +35,6 @@ const extractPluginNameFromUrl = cloneUrl => {
   return parts[parts.length - 1].replace(/\.git$/, '')
 }
 
-// eslint-disable-next-line complexity
 const getPluginName = plugin => {
   if (plugin && typeof plugin === 'object') {
     if ('packageAlias' in plugin && plugin.packageAlias) {
@@ -60,7 +59,6 @@ const findPluginByName = (list, pluginName) => list.find(
   plugin => equalPluginName(pluginName, plugin)
 )
 
-// eslint-disable-next-line complexity
 const findPluginForInstall = (plugin, plugins) => {
   if (typeof plugin === 'object') {
     return plugin

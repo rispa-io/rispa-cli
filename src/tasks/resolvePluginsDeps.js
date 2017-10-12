@@ -4,17 +4,17 @@ const { readDependencies, parseDependencyVersion } = require('../utils/plugin')
 const { PLUGIN_PREFIX } = require('../constants')
 const createInstallPlugin = require('../tasks/installPlugin')
 
-const pluginsDependencies = (pluginsPath, plugins) => (
-  Object.entries(
+const pluginsDependencies = (pluginsPath, plugins) => Object
+  .entries(
     plugins.reduce((deps, plugin) => Object.assign(
       deps, readDependencies(path.resolve(pluginsPath, `./${plugin.name}`))
     ), {})
-  ).filter(([name]) => name.startsWith(PLUGIN_PREFIX))
-    .map(([name, dependencyVersion]) => ({
-      name,
-      ref: parseDependencyVersion(dependencyVersion),
-    }))
-)
+  )
+  .filter(([name]) => name.startsWith(PLUGIN_PREFIX))
+  .map(([name, dependencyVersion]) => ({
+    name,
+    ref: parseDependencyVersion(dependencyVersion),
+  }))
 
 const resolvePluginsDeps = {
   title: 'Resolve plugins dependencies',
@@ -28,6 +28,7 @@ const resolvePluginsDeps = {
     const installPlugins = pluginsDependencies(pluginsPath, pluginsForResolve)
       .reduce((result, { name, ref }) => {
         const plugin = plugins.find(currentPlugin => currentPlugin.packageName === name)
+
         if (plugin && plugin.extendable) {
           result.push(createInstallPlugin(Object.assign({}, plugin, { ref })))
         }

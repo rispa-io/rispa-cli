@@ -7,6 +7,7 @@ const {
 } = require('../utils/git')
 const {
   getPluginName,
+  equalPluginName,
 } = require('../utils/plugin')
 const { DEV_MODE, TEST_MODE } = require('../constants')
 
@@ -16,9 +17,11 @@ const checkCloneUrl = cloneUrl => {
   }
 }
 
-const configurationContainsPlugin = (configuration, plugin) => {
-  configuration.plugins.some(searchPlugin => searchPlugin.name === plugin.name)
-}
+const configurationContainsPlugin = (configuration, plugin) => (
+  configuration.plugins.some(searchPlugin =>
+    equalPluginName(searchPlugin.name, plugin)
+  )
+)
 
 const createInstallPlugin = plugin => improveTask({
   title: `Install plugin with name ${cyan(getPluginName(plugin))}`,

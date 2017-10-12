@@ -273,7 +273,7 @@ describe('add plugins', () => {
 
     expect(mockGit.getChanges).toBeCalled()
     expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, undefined)
-    expect(mockGit.commit).not.toBeCalledWith()
+    expect(mockGit.commit).not.toBeCalled()
     expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
   })
 
@@ -299,6 +299,7 @@ describe('add plugins', () => {
   })
 
   it('should skip add plugin - already exist', async () => {
+    console.log(' already exist')
     mockFs.setMockJson({
       [rispaJsonPath]: {
         pluginsPath,
@@ -328,8 +329,8 @@ describe('add plugins', () => {
     ).resolves.toBeDefined()
 
     expect(mockGit.getChanges).toBeCalled()
-    expect(mockGit.addSubtree).not.toBeCalledWith()
-    expect(mockGit.commit).not.toBeCalledWith()
+    expect(mockGit.addSubtree).not.toBeCalled()
+    expect(mockGit.commit).not.toBeCalled()
     expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
   })
 
@@ -392,6 +393,30 @@ describe('add plugins', () => {
     ).rejects.toHaveProperty('message', 'Can\'t find plugins for select')
   })
 
+  it('should failed add plugin - invalid remote url', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath,
+        plugins: [],
+      },
+    })
+
+    mockGithubApi.setMockPlugins([{
+      name: pluginName,
+      clone_url: '',
+    }])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginName.replace('rispa-', PLUGIN_PREFIX),
+      },
+    })
+
+    await expect(
+      runCommand([pluginName])
+    ).rejects.toHaveProperty('errors.0.message', 'Plugin without remote url')
+  })
+
   it('should failed add plugin - invalid git url', async () => {
     mockFs.setMockJson({
       [rispaJsonPath]: {
@@ -406,8 +431,8 @@ describe('add plugins', () => {
       runCommand([`${PLUGIN_GIT_PREFIX}${invalidRemoteUrl}`])
     ).rejects.toHaveProperty('errors.0.message', `Invalid plugin remote url ${chalk.cyan(invalidRemoteUrl)}`)
 
-    expect(mockGit.addSubtree).not.toBeCalledWith()
-    expect(mockGit.commit).not.toBeCalledWith()
+    expect(mockGit.addSubtree).not.toBeCalled()
+    expect(mockGit.commit).not.toBeCalled()
     expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
   })
 
