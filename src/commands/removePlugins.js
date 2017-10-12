@@ -9,11 +9,12 @@ const { extendsTask, skipMode } = require('../utils/tasks')
 const { DEV_MODE } = require('../constants')
 const gitCheckChanges = require('../tasks/gitCheckChanges')
 const { commit: gitCommit, getChanges: gitGetChanges } = require('../utils/git')
+const { findPluginByName } = require('../utils/plugin')
 
 const skipDevMode = skipMode(DEV_MODE)
 
 class RemovePluginsCommand extends Command {
-  constructor([...pluginsToRemove], options) {
+  constructor(pluginsToRemove, options) {
     super(options)
 
     this.state = {
@@ -23,14 +24,20 @@ class RemovePluginsCommand extends Command {
     this.removePlugins = this.removePlugins.bind(this)
   }
 
-  removePlugins() {
+  removePlugins(ctx) {
     const { pluginsToRemove } = this.state
+    const { configuration } = ctx
 
-    return new Listr(
-      pluginsToRemove.map(plugin =>
-        createRemovePlugin(plugin)
-      ), { exitOnError: false }
+    const plugins = pluginsToRemove.map(pluginName =>
+      findPluginByName(configuration.plugins, pluginName) || pluginName
     )
+
+    const invalidPlugins = plugins.filter(plugin => typeof plugin === 'string')
+    if (invalidPlugins.length !== 0) {
+      throw new Error(`Can't find plugins with names:\n - ${invalidPlugins.join(', ')}`)
+    }
+
+    return new Listr(plugins.map(createRemovePlugin), { exitOnError: false })
   }
 
   init() {

@@ -6,6 +6,7 @@ const Command = require('../Command')
 const readProjectConfiguration = require('../tasks/readProjectConfiguration')
 const scanPlugins = require('../tasks/scanPlugins')
 const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
+const { findPluginByName, getPluginName } = require('../utils/plugin')
 
 const initGenerators = ctx => {
   const generatorsPaths = Object.values(ctx.plugins)
@@ -26,6 +27,7 @@ class GenerateCommand extends Command {
     super(options)
 
     this.state = {
+      plugin: null,
       pluginName,
       generatorName,
     }
@@ -40,11 +42,14 @@ class GenerateCommand extends Command {
 
   checkPlugin(ctx) {
     const { pluginName } = this.state
-    const plugin = ctx.plugins[pluginName]
+
+    const plugin = findPluginByName(ctx.plugins, pluginName)
 
     if (!plugin) {
       throw new Error(`Can't find plugin with name ${chalk.cyan(pluginName)}`)
     }
+
+    this.state.plugin = plugin
   }
 
   checkGenerator(ctx) {
@@ -62,12 +67,14 @@ class GenerateCommand extends Command {
   selectPlugin(ctx) {
     return prompt([{
       type: 'list',
-      name: 'pluginName',
+      name: 'plugin',
       message: 'Select plugin:',
       paginated: true,
-      choices: [...new Set(Object.keys(ctx.plugins).map(key => ctx.plugins[key].name))],
-    }]).then(({ pluginName }) => {
-      this.state.pluginName = pluginName
+      choices: ctx.plugins.map(plugin => ({
+        name: getPluginName(plugin), value: plugin,
+      })),
+    }]).then(({ plugin }) => {
+      this.state.plugin = plugin
     })
   }
 
@@ -94,7 +101,7 @@ class GenerateCommand extends Command {
   }
 
   runGenerator(ctx) {
-    const { pluginName } = this.state
+    const { pluginName, plugin } = this.state
     const { projectPath, generators, generator, configuration } = ctx
 
     let destPath
@@ -102,7 +109,6 @@ class GenerateCommand extends Command {
       const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
       destPath = path.resolve(pluginsPath, pluginName, './plopfile.js')
     } else {
-      const plugin = ctx.plugins[pluginName]
       destPath = path.resolve(plugin.path, './plopfile.js')
     }
 
@@ -116,6 +122,7 @@ class GenerateCommand extends Command {
           const error = result.failures
             .map(failure => `${failure.path}: ${failure.error}`)
             .join('\n')
+
           throw new Error(error)
         } else {
           return Promise.resolve()

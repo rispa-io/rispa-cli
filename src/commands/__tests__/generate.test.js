@@ -5,7 +5,6 @@ jest.mock('inquirer')
 
 const path = require.requireActual('path')
 const chalk = require.requireActual('chalk')
-const { PLUGIN_GENERATORS_PATH } = require.requireActual('../../constants')
 
 const mockInquirer = require.requireMock('inquirer')
 const mockGenerator = require.requireMock('@rispa/generator')
@@ -21,13 +20,20 @@ describe('generate', () => {
   const pluginsPath = path.resolve(cwd, './packages')
   const pluginPath = path.resolve(pluginsPath, `./${pluginName}`)
   const generatorName = 'generatorName'
-  const generatorsPath = path.resolve(pluginPath, PLUGIN_GENERATORS_PATH)
+  const generatorsPath = path.resolve(pluginPath, './generators.js')
   const configuration = {
     pluginsPath,
-    plugins: [pluginName],
-    remotes: {
-      [pluginName]: pluginRemoteUrl,
-    },
+    plugins: [{
+      name: pluginName,
+      remote: pluginRemoteUrl,
+    }],
+  }
+
+  const plugin = {
+    name: pluginName,
+    scripts: [],
+    path: pluginPath,
+    generators: generatorsPath,
   }
 
   const runCommand = params => {
@@ -45,14 +51,7 @@ describe('generate', () => {
   }
 
   const mockScanPlugins = () => {
-    scanPlugins.setMockPlugins({
-      [pluginName]: {
-        name: pluginName,
-        scripts: [],
-        path: pluginPath,
-        generators: generatorsPath,
-      },
-    })
+    scanPlugins.setMockPlugins([plugin])
   }
 
   const mockGeneratorRun = () => {
@@ -83,6 +82,7 @@ describe('generate', () => {
     mockScanPlugins()
 
     mockInquirer.setMockAnswers({
+      plugin,
       pluginName,
       generatorName,
     })
@@ -106,6 +106,7 @@ describe('generate', () => {
     mockReadConfigurationTask()
     mockScanPlugins()
     mockInquirer.setMockAnswers({
+      plugin,
       pluginName,
       generatorName,
     })
@@ -121,6 +122,7 @@ describe('generate', () => {
     mockReadConfigurationTask()
     mockScanPlugins()
     mockInquirer.setMockAnswers({
+      plugin,
       pluginName,
       generatorName,
     })

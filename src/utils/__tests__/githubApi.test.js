@@ -31,7 +31,7 @@ describe('github api', () => {
 
     await expect(githubApi.plugins()).resolves.toEqual(
       rawPlugins.map(({ name, clone_url }) => ({
-        name, cloneUrl: clone_url,
+        name, clone_url,
       }))
     )
   })

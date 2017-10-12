@@ -4,24 +4,12 @@ const mockCrossSpawn = require.requireMock('cross-spawn')
 
 const { DEFAULT_PLUGIN_BRANCH } = require.requireActual('../../constants')
 
-const { parseDependencyVersion, findInList, publishToNpm, compareVersions } = require.requireActual('../plugin')
+const { parseDependencyVersion, publishToNpm, compareVersions } = require.requireActual('../plugin')
 
 describe('plugin utils', () => {
   const cwd = '/cwd'
   it('should failed parse version', () => {
     expect(parseDependencyVersion('')).toBe(DEFAULT_PLUGIN_BRANCH)
-  })
-
-  it('should find plugin in list', () => {
-    const plugin = {
-      name: 'name',
-      packageName: 'packageName',
-      packageAlias: 'packageAlias',
-    }
-
-    expect(findInList(plugin.name, [plugin])).toBe(plugin)
-    expect(findInList(plugin.packageName, [plugin])).toBe(plugin)
-    expect(findInList(plugin.packageAlias, [plugin])).toBe(plugin)
   })
 
   describe('publishToNpm', () => {

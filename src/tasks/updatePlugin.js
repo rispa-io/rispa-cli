@@ -8,23 +8,23 @@ const {
 } = require('../utils/git')
 const { improveTask, checkMode } = require('../utils/tasks')
 const { DEV_MODE, TEST_MODE } = require('../constants')
+const { getPluginName } = require('../utils/plugin')
 
-const updatePluginSubtree = (remotes, projectPath, pluginsPath, pluginName) => {
-  const remoteUrl = remotes[pluginName]
+const updatePluginSubtree = (projectPath, pluginsPath, plugin) => {
   const pluginsRelPath = path.relative(projectPath, pluginsPath)
-  const prefix = `${pluginsRelPath}/${pluginName}`
+  const prefix = `${pluginsRelPath}/${plugin.name}`
 
-  if (!gitUpdateSubtree(projectPath, prefix, pluginName, remoteUrl)) {
-    throw new Error(`Failed update subtree '${remoteUrl}'`)
+  if (!gitUpdateSubtree(projectPath, prefix, plugin.name, plugin.remote)) {
+    throw new Error(`Failed update subtree '${plugin.remote}'`)
   }
 }
 
-const createUpdatePlugin = name => improveTask({
-  title: `Update plugin with name ${chalk.cyan(name)}`,
+const createUpdatePlugin = plugin => improveTask({
+  title: `Update plugin with name ${chalk.cyan(getPluginName(plugin))}`,
   task: ctx => {
     const { projectPath, configuration } = ctx
     const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
-    const pluginPath = path.resolve(pluginsPath, `./${name}`)
+    const pluginPath = path.resolve(pluginsPath, `./${plugin.name}`)
 
     if (checkMode(ctx, DEV_MODE, TEST_MODE)) {
       if (!fs.existsSync(path.resolve(pluginPath, './.git'))) {
@@ -37,10 +37,10 @@ const createUpdatePlugin = name => improveTask({
 
       gitPull(pluginPath)
     } else {
-      updatePluginSubtree(configuration.remotes, projectPath, pluginsPath, name)
+      updatePluginSubtree(projectPath, pluginsPath, plugin)
     }
 
-    ctx.updatedPlugins.push(name)
+    ctx.updatedPlugins.push(plugin.name)
   },
 })
 

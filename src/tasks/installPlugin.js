@@ -5,6 +5,9 @@ const {
   addSubtree: gitAddSubtree,
   cloneRepository: gitCloneRepository,
 } = require('../utils/git')
+const {
+  getPluginName,
+} = require('../utils/plugin')
 const { DEV_MODE, TEST_MODE } = require('../constants')
 
 const checkCloneUrl = cloneUrl => {
@@ -13,10 +16,15 @@ const checkCloneUrl = cloneUrl => {
   }
 }
 
-const createInstallPlugin = ({ name, cloneUrl, ref }) => improveTask({
-  title: `Install plugin with name ${cyan(name)}`,
-  skip: ({ configuration: { plugins } }) =>
-    (plugins.indexOf(name) !== -1 && 'Plugin already installed') || (!cloneUrl && 'Can\'t find plugin'),
+const configurationContainsPlugin = (configuration, plugin) => {
+  configuration.plugins.some(searchPlugin => searchPlugin.name === plugin.name)
+}
+
+const createInstallPlugin = plugin => improveTask({
+  title: `Install plugin with name ${cyan(getPluginName(plugin))}`,
+  skip: ({ configuration }) => (
+    configurationContainsPlugin(configuration, plugin) && 'Plugin already installed'
+  ),
   before: ctx => {
     if (!ctx.installedPlugins) {
       ctx.installedPlugins = []
@@ -24,24 +32,35 @@ const createInstallPlugin = ({ name, cloneUrl, ref }) => improveTask({
   },
   task: ctx => {
     const { projectPath } = ctx
+    const { remote, name, ref } = plugin
+
+    if (!remote) {
+      throw new Error('Plugin without remote url')
+    }
+
     const pluginsPath = ctx.pluginsPath || path.resolve(projectPath, ctx.configuration.pluginsPath)
 
-    checkCloneUrl(cloneUrl)
+    checkCloneUrl(remote)
 
+    // TODO: Добавить для расширяемых плагинов установка пути через префикс проекта, пример: rispa-config -> project-name-config
     if (checkMode(ctx, DEV_MODE)) {
-      gitCloneRepository(pluginsPath, cloneUrl)
+      gitCloneRepository(pluginsPath, remote)
     } else if (checkMode(ctx, TEST_MODE)) {
-      gitCloneRepository(pluginsPath, cloneUrl, { depth: 1 })
+      gitCloneRepository(pluginsPath, remote, { depth: 1 })
     } else {
       const pluginsRelPath = path.relative(projectPath, pluginsPath)
       const prefix = `${pluginsRelPath}/${name}`
-      gitAddSubtree(projectPath, prefix, name, cloneUrl, ref)
+      gitAddSubtree(projectPath, prefix, name, remote, ref)
     }
 
     ctx.pluginsPath = pluginsPath
     ctx.installedPlugins.push(name)
-    ctx.configuration.plugins.push(name)
-    ctx.configuration.remotes[name] = cloneUrl
+
+    ctx.configuration.plugins.push({
+      name,
+      ref,
+      remote,
+    })
   },
 })
 

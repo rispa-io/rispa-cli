@@ -20,12 +20,19 @@ describe('run plugin script', () => {
   const pluginPath = path.resolve(cwd, `./${pluginName}`)
   const args = [1, 2, 'test']
   const rispaJsonPath = path.resolve(cwd, CONFIGURATION_PATH)
+  const plugin = {
+    name: pluginName,
+    packageAlias: pluginName,
+    scripts: [scriptName],
+    path: pluginPath,
+  }
 
   mockFs.setMockJson({
     [rispaJsonPath]: {
       pluginsPath: '',
-      plugins: [pluginName],
-      remotes: {},
+      plugins: [{
+        name: pluginName,
+      }],
     },
   })
 
@@ -37,15 +44,9 @@ describe('run plugin script', () => {
   }
 
   const mockScanPlugins = () => {
-    scanPlugins.setMockPlugins({
-      [pluginName]: {
-        name: pluginName,
-        alias: pluginName,
-        dirName: pluginName,
-        scripts: [scriptName],
-        path: pluginPath,
-      },
-    })
+    scanPlugins.setMockPlugins([
+      plugin,
+    ])
   }
 
   const mockRunScriptTask = () => {
@@ -71,7 +72,7 @@ describe('run plugin script', () => {
     mockRunScriptTask()
 
     mockInquirer.setMockAnswers({
-      pluginName,
+      plugin,
       scriptName,
     })
 
@@ -91,7 +92,7 @@ describe('run plugin script', () => {
   })
 
   it('should failed run - cant find plugins', async () => {
-    scanPlugins.setMockPlugins({})
+    scanPlugins.setMockPlugins([])
 
     await expect(runCommand([pluginName, scriptName]))
       .rejects.toHaveProperty('message', 'Can\'t find plugins')
@@ -112,13 +113,11 @@ describe('run plugin script', () => {
   })
 
   it('should failed run with select plugin - cant find plugins with scripts', async () => {
-    scanPlugins.setMockPlugins({
-      [pluginName]: {
-        name: pluginName,
+    scanPlugins.setMockPlugins([
+      Object.assign({}, plugin, {
         scripts: [],
-        path: pluginPath,
-      },
-    })
+      }),
+    ])
 
     await expect(runCommand([]))
       .rejects.toHaveProperty('message', 'Can\'t find plugins with scripts')

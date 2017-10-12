@@ -6,7 +6,7 @@ jest.mock('../../utils/git.js')
 jest.mock('../../utils/githubApi')
 
 const path = require.requireActual('path')
-const { LERNA_JSON_PATH, PLUGIN_PREFIX } = require.requireActual('../../constants')
+const { PLUGIN_PREFIX } = require.requireActual('../../constants')
 
 const mockCrossSpawn = require.requireMock('cross-spawn')
 const mockInquirer = require.requireMock('inquirer')
@@ -59,12 +59,13 @@ describe('create project', () => {
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      cloneUrl: pluginRemoteUrl,
+      clone_url: pluginRemoteUrl,
     }])
 
     mockGithubApi.setMockPluginNamePackageJson({
       [pluginName]: {
         name: pluginName.replace('rispa-', PLUGIN_PREFIX),
+        version: '1.0.0',
       },
     })
 
@@ -72,7 +73,7 @@ describe('create project', () => {
       selectedPlugins: [
         {
           name: pluginName,
-          cloneUrl: pluginRemoteUrl,
+          remote: pluginRemoteUrl,
         },
       ],
     })
@@ -96,7 +97,7 @@ describe('create project', () => {
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      cloneUrl: pluginRemoteUrl,
+      clone_url: pluginRemoteUrl,
     }])
 
     mockGithubApi.setMockPluginNamePackageJson({
@@ -108,7 +109,7 @@ describe('create project', () => {
     mockInquirer.setMockAnswers({
       selectedPlugins: [{
         name: pluginName,
-        cloneUrl: pluginRemoteUrl,
+        remote: pluginRemoteUrl,
       }],
       projectName,
       remoteUrl,

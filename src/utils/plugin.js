@@ -35,21 +35,47 @@ const extractPluginNameFromUrl = cloneUrl => {
   return parts[parts.length - 1].replace(/\.git$/, '')
 }
 
-const findInList = (plugin, pluginList) => {
-  if (typeof plugin === 'object') {
-    return plugin
-  } else if (plugin.startsWith(PLUGIN_GIT_PREFIX)) {
-    return {
-      name: extractPluginNameFromUrl(plugin),
-      cloneUrl: plugin.replace(PLUGIN_GIT_PREFIX, ''),
+// eslint-disable-next-line complexity
+const getPluginName = plugin => {
+  if (plugin && typeof plugin === 'object') {
+    if ('packageAlias' in plugin && plugin.packageAlias) {
+      return plugin.packageAlias
+    } else if ('packageName' in plugin && plugin.packageName) {
+      return plugin.packageName
+    } else if ('name' in plugin && plugin.name) {
+      return plugin.name
     }
+
+    throw new Error('Plugin does not contain name')
   }
 
-  const currentPlugin = pluginList.find(({ name, packageName, packageAlias }) =>
-    name === plugin || packageName === plugin || packageAlias === plugin
-  )
+  throw new TypeError('Invalid plugin type')
+}
 
-  return currentPlugin || { name: plugin }
+const equalPluginName = (pluginName, plugin) => (
+  pluginName === plugin.name || pluginName === plugin.packageName || pluginName === plugin.packageAlias
+)
+
+const findPluginByName = (list, pluginName) => list.find(
+  plugin => equalPluginName(pluginName, plugin)
+)
+
+// eslint-disable-next-line complexity
+const findPluginForInstall = (plugin, plugins) => {
+  if (typeof plugin === 'object') {
+    return plugin
+  } else if (typeof plugin === 'string') {
+    if (plugin.startsWith(PLUGIN_GIT_PREFIX)) {
+      return {
+        name: extractPluginNameFromUrl(plugin),
+        remote: plugin.replace(PLUGIN_GIT_PREFIX, ''),
+      }
+    }
+
+    return findPluginByName(plugins, plugin)
+  }
+
+  throw new TypeError('Invalid plugin type')
 }
 
 const publishToNpm = pluginPath => {
@@ -77,12 +103,7 @@ const compareVersions = (version1, version2) => {
     return minor
   }
 
-  const patch = parseInt(version1.patch, 10) - parseInt(version2.patch, 10)
-  if (patch !== 0) {
-    return patch
-  }
-
-  return 0
+  return parseInt(version1.patch, 10) - parseInt(version2.patch, 10)
 }
 
 module.exports = {
@@ -90,7 +111,10 @@ module.exports = {
   readDependencies,
   parseDependencyVersion,
   extractPluginNameFromUrl,
-  findInList,
+  getPluginName,
+  findPluginForInstall,
+  equalPluginName,
+  findPluginByName,
   savePackageJson,
   publishToNpm,
   compareVersions,

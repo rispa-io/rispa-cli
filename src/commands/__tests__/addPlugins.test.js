@@ -14,6 +14,7 @@ const {
   TEST_MODE,
   PLUGIN_PREFIX,
   PACKAGE_JSON_PATH,
+  DEFAULT_PLUGIN_BRANCH,
 } = require.requireActual('../../constants')
 
 const mockCrossSpawn = require.requireMock('cross-spawn')
@@ -29,12 +30,7 @@ describe('add plugins', () => {
   beforeAll(() => {
     mockGit.getChanges.mockImplementation(() => false)
 
-    scanPlugins.setMockPlugins({})
-
-    mockPreset.readPresetConfiguration.mockImplementation(() => ({
-      plugins: [],
-      remotes: {},
-    }))
+    scanPlugins.setMockPlugins([])
   })
 
   beforeEach(() => {
@@ -79,7 +75,6 @@ describe('add plugins', () => {
       [rispaJsonPath]: {
         pluginsPath,
         plugins: [],
-        remotes: {},
       },
       [pluginPackageJsonPath]: {
         dependencies: {
@@ -90,10 +85,10 @@ describe('add plugins', () => {
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      cloneUrl: pluginRemoteUrl,
+      clone_url: pluginRemoteUrl,
     }, {
       name: resolvePluginName,
-      cloneUrl: resolvePluginRemoteUrl,
+      clone_url: resolvePluginRemoteUrl,
     }])
 
     mockGithubApi.setMockPluginsExtendable([resolvePluginName])
@@ -115,7 +110,7 @@ describe('add plugins', () => {
     ).resolves.toBeDefined()
 
     expect(mockGit.getChanges).toBeCalled()
-    expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, undefined)
+    expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, DEFAULT_PLUGIN_BRANCH)
     expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${resolvePluginName}`, resolvePluginName, resolvePluginRemoteUrl, `v${resolvePluginVersion}`)
     expect(mockGit.commit).toBeCalledWith(cwd, `Add plugins: ${pluginName}, ${resolvePluginName}`)
     expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
@@ -126,7 +121,6 @@ describe('add plugins', () => {
       [rispaJsonPath]: {
         pluginsPath,
         plugins: [],
-        remotes: {},
       },
       [pluginPackageJsonPath]: {
         dependencies: {
@@ -137,10 +131,10 @@ describe('add plugins', () => {
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      cloneUrl: pluginRemoteUrl,
+      clone_url: pluginRemoteUrl,
     }, {
       name: resolvePluginName,
-      cloneUrl: resolvePluginRemoteUrl,
+      clone_url: resolvePluginRemoteUrl,
     }])
 
     mockGithubApi.setMockPluginsExtendable([resolvePluginName])
@@ -154,7 +148,8 @@ describe('add plugins', () => {
     mockInquirer.setMockAnswers({
       selectedPlugins: [{
         name: pluginName,
-        cloneUrl: pluginRemoteUrl,
+        remote: pluginRemoteUrl,
+        ref: DEFAULT_PLUGIN_BRANCH
       }],
     })
 
@@ -166,7 +161,7 @@ describe('add plugins', () => {
     ).resolves.toBeDefined()
 
     expect(mockGit.getChanges).toBeCalled()
-    expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, undefined)
+    expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, DEFAULT_PLUGIN_BRANCH)
     expect(mockGit.commit).toBeCalledWith(cwd, `Add plugins: ${pluginName}`)
     expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
   })
@@ -177,13 +172,12 @@ describe('add plugins', () => {
         mode: DEV_MODE,
         pluginsPath,
         plugins: [],
-        remotes: {},
       },
     })
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      cloneUrl: pluginRemoteUrl,
+      clone_url: pluginRemoteUrl,
     }])
 
     mockGithubApi.setMockPluginNamePackageJson({
@@ -212,7 +206,7 @@ describe('add plugins', () => {
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      cloneUrl: pluginRemoteUrl,
+      clone_url: pluginRemoteUrl,
     }])
 
     mockGithubApi.setMockPluginNamePackageJson({
@@ -240,7 +234,7 @@ describe('add plugins', () => {
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      cloneUrl: pluginRemoteUrl,
+      clone_url: pluginRemoteUrl,
     }])
 
     mockGithubApi.setMockPluginNamePackageJson({
@@ -257,7 +251,7 @@ describe('add plugins', () => {
     ).resolves.toBeDefined()
 
     expect(mockGit.getChanges).toBeCalled()
-    expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, undefined)
+    expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, DEFAULT_PLUGIN_BRANCH)
     expect(mockGit.commit).toBeCalledWith(cwd, `Add plugins: ${pluginName}`)
     expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['bs'], crossSpawnOptions)
   })
@@ -267,7 +261,6 @@ describe('add plugins', () => {
       [rispaJsonPath]: {
         pluginsPath,
         plugins: [],
-        remotes: {},
       },
     })
 
@@ -289,7 +282,6 @@ describe('add plugins', () => {
       [rispaJsonPath]: {
         pluginsPath,
         plugins: [],
-        remotes: {},
       },
     })
 
@@ -310,16 +302,16 @@ describe('add plugins', () => {
     mockFs.setMockJson({
       [rispaJsonPath]: {
         pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
+        plugins: [{
+          name: pluginName,
+          remote: pluginRemoteUrl,
+        }],
       },
     })
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      cloneUrl: pluginRemoteUrl,
+      clone_url: pluginRemoteUrl,
     }])
 
     mockGithubApi.setMockPluginNamePackageJson({
@@ -341,20 +333,19 @@ describe('add plugins', () => {
     expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
   })
 
-  it('should success skip add plugin', async () => {
+  it('should failed add plugin - cant find', async () => {
     mockFs.setMockJson({
       [rispaJsonPath]: {
         pluginsPath,
         plugins: [],
-        remotes: {},
       },
     })
 
     mockGithubApi.setMockPlugins([])
 
     await expect(
-      runCommand([pluginName])
-    ).resolves.toBeDefined()
+      runCommand(['rispa-config'])
+    ).rejects.toHaveProperty('message', 'Can\'t find plugins with names:\n - rispa-config')
   })
 
   it('should failed add plugin - tree has modifications', async () => {
@@ -362,7 +353,6 @@ describe('add plugins', () => {
       [rispaJsonPath]: {
         pluginsPath,
         plugins: [],
-        remotes: {},
       },
     })
 
@@ -379,16 +369,16 @@ describe('add plugins', () => {
     mockFs.setMockJson({
       [rispaJsonPath]: {
         pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
+        plugins: [{
+          name: pluginName,
+          remote: pluginRemoteUrl,
+        }],
       },
     })
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      cloneUrl: pluginRemoteUrl,
+      clone_url: pluginRemoteUrl,
     }])
 
     mockGithubApi.setMockPluginNamePackageJson({
@@ -407,7 +397,6 @@ describe('add plugins', () => {
       [rispaJsonPath]: {
         pluginsPath,
         plugins: [],
-        remotes: {},
       },
     })
 

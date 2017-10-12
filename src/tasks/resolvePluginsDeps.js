@@ -16,28 +16,26 @@ const pluginsDependencies = (pluginsPath, plugins) => (
     }))
 )
 
-const resolvePluginsDepsTask = ctx => {
-  const { configuration, projectPath, plugins, installedPlugins } = ctx
-
-  const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
-  const pluginsForResolve = plugins.filter(plugin => installedPlugins.indexOf(plugin.name) !== -1)
-
-  const installPlugins = pluginsDependencies(pluginsPath, pluginsForResolve)
-    .reduce((result, { name, ref }) => {
-      const plugin = plugins.find(currentPlugin => currentPlugin.packageName === name)
-      if (plugin && plugin.extendable) {
-        result.push(createInstallPlugin({ name: plugin.name, cloneUrl: plugin.cloneUrl, ref }))
-      }
-      return result
-    }, [])
-
-  return new Listr(installPlugins)
-}
-
 const resolvePluginsDeps = {
   title: 'Resolve plugins dependencies',
   skip: ctx => (!ctx.installedPlugins || !ctx.installedPlugins.length) && 'Plugins not added',
-  task: resolvePluginsDepsTask,
+  task: ctx => {
+    const { configuration, projectPath, plugins, installedPlugins } = ctx
+    const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
+
+    const pluginsForResolve = plugins.filter(plugin => installedPlugins.indexOf(plugin.name) !== -1)
+
+    const installPlugins = pluginsDependencies(pluginsPath, pluginsForResolve)
+      .reduce((result, { name, ref }) => {
+        const plugin = plugins.find(currentPlugin => currentPlugin.packageName === name)
+        if (plugin && plugin.extendable) {
+          result.push(createInstallPlugin(Object.assign({}, plugin, { ref })))
+        }
+        return result
+      }, [])
+
+    return new Listr(installPlugins, { exitOnError: false })
+  },
 }
 
 module.exports = resolvePluginsDeps

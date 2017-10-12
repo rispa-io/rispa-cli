@@ -15,7 +15,7 @@ const postinstall = require('../tasks/postinstall')
 const { extendsTask, skipMode } = require('../utils/tasks')
 const { DEV_MODE, TEST_MODE } = require('../constants')
 const { commit: gitCommit, getChanges: gitGetChanges } = require('../utils/git')
-const { findInList: findPluginInList } = require('../utils/plugin')
+const { findPluginForInstall } = require('../utils/plugin')
 
 const skipNotProdMode = skipMode(DEV_MODE, TEST_MODE)
 
@@ -33,17 +33,19 @@ class AddPluginsCommand extends Command {
   }
 
   installPlugins(ctx) {
-    const { plugins: pluginList, configuration: { pluginsPath } } = ctx
+    const { configuration } = ctx
+    const { pluginsToInstall } = this.state
 
-    fs.ensureDirSync(pluginsPath)
+    fs.ensureDirSync(configuration.pluginsPath)
 
-    const pluginsToInstall = this.state.pluginsToInstall.map(plugin =>
-      findPluginInList(plugin, pluginList)
-    )
+    const plugins = pluginsToInstall.map(pluginName => findPluginForInstall(pluginName, ctx.plugins) || pluginName)
 
-    return new Listr(
-      pluginsToInstall.map(createInstallPlugin), { exitOnError: false }
-    )
+    const invalidPlugins = plugins.filter(plugin => typeof plugin === 'string')
+    if (invalidPlugins.length !== 0) {
+      throw new Error(`Can't find plugins with names:\n - ${invalidPlugins.join(', ')}`)
+    }
+
+    return new Listr(plugins.map(createInstallPlugin), { exitOnError: false })
   }
 
   init() {
@@ -66,7 +68,7 @@ class AddPluginsCommand extends Command {
         skip: skipTestMode,
         enabled: () => pluginsToInstall.length === 0,
         before: ctx => {
-          ctx.excludePluginsNames = ctx.configuration.plugins
+          ctx.excludePluginsNames = ctx.configuration.plugins.map(plugin => plugin.name)
         },
         after: ctx => {
           this.state.pluginsToInstall = ctx.selectedPlugins

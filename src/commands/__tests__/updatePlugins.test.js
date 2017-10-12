@@ -46,10 +46,10 @@ describe('update plugins', () => {
       ctx.configuration = {
         mode,
         pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
+        plugins: [{
+          name: pluginName,
+          remote: pluginRemoteUrl,
+        }],
       }
     })
   }
@@ -82,7 +82,6 @@ describe('update plugins', () => {
       ctx.configuration = {
         pluginsPath,
         plugins: [],
-        remotes: {},
       }
     })
 
@@ -125,11 +124,15 @@ describe('update plugins', () => {
     readProjectConfiguration.task.mockImplementation(ctx => {
       ctx.configuration = {
         pluginsPath,
-        plugins: [pluginName, pluginName2],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-          [pluginName2]: pluginRemoteUrl2,
-        },
+        plugins: [
+          {
+            name: pluginName,
+            remote: pluginRemoteUrl,
+          }, {
+            name: pluginName2,
+            remote: pluginRemoteUrl2,
+          },
+        ],
       }
     })
 
@@ -145,7 +148,12 @@ describe('update plugins', () => {
     mockReadConfigurationTask()
 
     mockInquirer.setMockAnswers({
-      selectedPlugins: [pluginName],
+      selectedPlugins: [
+        {
+          name: pluginName,
+          remote: pluginRemoteUrl,
+        },
+      ],
     })
 
     await expect(runCommand([])).resolves.toBeDefined()

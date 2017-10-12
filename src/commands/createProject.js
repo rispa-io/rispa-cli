@@ -1,6 +1,5 @@
 const Listr = require('listr')
 const path = require('path')
-const R = require('ramda')
 const fs = require('fs-extra')
 const { prompt } = require('inquirer')
 const configureGenerators = require('@rispa/generator')
@@ -15,15 +14,9 @@ const saveProjectConfiguration = require('../tasks/saveProjectConfiguration')
 const resolvePluginsDeps = require('../tasks/resolvePluginsDeps')
 const { extendsTask, skipMode } = require('../utils/tasks')
 const { DEV_MODE, TEST_MODE } = require('../constants')
-const { findInList: findPluginInList } = require('../utils/plugin')
+const { findPluginForInstall } = require('../utils/plugin')
 
 const skipTestMode = skipMode(TEST_MODE)
-
-const fillPlugins = (pluginNames, pluginList) =>
-  R.compose(
-    R.filter(R.prop('cloneUrl')),
-    R.map(pluginName => findPluginInList(pluginName, pluginList))
-  )(pluginNames)
 
 class CreateProjectCommand extends Command {
   constructor([projectName, remoteUrl, ...pluginsToInstall], options) {
@@ -86,17 +79,20 @@ class CreateProjectCommand extends Command {
   }
 
   installPlugins(ctx) {
-    const { plugins: pluginList } = ctx
+    const { plugins } = ctx
+    const { pluginsToInstall } = this.state
 
     ctx.pluginsPath = path.resolve(ctx.projectPath, ctx.configuration.pluginsPath)
 
     fs.ensureDirSync(ctx.pluginsPath)
 
-    const pluginsToInstall = fillPlugins(this.state.pluginsToInstall, pluginList)
+    const installPlugins = pluginsToInstall.map(pluginName => {
+      const plugin = findPluginForInstall(pluginName, plugins)
 
-    return new Listr(
-      pluginsToInstall.map(createInstallPlugin), { exitOnError: false }
-    )
+      return createInstallPlugin(plugin)
+    })
+
+    return new Listr(installPlugins, { exitOnError: false })
   }
 
   init() {
