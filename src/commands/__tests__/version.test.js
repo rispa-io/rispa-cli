@@ -28,7 +28,6 @@ describe('get version', () => {
 
   const runCommand = options => {
     const command = new VersionCommand({ renderer: 'silent' })
-    command.init()
     return command.run(Object.assign({
       cwd: '',
     }, options))

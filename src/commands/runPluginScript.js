@@ -7,6 +7,7 @@ const { extendsTask } = require('../utils/tasks')
 const readProjectConfiguration = require('../tasks/readProjectConfiguration')
 const { ALL_PLUGINS } = require('../constants')
 const { initDotenv } = require('../utils/env')
+const { findPluginByName, getPluginName, equalPluginName } = require('../utils/plugin')
 
 class RunPluginScriptCommand extends Command {
   constructor([pluginName, scriptName, ...args], options) {
@@ -19,49 +20,17 @@ class RunPluginScriptCommand extends Command {
     }
 
     this.runScripts = this.runScripts.bind(this)
-    this.checking = this.checking.bind(this)
     this.selectPlugin = this.selectPlugin.bind(this)
     this.selectScript = this.selectScript.bind(this)
   }
 
-  checking(ctx) {
-    initDotenv()
-
-    if (this.state.pluginName === ALL_PLUGINS) {
-      this.checkingAll(ctx)
-    } else {
-      this.checkingSingle(ctx)
-    }
-  }
-
-  checkingAll(ctx) {
-    const { scriptName } = this.state
-    const { skip: skipPlugins = [] } = ctx
-
-    ctx.plugins = Object.values(ctx.plugins)
-      .filter(((plugin, idx, plugins) =>
-          plugins.indexOf(plugin) === idx &&
-          !plugin.npm &&
-          plugin.scripts.indexOf(scriptName) !== -1 &&
-          skipPlugins.indexOf(plugin.name) === -1 &&
-          skipPlugins.indexOf(plugin.alias) === -1
-      ))
-  }
-
-  checkingSingle(ctx) {
-    const { pluginName, scriptName } = this.state
-    const currentPlugin = ctx.plugins[pluginName]
-    if (currentPlugin.scripts.indexOf(scriptName) === -1) {
-      throw new Error(`Can't find script '${scriptName}' in plugin with name '${pluginName}'`)
-    }
-
-    ctx.plugins = [currentPlugin]
-  }
-
   selectPlugin(ctx) {
-    const plugins = Object.values(ctx.plugins)
+    const plugins = ctx.plugins
       .filter(plugin => plugin.scripts && plugin.scripts.length)
-      .map(plugin => plugin.name)
+      .map(plugin => ({
+        name: getPluginName(plugin),
+        value: plugin,
+      }))
 
     if (plugins.length === 0) {
       throw new Error('Can\'t find plugins with scripts')
@@ -69,60 +38,86 @@ class RunPluginScriptCommand extends Command {
 
     return prompt([{
       type: 'list',
-      name: 'pluginName',
+      name: 'plugin',
       message: 'Select available plugin:',
       paginated: true,
       choices: plugins,
-    }]).then(({ pluginName }) => {
-      this.state.pluginName = pluginName
+    }]).then(({ plugin }) => {
+      this.state.plugin = plugin
     })
   }
 
-  selectScript(ctx) {
-    const { pluginName } = this.state
-    const scripts = ctx.plugins[pluginName].scripts
+  selectScript() {
+    const { plugin } = this.state
 
     return prompt([{
       type: 'list',
       name: 'scriptName',
       message: 'Select available script:',
       paginated: true,
-      choices: scripts,
+      choices: plugin.scripts,
     }]).then(({ scriptName }) => {
       this.state.scriptName = scriptName
     })
   }
 
-  runScripts({ plugins }) {
+  getAllPlugins(ctx) {
+    const { scriptName } = this.state
+    const { skip: skipPlugins = [] } = ctx
+
+    const pluginsToRun = ctx.plugins
+      .filter(plugin =>
+        !plugin.npm &&
+        plugin.scripts.indexOf(scriptName) !== -1 &&
+        !skipPlugins.some(skipPluginName => equalPluginName(skipPluginName, plugin))
+      )
+
+    return pluginsToRun
+  }
+
+  getSinglePlugin() {
+    const { plugin, scriptName } = this.state
+
+    if (plugin.scripts.indexOf(scriptName) === -1) {
+      throw new Error(`Can't find script '${scriptName}' in plugin with name '${plugin.name}'`)
+    }
+
+    return plugin
+  }
+
+  runScripts(ctx) {
     const { scriptName, args } = this.state
 
-    return new Listr(plugins.map(plugin =>
-      createRunPackageScriptTask(plugin.name, plugin.path, scriptName, args)
+    initDotenv()
+
+    const pluginsToRun = this.state.pluginName === ALL_PLUGINS
+      ? this.getAllPlugins(ctx)
+      : [this.getSinglePlugin(ctx)]
+
+    return new Listr(pluginsToRun.map(({ name, path }) =>
+      createRunPackageScriptTask(name, path, scriptName, args)
     ), { exitOnError: false })
   }
 
   init() {
     const { pluginName, scriptName } = this.state
-    this.add([
+
+    return [
       readProjectConfiguration,
       extendsTask(scanPlugins, {
         after: ctx => {
-          ctx.plugins = Object.values(ctx.plugins).reduce((result, plugin) => {
-            if (plugin.alias) {
-              result[plugin.alias] = plugin
-            }
-
-            result[plugin.name] = plugin
-
-            return result
-          }, {})
-
-          if (Object.keys(ctx.plugins).length === 0) {
+          if (ctx.plugins.length === 0) {
             throw new Error('Can\'t find plugins')
           }
 
-          if (pluginName && pluginName !== ALL_PLUGINS && !ctx.plugins[pluginName]) {
-            throw new Error('Can\'t find plugin')
+          if (pluginName && pluginName !== ALL_PLUGINS) {
+            const plugin = findPluginByName(ctx.plugins, pluginName)
+
+            if (!plugin) {
+              throw new Error('Can\'t find plugin')
+            }
+
+            this.state.plugin = plugin
           }
         },
       }),
@@ -137,14 +132,10 @@ class RunPluginScriptCommand extends Command {
         task: this.selectScript,
       },
       {
-        title: 'Checking',
-        task: this.checking,
-      },
-      {
         title: 'Run scripts',
         task: this.runScripts,
       },
-    ])
+    ]
   }
 }
 

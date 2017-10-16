@@ -13,7 +13,6 @@ describe('postinstall', () => {
 
   const runCommand = options => {
     const command = new PostinstallCommand({ renderer: 'silent' })
-    command.init()
     return command.run(Object.assign({
       cwd,
     }, options))
@@ -25,15 +24,15 @@ describe('postinstall', () => {
       ctx.configuration = {}
     })
 
-    scanPlugins.setMockPlugins({
-      plugin1: {
+    scanPlugins.setMockPlugins([
+      {
         postinstall: 'command1 param1 param2 && command2 param3',
       },
-      plugin2: {},
-      plugin3: {
+      {},
+      {
         postinstall: 'command3 param4 && command4 param5 param6',
       },
-    })
+    ])
 
     await expect(runCommand()).resolves.toBeDefined()
 

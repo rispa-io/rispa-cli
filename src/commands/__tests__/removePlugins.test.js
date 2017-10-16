@@ -34,10 +34,13 @@ describe('remove plugins', () => {
   const pluginName = 'rispa-core'
   const pluginRemoteUrl = `https://git.com/${pluginName}.git`
   const pluginsPath = './packages'
+  const plugin = {
+    name: pluginName,
+    remote: pluginRemoteUrl,
+  }
 
   const runCommand = params => {
     const command = new RemovePluginsCommand(params, { renderer: 'silent' })
-    command.init()
     return command.run({
       cwd,
       projectPath: cwd,
@@ -49,10 +52,7 @@ describe('remove plugins', () => {
       ctx.configuration = {
         mode,
         pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
+        plugins: [plugin],
       }
     })
   }
@@ -76,7 +76,6 @@ describe('remove plugins', () => {
     mockGit.getChanges.mockReset()
     mockGit.getChanges.mockImplementationOnce(() => false)
     mockGit.getChanges.mockImplementationOnce(() => false)
-
 
     await expect(runCommand([pluginName])).resolves.toBeDefined()
 
@@ -117,11 +116,13 @@ describe('remove plugins', () => {
     readProjectConfiguration.task.mockImplementation(ctx => {
       ctx.configuration = {
         pluginsPath,
-        plugins: ['rispa-core', 'rispa-config'],
-        remotes: {
-          'rispa-core': 'remote1',
-          'rispa-config': 'remote2',
-        },
+        plugins: [
+          plugin,
+          {
+            name: 'rispa-config',
+            remote: 'remote2',
+          }
+        ],
       }
     })
 
@@ -136,17 +137,12 @@ describe('remove plugins', () => {
     readProjectConfiguration.task.mockImplementation(ctx => {
       ctx.configuration = {
         pluginsPath,
-        plugins: ['rispa-core'],
-        remotes: {
-          'rispa-core': 'remote1',
-        },
+        plugins: [plugin],
       }
     })
 
-    await expect(runCommand(['rispa-core', 'rispa-config'])).resolves.toBeDefined()
-
-    expect(mockGit.removeRemote).toBeCalledWith(cwd, 'rispa-core')
-    expect(mockGit.commit).toBeCalledWith(cwd, 'Remove plugins: rispa-core')
+    await expect(runCommand(['rispa-core', 'rispa-config']))
+      .rejects.toHaveProperty('message', 'Can\'t find plugins with names:\n - rispa-config')
   })
 
   it('should failed remove plugin - tree has modifications', async () => {

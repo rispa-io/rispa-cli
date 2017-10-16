@@ -55,7 +55,7 @@ class CommitCommand extends Command {
   }
 
   init() {
-    this.add([
+    return [
       readProjectConfiguration,
       {
         title: 'Get changes',
@@ -72,7 +72,7 @@ class CommitCommand extends Command {
         skip: () => !this.state.projectChanges && 'Can\'t find project changes',
         task: this.commitProjectChanges,
       },
-    ])
+    ]
   }
 }
 

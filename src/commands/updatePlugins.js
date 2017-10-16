@@ -10,11 +10,12 @@ const gitCheckChanges = require('../tasks/gitCheckChanges')
 const bootstrapProjectDeps = require('../tasks/bootstrapProjectDeps')
 const { commit: gitCommit, getChanges: gitGetChanges } = require('../utils/git')
 const { ALL_PLUGINS, DEV_MODE, TEST_MODE } = require('../constants')
+const { findPluginByName } = require('../utils/plugin')
 
 const skipNotProdMode = skipMode(DEV_MODE, TEST_MODE)
 
 class UpdatePluginsCommand extends Command {
-  constructor([...pluginsToUpdate], options) {
+  constructor(pluginsToUpdate, options) {
     super(options)
 
     this.state = {
@@ -26,23 +27,29 @@ class UpdatePluginsCommand extends Command {
 
   updatePlugins(ctx) {
     const { pluginsToUpdate } = this.state
-    const { configuration: { plugins } } = ctx
+    const { configuration } = ctx
 
-    const invalidPlugins = pluginsToUpdate.filter(plugin => plugins.indexOf(plugin) === -1)
-    if (invalidPlugins.length) {
-      throw new Error(`Can't find plugins with names:\n - ${invalidPlugins.join(', ')}`)
+    let plugins
+    if (pluginsToUpdate[0] === ALL_PLUGINS) {
+      plugins = configuration.plugins
+    } else {
+      plugins = pluginsToUpdate.map(pluginName => findPluginByName(configuration.plugins, pluginName) || pluginName)
+
+      const invalidPlugins = plugins.filter(plugin => typeof plugin === 'string')
+      if (invalidPlugins.length !== 0) {
+        throw new Error(`Can't find plugins with names:\n - ${invalidPlugins.join(', ')}`)
+      }
     }
 
     ctx.updatedPlugins = []
 
-    return new Listr(pluginsToUpdate.map(plugin =>
-      createUpdatePlugin(plugin)
-    ))
+    return new Listr(plugins.map(createUpdatePlugin))
   }
 
   init() {
     const { pluginsToUpdate } = this.state
-    this.add([
+
+    return [
       readProjectConfiguration,
       extendsTask(gitCheckChanges, {
         skip: skipNotProdMode,
@@ -64,11 +71,6 @@ class UpdatePluginsCommand extends Command {
       {
         title: 'Update plugins',
         task: this.updatePlugins,
-        before: ctx => {
-          if (pluginsToUpdate[0] === ALL_PLUGINS) {
-            this.state.pluginsToUpdate = ctx.configuration.plugins
-          }
-        },
       },
       bootstrapProjectDeps,
       saveProjectConfiguration,
@@ -84,7 +86,7 @@ class UpdatePluginsCommand extends Command {
         },
       },
       cleanCache,
-    ])
+    ]
   }
 }
 

@@ -40,7 +40,6 @@ describe('commit', () => {
 
   const runCommand = () => {
     const command = new CommitCommand({ renderer: 'silent' })
-    command.init()
     return command.run({
       cwd,
       projectPath,

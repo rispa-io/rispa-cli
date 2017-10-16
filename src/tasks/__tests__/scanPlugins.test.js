@@ -5,8 +5,8 @@ jest.mock('glob')
 const path = require.requireActual('path')
 const {
   PLUGIN_PREFIX,
-  PLUGIN_ACTIVATOR_PATH,
-  PLUGIN_GENERATORS_PATH,
+  PLUGIN_ACTIVATOR,
+  PLUGIN_GENERATORS,
   LERNA_JSON_PATH,
   PACKAGE_JSON_PATH,
   PLUGIN_ALIAS,
@@ -32,21 +32,22 @@ describe('scan plugins', () => {
   const lernaPackagesPath = 'packages/'
   const pluginsPath = path.resolve(projectPath, lernaPackagesPath)
   const pluginsScanPath = path.resolve(projectPath, `${lernaPackagesPath}*`)
-  const pluginList = pluginNames.map((pluginName, idx) => {
+  const plugins = pluginNames.map((pluginName, idx) => {
     const plugin = {
-      name: pluginName.replace('rispa-', PLUGIN_PREFIX),
+      name: pluginName,
+      packageName: pluginName.replace('rispa-', PLUGIN_PREFIX),
+      path: path.resolve(pluginsPath, `./${pluginName}`),
       npm: false,
       postinstall: undefined,
-      path: path.resolve(pluginsPath, `./${pluginName}`),
     }
 
     if (idx % 2) {
-      plugin.alias = pluginName.replace('rispa-', '')
+      plugin.packageAlias = pluginName.replace('rispa-', '')
       plugin.scripts = ['build']
-      plugin.activator = path.resolve(plugin.path, PLUGIN_ACTIVATOR_PATH)
-      plugin.generators = path.resolve(plugin.path, PLUGIN_GENERATORS_PATH)
+      plugin.activator = path.resolve(plugin.path, './activator.js')
+      plugin.generators = path.resolve(plugin.path, './generators.js')
     } else {
-      plugin.alias = undefined
+      plugin.packageAlias = undefined
       plugin.scripts = []
       plugin.activator = false
       plugin.generators = false
@@ -54,13 +55,10 @@ describe('scan plugins', () => {
 
     return plugin
   })
-  const plugins = pluginList.reduce((result, plugin) => {
-    result[plugin.name] = plugin
-    return result
-  }, {})
-  const pluginsPaths = pluginList.map(plugin => plugin.path)
 
-  const pluginsFiles = pluginList.reduce((result, plugin) => {
+  const pluginsPaths = plugins.map(plugin => plugin.path)
+
+  const pluginsFiles = plugins.reduce((result, plugin) => {
     if (plugin.activator) {
       result.push(plugin.activator)
     }
@@ -69,13 +67,19 @@ describe('scan plugins', () => {
     }
     return result
   }, [])
-  const packageJsonFiles = pluginList.reduce((result, plugin) => {
+
+  const packageJsonFiles = plugins.reduce((result, plugin) => {
     const packagesJsonPath = path.resolve(plugin.path, PACKAGE_JSON_PATH)
+
     result[packagesJsonPath] = {
-      name: plugin.name,
-      [PLUGIN_ALIAS]: plugin.alias,
-      scripts: plugin.scripts.length && plugin.scripts.reduce((scripts, scriptName) => Object.assign(scripts, { [scriptName]: '' }), {}),
+      name: plugin.packageName,
+      [PLUGIN_ALIAS]: plugin.packageAlias,
+      [PLUGIN_ACTIVATOR]: plugin.activator,
+      [PLUGIN_GENERATORS]: plugin.generators,
+      scripts: plugin.scripts.length && plugin.scripts
+        .reduce((scripts, scriptName) => Object.assign(scripts, { [scriptName]: '' }), {}),
     }
+
     return result
   }, {})
 
@@ -135,9 +139,6 @@ describe('scan plugins', () => {
     mockFs.setMockJson(Object.assign({}, packageJsonFiles, lernaJsonFile, {
       [path.resolve(projectPath, PLUGINS_CACHE_PATH)]: {
         plugins,
-        paths: {
-          [pluginsScanPath]: pluginList.map(plugin => plugin.name),
-        },
       },
     }))
 

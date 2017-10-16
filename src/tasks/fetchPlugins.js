@@ -2,10 +2,15 @@ const githubApi = require('../utils/githubApi')
 const { checkMode } = require('../utils/tasks')
 const { DEFAULT_PLUGIN_BRANCH, DEFAULT_PLUGIN_DEV_BRANCH, PLUGIN_ALIAS, DEV_MODE, TEST_MODE } = require('../constants')
 
-const fillPlugin = (plugin, packageJson) => Object.assign({}, plugin, {
+const createPluginInfo = (plugin, packageJson, branch) => ({
+  name: plugin.name,
+  description: plugin.description,
   packageName: packageJson.name,
   packageAlias: packageJson[PLUGIN_ALIAS],
-  packageVersion: packageJson.version,
+  packageDescription: packageJson.description,
+  remote: plugin.clone_url,
+  ref: branch,
+  extendable: false,
 })
 
 const fetchPluginsTask = ctx => {
@@ -14,8 +19,8 @@ const fetchPluginsTask = ctx => {
   const mapPlugin = plugin => (
     githubApi.pluginPackageJson(plugin.name, branch)
       .then(
-        packageJson => fillPlugin(plugin, packageJson),
-        () => plugin
+        packageJson => createPluginInfo(plugin, packageJson, branch),
+        () => createPluginInfo(plugin, {}, branch)
       )
   )
 

@@ -10,16 +10,17 @@ const createDefaultConfiguration = mode => ({
   mode,
   pluginsPath: './packages',
   plugins: [],
-  remotes: {},
 })
 
 const readConfiguration = projectPath => {
   const configurationPath = path.resolve(projectPath, CONFIGURATION_PATH)
+
   return fs.readJsonSync(configurationPath, { throws: false })
 }
 
 const saveConfiguration = (configuration, projectPath) => {
   const configurationPath = path.resolve(projectPath, CONFIGURATION_PATH)
+
   fs.writeFileSync(configurationPath, JSON.stringify(configuration, null, 2))
 }
 

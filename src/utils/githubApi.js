@@ -9,7 +9,7 @@ const api = axios.create({
 
 module.exports.plugins = () => (
   api.get(`${BASE_GITHUB_URL}/search/repositories?${GITHUB_SEARCH_PLUGINS_QUERY}`)
-    .then(({ data: { items: plugins } }) => plugins.map(({ name, clone_url: cloneUrl }) => ({ name, cloneUrl })))
+    .then(({ data: { items: plugins } }) => plugins)
 )
 
 module.exports.pluginsExtendable = () => (

@@ -7,42 +7,26 @@ const { savePluginsCache, readPluginsCache } = require('../utils/pluginsCache')
 const {
   PLUGIN_PREFIX,
   PLUGIN_ALIAS,
-  PLUGIN_ACTIVATOR_PATH,
-  PLUGIN_GENERATORS_PATH,
+  PLUGIN_ACTIVATOR,
+  PLUGIN_GENERATORS,
   PLUGIN_POSTINSTALL,
 } = require('../constants')
 
 const getPluginInfo = ([pluginPath, packageInfo, npm]) => {
-  const name = packageInfo.name
-  const rispaName = packageInfo[PLUGIN_ALIAS]
-  const postinstall = packageInfo[PLUGIN_POSTINSTALL]
-  const activatorPath = path.resolve(pluginPath, PLUGIN_ACTIVATOR_PATH)
-  const generatorsPath = path.resolve(pluginPath, PLUGIN_GENERATORS_PATH)
+  const activatorPath = packageInfo[PLUGIN_ACTIVATOR]
+  const generatorsPath = packageInfo[PLUGIN_GENERATORS]
 
   return {
-    name,
-    npm,
-    postinstall,
-    path: pluginPath,
-    alias: rispaName,
+    name: path.basename(pluginPath),
+    packageName: packageInfo.name,
+    packageAlias: packageInfo[PLUGIN_ALIAS],
     scripts: packageInfo.scripts ? Object.keys(packageInfo.scripts) : [],
-    activator: fs.existsSync(activatorPath) && activatorPath,
-    generators: fs.existsSync(generatorsPath) && generatorsPath,
+    npm,
+    postinstall: packageInfo[PLUGIN_POSTINSTALL],
+    path: pluginPath,
+    activator: activatorPath && path.resolve(pluginPath, activatorPath),
+    generators: generatorsPath && path.resolve(pluginPath, generatorsPath),
   }
-}
-
-const getPluginsFromCache = (pluginsPath, cache) => {
-  if (!(pluginsPath in cache.paths)) {
-    return null
-  }
-
-  return cache.paths[pluginsPath]
-    .map(pluginName => cache.plugins[pluginName])
-    .filter(item => item)
-    .reduce((result, packageInfo) => {
-      result[packageInfo.name] = packageInfo
-      return result
-    }, {})
 }
 
 const createPluginCheck = strict => ([, packageInfo]) => (
@@ -60,35 +44,41 @@ const scanPluginsByPath = (pluginsPath, { npm }) =>
       return result
     }, {})
 
-const getPluginsByPaths = (pluginsPaths, cache, options) => (
+const getPluginsByPaths = (pluginsPaths, options) => (
   pluginsPaths.reduce((result, pluginsPath) => (
     Object.assign(result, {
-      [pluginsPath]: (
-        getPluginsFromCache(pluginsPath, cache) ||
-        scanPluginsByPath(pluginsPath, options)
-      ),
+      [pluginsPath]: scanPluginsByPath(pluginsPath, options),
     })
   ), {})
 )
 
-const scanPluginsTask = ctx => {
-  const { projectPath } = ctx
+const readPlugins = projectPath => {
   const pluginsCache = readPluginsCache(projectPath)
+  if (pluginsCache && 'plugins' in pluginsCache) {
+    return pluginsCache.plugins
+  }
+
   const pluginsPaths = readPluginsPaths(projectPath)
 
-  const pluginsByPaths = Object.assign(
-    getPluginsByPaths(pluginsPaths.lerna, pluginsCache, { npm: false }),
-    getPluginsByPaths(pluginsPaths.nodeModules, pluginsCache, { npm: true })
+  const pluginsByPaths = Object.values(Object.assign(
+    getPluginsByPaths(pluginsPaths.lerna, { npm: false }),
+    getPluginsByPaths(pluginsPaths.nodeModules, { npm: true })
+  ))
+
+  const plugins = Object.values(
+    pluginsByPaths.reduce((result, pluginsByPath) => Object.assign(result, pluginsByPath), {})
   )
 
-  const plugins = Object.values(pluginsByPaths).reduce((result, pluginsByPath) => (
-    Object.assign(result, pluginsByPath)
-  ), {})
+  savePluginsCache(projectPath, plugins)
 
-  savePluginsCache(pluginsByPaths, plugins, projectPath)
+  return plugins
+}
+
+const scanPluginsTask = ctx => {
+  const { projectPath } = ctx
 
   ctx.projectPath = projectPath
-  ctx.plugins = plugins
+  ctx.plugins = readPlugins(projectPath)
 }
 
 const scanPlugins = {

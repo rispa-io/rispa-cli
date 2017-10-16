@@ -4,15 +4,9 @@ jest.mock('inquirer')
 jest.mock('fs-extra')
 jest.mock('../../utils/git.js')
 jest.mock('../../utils/githubApi')
-jest.mock('../../utils/preset')
-jest.mock('../../tasks/installPreset', () => Object.assign(
-  {},
-  require.requireActual('../../tasks/installPreset'),
-  { task: jest.fn() }
-))
 
 const path = require.requireActual('path')
-const { LERNA_JSON_PATH, PLUGIN_PREFIX } = require.requireActual('../../constants')
+const { PLUGIN_PREFIX } = require.requireActual('../../constants')
 
 const mockCrossSpawn = require.requireMock('cross-spawn')
 const mockInquirer = require.requireMock('inquirer')
@@ -20,8 +14,6 @@ const mockFs = require.requireMock('fs-extra')
 const mockGit = require.requireMock('../../utils/git.js')
 const mockGenerator = require.requireMock('@rispa/generator')
 const mockGithubApi = require.requireMock('../../utils/githubApi')
-const mockPreset = require.requireMock('../../utils/preset')
-const mockInstallPreset = require.requireMock('../../tasks/installPreset')
 
 const CreateProjectCommand = require.requireActual('../createProject')
 
@@ -47,11 +39,9 @@ describe('create project', () => {
   const pluginName = 'rispa-core'
   const pluginRemoteUrl = 'https://git.com/plugin-remote-url.git'
   const crossSpawnOptions = { cwd: projectPath, stdio: 'inherit' }
-  const preset = 'react'
 
   const runCommand = (args, options) => {
     const command = new CreateProjectCommand(args, { renderer: 'silent' })
-    command.init()
     return command.run(Object.assign({
       cwd,
     }, options))
@@ -69,12 +59,13 @@ describe('create project', () => {
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      cloneUrl: pluginRemoteUrl,
+      clone_url: pluginRemoteUrl,
     }])
 
     mockGithubApi.setMockPluginNamePackageJson({
       [pluginName]: {
         name: pluginName.replace('rispa-', PLUGIN_PREFIX),
+        version: '1.0.0',
       },
     })
 
@@ -82,7 +73,7 @@ describe('create project', () => {
       selectedPlugins: [
         {
           name: pluginName,
-          cloneUrl: pluginRemoteUrl,
+          remote: pluginRemoteUrl,
         },
       ],
     })
@@ -106,7 +97,7 @@ describe('create project', () => {
 
     mockGithubApi.setMockPlugins([{
       name: pluginName,
-      cloneUrl: pluginRemoteUrl,
+      clone_url: pluginRemoteUrl,
     }])
 
     mockGithubApi.setMockPluginNamePackageJson({
@@ -118,7 +109,7 @@ describe('create project', () => {
     mockInquirer.setMockAnswers({
       selectedPlugins: [{
         name: pluginName,
-        cloneUrl: pluginRemoteUrl,
+        remote: pluginRemoteUrl,
       }],
       projectName,
       remoteUrl,
@@ -136,51 +127,6 @@ describe('create project', () => {
     expectSuccessGitCommands()
     expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['install'], crossSpawnOptions)
     expect(runGeneratorActions).toBeCalledWith({ projectName })
-  })
-
-  it('should success create project with preset', async () => {
-    mockFs.setMockFiles([])
-
-    mockGithubApi.setMockPlugins([])
-
-    mockGithubApi.setMockPluginNamePackageJson({})
-
-    mockInquirer.setMockAnswers({
-      projectName,
-      remoteUrl,
-    })
-
-    const runGeneratorActions = jest.fn()
-    mockGenerator.setMockGenerators({
-      project: {
-        runActions: runGeneratorActions,
-      },
-    })
-
-    mockFs.setMockJson({
-      [path.resolve(projectPath, LERNA_JSON_PATH)]: {
-        npmClient: 'yarn',
-      },
-    })
-
-    mockPreset.readPresetConfiguration.mockImplementation(() => ({
-      plugins: [pluginName],
-      remotes: {
-        [pluginName]: pluginRemoteUrl,
-      },
-    }))
-
-    mockInstallPreset.task.mockImplementationOnce(ctx => {
-      ctx.configuration.extends = preset
-    })
-
-    await expect(runCommand([], { preset }).catch(console.error)).resolves.toBeDefined()
-
-    expectSuccessGitCommands()
-    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['install'], crossSpawnOptions)
-    expect(runGeneratorActions).toBeCalledWith({ projectName })
-
-    expect(mockInstallPreset.task).toBeCalled()
   })
 
   it('should failed create project - project exist', async () => {

@@ -16,6 +16,22 @@ class Command extends Listr {
       super.add(improveTask(task))
     }
   }
+
+  init() {
+    throw new Error('Init method must be override')
+  }
+
+  run(context) {
+    return Promise.resolve()
+      .then(() => this.init())
+      .then(tasks => {
+        if (tasks) {
+          this.add(tasks)
+        }
+
+        return super.run(context)
+      })
+  }
 }
 
 module.exports = Command

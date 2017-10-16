@@ -1,4 +1,5 @@
 const { prompt } = require('inquirer')
+const { getPluginName, equalPluginName } = require('../utils/plugin')
 
 const promptPlugins = choices => prompt([{
   type: 'checkbox',
@@ -12,11 +13,13 @@ const selectPluginsTask = ctx => {
   const plugins = ctx.plugins || ctx.configuration.plugins
 
   const pluginsForSelect = plugins
+    .filter(plugin =>
+      !excludePluginsNames.some(pluginName => equalPluginName(pluginName, plugin))
+    )
     .map(plugin => ({
-      name: typeof plugin === 'object' ? plugin.name : plugin,
+      name: getPluginName(plugin),
       value: plugin,
     }))
-    .filter(plugin => excludePluginsNames.indexOf(plugin.name) === -1)
 
   if (pluginsForSelect.length === 0) {
     throw new Error('Can\'t find plugins for select')

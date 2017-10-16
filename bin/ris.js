@@ -83,7 +83,6 @@ const runCommand = ([firstArg = '', ...args]) => {
   const [argv, params] = parseArgs(args)
 
   const command = new Command(argv)
-  command.init()
   command.run(Object.assign(params, {
     cwd: CWD,
   })).catch(handleError)

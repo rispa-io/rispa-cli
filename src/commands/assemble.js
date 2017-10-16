@@ -11,7 +11,7 @@ const cleanCache = require('../tasks/cleanCache')
 
 class AssembleCommand extends Command {
   init() {
-    this.add([
+    return [
       readProjectConfiguration,
       extendsTask(gitCheckChanges, {
         skip: skipMode(DEV_MODE),
@@ -33,7 +33,7 @@ class AssembleCommand extends Command {
       },
       cleanCache,
       bootstrapProjectDeps,
-    ])
+    ]
   }
 }
 
