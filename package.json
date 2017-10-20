@@ -2,7 +2,8 @@
   "name": "@rispa/cli",
   "version": "3.0.2",
   "description": "Rispa CLI - command line utility allowing the creation of project structure, managing plugins, run generators",
-  "main": "index.js",
+  "main": "./lib/index.js",
+  "typings": "./lib/index.d.ts",
   "bin": {
     "ris": "./bin/ris.js"
   },
@@ -25,49 +26,36 @@
     "url": "https://github.com/rispa-io/rispa-cli/issues"
   },
   "homepage": "https://github.com/rispa-io/rispa-cli#readme",
-  "dependencies": {
-    "@rispa/generator": "latest",
-    "axios": "^0.16.2",
-    "chalk": "^2.0.1",
-    "cli-cursor": "^2.1.0",
-    "cross-spawn": "^5.1.0",
-    "date-fns": "^2.0.0-alpha.1",
-    "debug": "^2.6.8",
-    "dotenv": "^4.0.0",
-    "figures": "^2.0.0",
-    "fs-extra": "^4.0.0",
-    "glob": "^7.1.2",
-    "global-prefix": "^1.0.1",
-    "inquirer": "^3.2.1",
-    "listr": "^0.12.0",
-    "ramda": "^0.24.1",
-    "sudo-block": "^1.2.0"
+  "scripts": {
+    "lint": "tslint --type-check -p tsconfig.json",
+    "lint:fix": "tslint --fix --type-check -p tsconfig.json",
+    "build": "tsc"
   },
   "devDependencies": {
-    "@rispa/eslint-config": ">=3.0.0",
-    "jest": "^20.0.4"
+    "@rispa/tslint-config": ">=1.0.0",
+    "@types/chalk": "^0.4.31",
+    "@types/fs-extra": "^4.0.2",
+    "@types/node": "^8.0.31",
+    "@types/inquirer": "^0.0.35",
+    "@types/figures": "^2.0.0",
+    "@types/dateformat": "^1.0.1",
+    "tslint": "^5.7.0",
+    "typescript": "^2.5.3"
   },
-  "scripts": {
-    "test": "jest",
-    "test:update": "jest -u",
-    "test:coverage": "jest --coverage",
-    "lint": "rispa-eslint .",
-    "lint:fix": "rispa-eslint . --fix"
+  "dependencies": {
+    "chalk": "^2.2.0",
+    "cross-spawn": "^5.1.0",
+    "debug": "^3.1.0",
+    "fs-extra": "^4.0.2",
+    "global-prefix": "^1.0.2",
+    "noladius": "^0.2.7",
+    "sudo-block": "^2.0.0",
+    "walk-sync": "^0.3.2",
+    "inquirer": "^3.3.0",
+    "figures": "^2.0.0",
+    "dateformat": "^3.0.2"
   },
-  "jest": {
-    "collectCoverageFrom": [
-      "src/**/*.js"
-    ],
-    "modulePathIgnorePatterns": [
-      "<rootDir>/build/"
-    ],
-    "coverageThreshold": {
-      "global": {
-        "branches": 100,
-        "functions": 100,
-        "lines": 100,
-        "statements": 100
-      }
-    }
+  "peerDependencies": {
+    "yarn": ">=1.0.0"
   }
 }
