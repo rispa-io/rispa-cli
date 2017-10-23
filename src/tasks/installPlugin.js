@@ -8,6 +8,7 @@ const {
 const {
   getPluginName,
   equalPluginName,
+  addDevDependency,
 } = require('../utils/plugin')
 const { DEV_MODE, TEST_MODE } = require('../constants')
 
@@ -35,35 +36,45 @@ const createInstallPlugin = plugin => improveTask({
   },
   task: ctx => {
     const { projectPath } = ctx
-    const { remote, name, ref } = plugin
+    const { remote, name, packageName, packageVersion, ref, extendable } = plugin
 
     if (!remote) {
       throw new Error('Plugin without remote url')
     }
 
     const pluginsPath = ctx.pluginsPath || path.resolve(projectPath, ctx.configuration.pluginsPath)
+    const pluginInfo = {
+      name,
+      ref,
+      remote,
+    }
 
     checkCloneUrl(remote)
 
-    // TODO: Добавить для расширяемых плагинов установка пути через префикс проекта, пример: rispa-config -> project-name-config
     if (checkMode(ctx, DEV_MODE)) {
       gitCloneRepository(pluginsPath, remote)
     } else if (checkMode(ctx, TEST_MODE)) {
       gitCloneRepository(pluginsPath, remote, { depth: 1 })
+    } else if (packageName && packageVersion) {
+      addDevDependency(projectPath, packageName, packageVersion)
+
+      pluginInfo.name = packageName
+      pluginInfo.dependency = true
+      delete pluginInfo.remote
     } else {
+      if (extendable) {
+        pluginInfo.extendable = true
+      }
+
       const pluginsRelPath = path.relative(projectPath, pluginsPath)
       const prefix = `${pluginsRelPath}/${name}`
       gitAddSubtree(projectPath, prefix, name, remote, ref)
     }
 
     ctx.pluginsPath = pluginsPath
-    ctx.installedPlugins.push(name)
+    ctx.installedPlugins.push(pluginInfo.name)
 
-    ctx.configuration.plugins.push({
-      name,
-      ref,
-      remote,
-    })
+    ctx.configuration.plugins.push(pluginInfo)
   },
 })
 

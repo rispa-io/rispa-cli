@@ -8,13 +8,16 @@ const createPluginInfo = (plugin, packageJson, branch) => ({
   packageName: packageJson.name,
   packageAlias: packageJson[PLUGIN_ALIAS],
   packageDescription: packageJson.description,
+  packageVersion: packageJson.version,
   remote: plugin.clone_url,
   ref: branch,
   extendable: false,
 })
 
 const fetchPluginsTask = ctx => {
-  const branch = checkMode(ctx, DEV_MODE, TEST_MODE) ? DEFAULT_PLUGIN_DEV_BRANCH : DEFAULT_PLUGIN_BRANCH
+  const branch = checkMode(ctx, DEV_MODE, TEST_MODE)
+    ? DEFAULT_PLUGIN_DEV_BRANCH
+    : DEFAULT_PLUGIN_BRANCH
 
   const mapPlugin = plugin => (
     githubApi.pluginPackageJson(plugin.name, branch)
