@@ -12,17 +12,18 @@ const createRestorePluginTask = require.requireActual('../restorePlugin')
 describe('createRestorePluginTask', () => {
   const projectPath = '/projectPath'
   const pluginsPath = path.resolve(projectPath, './plugins')
+  const plugin = {
+    name: 'rispa-core',
+    remote: 'https://remote'
+  }
   const genContext = mode => ({
     projectPath,
     configuration: {
       mode,
       pluginsPath: './plugins',
       plugins: [
-        'rispa-core',
+        plugin,
       ],
-      remotes: {
-        'rispa-core': 'https://remote',
-      },
     },
   })
 
@@ -33,7 +34,7 @@ describe('createRestorePluginTask', () => {
   })
 
   it('should create task', () => {
-    const task = createRestorePluginTask('pluginName')
+    const task = createRestorePluginTask({ name: 'pluginName' })
     expect(task).toHaveProperty('title')
   })
 
@@ -42,7 +43,7 @@ describe('createRestorePluginTask', () => {
       mockGit.getRemotes.mockImplementationOnce(() => ({}))
 
       const ctx = genContext()
-      createRestorePluginTask('rispa-core').task(ctx)
+      createRestorePluginTask(plugin).task(ctx)
 
       expect(mockGit.addSubtree).toBeCalledWith(
         projectPath,
@@ -58,7 +59,7 @@ describe('createRestorePluginTask', () => {
       }))
 
       const ctx = genContext()
-      createRestorePluginTask('rispa-core').task(ctx)
+      createRestorePluginTask(plugin).task(ctx)
 
       expect(mockGit.addSubtree).not.toBeCalled()
       expect(mockGit.cloneRepository).not.toBeCalled()
@@ -68,7 +69,7 @@ describe('createRestorePluginTask', () => {
       mockGit.getRemotes.mockImplementationOnce(() => ({}))
 
       const ctx = genContext('dev')
-      createRestorePluginTask('rispa-core').task(ctx)
+      createRestorePluginTask(plugin).task(ctx)
 
       expect(mockGit.cloneRepository).toBeCalledWith(
         pluginsPath,
@@ -80,7 +81,7 @@ describe('createRestorePluginTask', () => {
       mockFs.setMockFiles([path.resolve(pluginsPath, 'rispa-core', PACKAGE_JSON_PATH)])
 
       const ctx = genContext('dev')
-      createRestorePluginTask('rispa-core').task(ctx)
+      createRestorePluginTask(plugin).task(ctx)
 
       expect(mockGit.addSubtree).not.toBeCalled()
       expect(mockGit.cloneRepository).not.toBeCalled()
