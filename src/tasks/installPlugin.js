@@ -55,7 +55,7 @@ const createInstallPlugin = plugin => improveTask({
       gitCloneRepository(pluginsPath, remote)
     } else if (checkMode(ctx, TEST_MODE)) {
       gitCloneRepository(pluginsPath, remote, { depth: 1 })
-    } else if (packageName && packageVersion) {
+    } else if (packageName && packageVersion && !extendable) {
       addDevDependency(projectPath, packageName, packageVersion)
 
       pluginInfo.name = packageName

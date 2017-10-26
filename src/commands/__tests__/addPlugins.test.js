@@ -51,6 +51,7 @@ describe('add plugins', () => {
   const cwd = '/cwd'
   const pluginsPath = path.resolve(cwd, './packages')
   const pluginName = 'rispa-core'
+  const pluginVersion = '0.1.0'
   const pluginPackageName = pluginName.replace('rispa-', PLUGIN_PREFIX)
   const pluginRemoteUrl = `https://git.com/${pluginName}.git`
   const pluginPath = path.resolve(pluginsPath, `./${pluginName}`)
@@ -442,5 +443,46 @@ describe('add plugins', () => {
     await expect(
       runCommand([])
     ).rejects.toHaveProperty('message', 'Can\'t find rispa project config')
+  })
+
+  it('should success add plugin - ', async () => {
+    mockFs.setMockJson({
+      [rispaJsonPath]: {
+        pluginsPath,
+        plugins: [],
+      },
+      [pluginPackageJsonPath]: {
+        dependencies: {},
+      },
+      [path.resolve(cwd, PACKAGE_JSON_PATH)]: {
+        devDependencies: {},
+      }
+    })
+
+    mockGithubApi.setMockPlugins([{
+      name: pluginName,
+      clone_url: pluginRemoteUrl,
+    }])
+
+    mockGithubApi.setMockPluginsExtendable([resolvePluginName])
+
+    mockGithubApi.setMockPluginNamePackageJson({
+      [pluginName]: {
+        name: pluginPackageName,
+        version: pluginVersion,
+      }
+    })
+
+    mockGit.getChanges.mockImplementationOnce(() => false)
+    mockGit.getChanges.mockImplementationOnce(() => true)
+
+    await expect(
+      runCommand([pluginName], { projectPath: cwd }).catch(console.log)
+    ).resolves.toBeDefined()
+
+    expect(mockGit.getChanges).toBeCalled()
+    expect(mockGit.addSubtree).not.toBeCalled()
+    expect(mockGit.commit).toBeCalledWith(cwd, `Add plugins: ${pluginPackageName}`)
+    expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
   })
 })
