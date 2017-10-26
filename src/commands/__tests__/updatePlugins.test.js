@@ -189,8 +189,6 @@ describe('update plugins', () => {
   })
 
   it('should success update plugins - skip dependency', async () => {
-    const pluginName2 = 'rispa-config'
-    const pluginRemoteUrl2 = `https://git.com/${pluginName2}.git`
     readProjectConfiguration.task.mockImplementation(ctx => {
       ctx.configuration = {
         pluginsPath,
