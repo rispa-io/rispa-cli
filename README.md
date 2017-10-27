@@ -1,6 +1,6 @@
 # Rispa CLI [![Build Status](https://api.travis-ci.org/rispa-io/rispa-cli.svg?branch=master)](https://travis-ci.org/rispa-io/rispa-cli)
 
-`ris` is the Rispa CLI command line utility allowing the creation of project structure, managing plugins, run generators.
+`ris` is the Rispa CLI command line utility that allows to set up project structure, manage plugins, run generators.
 
 * [Getting Started](#getting-started) – How to use.
 * [Features](#features) – About features.
@@ -35,7 +35,7 @@ cd project-name
 
 <img width="682" alt="ris new" src="https://user-images.githubusercontent.com/6418302/27534033-4bba4102-5a6e-11e7-8aec-e3adbf3a3ff6.png">
 
-It will create a directory called `project-name` inside the current run folder.<br>
+It will create a directory called `project-name` inside the current folder.<br>
 Inside that directory, it will generate the initial project structure and install the selected plugins:
 
 ```
@@ -50,17 +50,17 @@ project-name/
     ...selected-plugins
 ```
 
-`rispa.json` - is an entry point of **RISPA** project, it contains information of current project.
+`rispa.json` is an entry point of **RISPA** project, it contains information about current project.
 
 #### Options
 ##### Development mode
-For create project in development mode, run:
+To create project in development mode, run:
 
 ```sh
 ris new --mode=dev
 ```
 
-Project will generated without Subtree usage.
+Project will be generated without Subtree usage.
 
 ### Managing plugins
 
@@ -73,9 +73,9 @@ ris add rispa-eslint-config
 
 <img width="682" alt="ris add" src="https://user-images.githubusercontent.com/6418302/27534034-4bc0bad2-5a6e-11e7-87c7-db36bd099680.png">
 
-It will add plugin with name `rispa-eslint-config` in current run project.
+It will add plugin with name `rispa-eslint-config` to current project.
 
-If you want browse and select plugins to install, run:
+If you want to browse and select plugins to install, run:
 
 ```sh
 ris add
@@ -83,15 +83,15 @@ ris add
 
 <img width="682" alt="ris add" src="https://user-images.githubusercontent.com/6418302/27534032-4bb73ae8-5a6e-11e7-96c9-153ed14d8146.png">
 
-It will display available plugins, press `space` to select plugin to installation, finally press `enter` to install selected plugins.
+It will display available plugins. Press `space` to select plugins for installation, then press `enter` to install selected plugins.
 
-If you want add plugin via git url, run:
+If you want to add plugin via `git` url, run:
 
 ```sh
 ris add git:https://github.com/rispa-io/rispa-core.git
 ```
 
-It will add plugin with name `rispa-core` via git url in current run project.
+It will add `rispa-core` plugin via git url to current project.
 
 ### `ris update`
 
@@ -101,21 +101,21 @@ To update installed plugins, run inside project directory:
 ris update
 ```
 
-It will pull changes in all installed plugins in current run project.
+It will pull changes to all installed plugins in current project.
 
-**The pull changes works through the `git` interface.**
+**Pulling changes works through the `git` interface.**
 
 ### `ris remove`
 
-To remove plugin, run inside project directory:
+To remove a plugin, run inside project directory:
 
 ```sh
 ris remove plugin-name
 ```
 
-It will remove plugin with name `plugins-name` from current run project.
+It will remove `plugins-name` plugin from current project.
 
-**Plugin remove is an unsafe operation,**<br/>
+**Plugin removal is an unsafe operation,**<br/>
 **because, it doesn't make changes to the client code**<br/>
 **and requires corrections by user.**
 
@@ -141,27 +141,27 @@ ris run @rispa/core lint
 
 <img width="682" alt="ris run" src="https://user-images.githubusercontent.com/6418302/27534216-e7d3aa88-5a6e-11e7-8d28-798bacec715a.png">
 
-It will launch script `lint` in plugin with name `@rispa/core`.
+It will launch script `lint` in `@rispa/core` plugin.
 
 ### `ris run all` or `ris all`
 
-To launch script in all plugins, run inside project directory:
+To launch script for all plugins, run inside project directory:
 
 ```sh
 ris run all lint
 ```
 <img width="682" alt="ris run all lint" src="https://user-images.githubusercontent.com/6418302/27534031-4bb23476-5a6e-11e7-816d-55c67b6fcac0.png">
 
-It will launch script `lint` in all installed plugins.
+It will launch script `lint` for all installed plugins.
 
 #### Options
 ##### Yarn
-For force use *Yarn* or not, run for example:
+To force or disable usage of *Yarn*, use `--yarn`:
 ```sh
 ris run all lint --yarn=true
 ```
 ##### Skip
-For skip plugins, run for example:
+To skip plugins, use `--skip`:
 ```sh
 ris run all lint --skip=@rispa/ui-kit,feature-plugin
 ```
@@ -176,7 +176,7 @@ ris g core generator-name
 ```
 <img width="682" alt="ris g" src="https://user-images.githubusercontent.com/6418302/27534030-4bafa45e-5a6e-11e7-9b12-5f013a7a39c5.png">
 
-It will launch generator with the name `generator-name` of package `core` in current run project.
+It will launch `generator-name` generator of `core` package in current project.
 
 ### Commit
 ### `ris commit`
@@ -187,7 +187,7 @@ To commit project or plugins changes, run inside project directory:
 ris commit
 ```
 
-It will get project changes and ask you enter commit message and then it will push the current branch.
+It will collect project changes and ask you to enter commit message. The commit will be pushed to the current branch.
 
 <img width="682" alt="2017-06-26 13 01 18" src="https://user-images.githubusercontent.com/6418302/27534441-ad43721c-5a6f-11e7-8787-e2e7619b0a8b.png">
 
@@ -208,7 +208,7 @@ It will scan project tags and display available versions.
 
 ### Run local version
 
-If you launched the global installed CLI and if it found local version itself, then call will be redirected to the local version.
+If you launched the globally installed CLI and there will be local version found, the call will be redirected to the local version.
 
 ### Subtree
 
@@ -220,9 +220,9 @@ Generated project based on [Lerna](https://github.com/lerna/lerna) *monorepo* st
 
 ### Plugins
 
-Plugins is part of *monorepo* modules and extend the project functionality.<br/>
+Plugins are a part of *monorepo* modules, they extend the project functionality.<br/>
 
-[@rispa/core](https://github.com/rispa-io/rispa-core) - is an entry point of all plugins, provides enhancements and correct initialization of connected plugins.
+[@rispa/core](https://github.com/rispa-io/rispa-core) - is an entry point for all plugins, providing enhancements and correct initialization of connected plugins.
 
 List of available plugins can be seen [here](https://github.com/search?q=topic%3Arispa-plugin+org%3Arispa-io&type=Repositories).
 
