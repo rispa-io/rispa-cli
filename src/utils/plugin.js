@@ -93,6 +93,7 @@ const findPluginForInstall = (plugin, plugins) => {
       return {
         name: extractPluginNameFromUrl(plugin),
         remote: plugin.replace(PLUGIN_GIT_PREFIX, ''),
+        extendable: false,
       }
     }
 
