@@ -1,5 +1,6 @@
 const Listr = require('listr')
 const fs = require('fs-extra')
+const R = require('ramda')
 const createInstallPlugin = require('../tasks/installPlugin')
 const Command = require('../Command')
 const readProjectConfiguration = require('../tasks/readProjectConfiguration')
@@ -21,6 +22,8 @@ const skipNotProdMode = skipMode(DEV_MODE, TEST_MODE)
 
 const skipTestMode = skipMode(TEST_MODE)
 
+const sortByExtendable = R.sortBy(R.compose(R.not, R.propOr(false, 'extendable')))
+
 class AddPluginsCommand extends Command {
   constructor(pluginsToInstall, options) {
     super(options)
@@ -38,7 +41,9 @@ class AddPluginsCommand extends Command {
 
     fs.ensureDirSync(configuration.pluginsPath)
 
-    const plugins = pluginsToInstall.map(pluginName => findPluginForInstall(pluginName, ctx.plugins) || pluginName)
+    const plugins = sortByExtendable(pluginsToInstall.map(pluginName =>
+      findPluginForInstall(pluginName, ctx.plugins) || pluginName
+    ))
 
     const invalidPlugins = plugins.filter(plugin => typeof plugin === 'string')
     if (invalidPlugins.length !== 0) {

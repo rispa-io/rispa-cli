@@ -1,5 +1,6 @@
 const Listr = require('listr')
 const path = require('path')
+const R = require('ramda')
 const fs = require('fs-extra')
 const { prompt } = require('inquirer')
 const configureGenerators = require('@rispa/generator')
@@ -17,6 +18,8 @@ const { DEV_MODE, TEST_MODE } = require('../constants')
 const { findPluginForInstall } = require('../utils/plugin')
 
 const skipTestMode = skipMode(TEST_MODE)
+
+const sortByExtendable = R.sortBy(R.compose(R.not, R.propOr(false, 'extendable')))
 
 class CreateProjectCommand extends Command {
   constructor([projectName, remoteUrl, ...pluginsToInstall], options) {
@@ -86,13 +89,9 @@ class CreateProjectCommand extends Command {
 
     fs.ensureDirSync(ctx.pluginsPath)
 
-    const installPlugins = pluginsToInstall.map(pluginName => {
-      const plugin = findPluginForInstall(pluginName, plugins)
+    const installPlugins = sortByExtendable(pluginsToInstall.map(pluginName => findPluginForInstall(pluginName, plugins)))
 
-      return createInstallPlugin(plugin)
-    })
-
-    return new Listr(installPlugins, { exitOnError: false })
+    return new Listr(installPlugins.map(createInstallPlugin), { exitOnError: false })
   }
 
   init() {
