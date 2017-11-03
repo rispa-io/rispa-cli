@@ -2,6 +2,7 @@ const path = require('path')
 
 const CWD = process.cwd()
 const LOCAL_VERSION_PATH = path.resolve(CWD, './node_modules/.bin/ris')
+const CONFIGURATION_VERSION = 1
 
 const PACKAGE_JSON_PATH = './package.json'
 const YARN_LOCK_PATH = './yarn.lock'
@@ -33,6 +34,7 @@ const CLI_PLUGIN_NAME = 'rispa-cli'
 
 module.exports = {
   CWD,
+  CONFIGURATION_VERSION,
   LOCAL_VERSION_PATH,
   PACKAGE_JSON_PATH,
   YARN_LOCK_PATH,
