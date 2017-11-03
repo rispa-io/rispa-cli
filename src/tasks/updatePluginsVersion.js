@@ -100,6 +100,12 @@ const createSwitchToDevBranch = chainPlugins(
     () => gitCheckout(path, DEFAULT_PLUGIN_DEV_BRANCH)
 )
 
+const performDepsVersion = version => {
+  const [major, minor] = version.split('.')
+
+  return `${major}.${minor}.x`
+}
+
 const updatePluginsVersionTask = ctx => {
   const { nextVersion, plugins } = ctx
 
@@ -113,19 +119,21 @@ const updatePluginsVersionTask = ctx => {
     } = plugin
 
     plugin.packageInfo.version = nextVersion
+
+    const depsVersion = performDepsVersion(nextVersion)
     if (dependencies) {
       plugin.packageInfo.dependencies = updateDepsToVersion(
-        dependencies, dependenciesToUpdate, nextVersion
+        dependencies, dependenciesToUpdate, depsVersion
       )
     }
     if (devDependencies) {
       plugin.packageInfo.devDependencies = updateDepsToVersion(
-        devDependencies, dependenciesToUpdate, nextVersion
+        devDependencies, dependenciesToUpdate, depsVersion
       )
     }
     if (peerDependencies) {
       plugin.packageInfo.peerDependencies = updateDepsToVersion(
-        peerDependencies, dependenciesToUpdate, nextVersion
+        peerDependencies, dependenciesToUpdate, depsVersion
       )
     }
 
