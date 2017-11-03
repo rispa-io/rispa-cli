@@ -44,9 +44,9 @@ class ReleaseCommand extends Command {
         },
         task: ctx => {
           const pluginsPath = path.resolve(ctx.projectPath, ctx.configuration.pluginsPath)
-          const plugins = ctx.configuration.plugins.map(pluginName => ({
-            name: pluginName,
-            path: path.resolve(pluginsPath, `./${pluginName}`),
+          const plugins = ctx.configuration.plugins.map(plugin => ({
+            name: plugin.name,
+            path: path.resolve(pluginsPath, `./${plugin.name}`),
           }))
 
           ctx.plugins = plugins
