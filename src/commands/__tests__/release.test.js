@@ -84,10 +84,10 @@ describe('add plugins', () => {
       [rispaJsonPath]: {
         mode: DEV_MODE,
         pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
+        plugins: [{
+          name: pluginName,
+          remote: pluginRemoteUrl
+        }],
       },
       [pluginPackageJsonPath]: {
         name: pluginPackageName,
@@ -136,11 +136,15 @@ describe('add plugins', () => {
       [rispaJsonPath]: {
         mode: DEV_MODE,
         pluginsPath,
-        plugins: [pluginName, pluginName2],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-          [plugin2Version]: false,
-        },
+        plugins: [
+          {
+            name: pluginName,
+            remote: pluginRemoteUrl,
+          },
+          {
+            name: pluginName2,
+          }
+        ],
       },
       [pluginPackageJsonPath]: {
         name: pluginName,
@@ -211,10 +215,10 @@ describe('add plugins', () => {
       [rispaJsonPath]: {
         mode: DEV_MODE,
         pluginsPath,
-        plugins: [pluginName],
-        remotes: {
-          [pluginName]: pluginRemoteUrl,
-        },
+        plugins: [{
+          name: pluginName,
+          remote: pluginRemoteUrl
+        }],
       },
       [pluginPackageJsonPath]: {
         name: pluginName,
