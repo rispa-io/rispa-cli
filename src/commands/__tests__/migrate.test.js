@@ -3,8 +3,7 @@ jest.mock('../../tasks/saveProjectConfiguration')
 jest.mock('inquirer')
 jest.mock('fs-extra')
 
-const path = require.requireActual('path')
-const { CONFIGURATION_PATH, CONFIGURATION_VERSION } = require.requireActual('../../constants')
+const { CONFIGURATION_VERSION } = require.requireActual('../../constants')
 
 const readProjectConfigurationTask = require.requireMock('../../tasks/readProjectConfiguration')
 const saveProjectConfigurationTask = require.requireMock('../../tasks/saveProjectConfiguration')
