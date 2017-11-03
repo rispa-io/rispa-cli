@@ -89,9 +89,7 @@ class CreateProjectCommand extends Command {
 
     fs.ensureDirSync(ctx.pluginsPath)
 
-    const installPlugins = sortByExtendable(pluginsToInstall.map(pluginName => {
-      return findPluginForInstall(pluginName, plugins)
-    }))
+    const installPlugins = sortByExtendable(pluginsToInstall.map(pluginName => findPluginForInstall(pluginName, plugins)))
 
     return new Listr(installPlugins.map(createInstallPlugin), { exitOnError: false })
   }
