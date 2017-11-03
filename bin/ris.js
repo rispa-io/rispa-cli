@@ -24,6 +24,7 @@ const CleanCacheCommand = require('../src/commands/cleanCache')
 const ReleaseCommand = require('../src/commands/release')
 const PostinstallCommand = require('../src/commands/postinstall')
 const VersionCommand = require('../src/commands/version')
+const MigrateCommand = require('../src/commands/migrate')
 
 const commands = [
   RunPluginScriptCommand,
@@ -38,6 +39,7 @@ const commands = [
   CleanCacheCommand,
   PostinstallCommand,
   VersionCommand,
+  MigrateCommand,
 ]
 
 const logError = createDebug('rispa:error:cli')
