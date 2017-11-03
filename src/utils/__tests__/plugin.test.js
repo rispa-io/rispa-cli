@@ -1,8 +1,11 @@
 jest.mock('cross-spawn')
+jest.mock('fs-extra')
 
 const mockCrossSpawn = require.requireMock('cross-spawn')
+const mockFs = require.requireMock('fs-extra')
 
-const { DEFAULT_PLUGIN_BRANCH } = require.requireActual('../../constants')
+const { DEFAULT_PLUGIN_BRANCH, PACKAGE_JSON_PATH } = require.requireActual('../../constants')
+const path = require.requireActual('path')
 
 const {
   parseDependencyVersion,
@@ -10,9 +13,16 @@ const {
   compareVersions,
   getPluginName,
   findPluginForInstall,
+  addDevDependency,
+  removeDevDependency,
 } = require.requireActual('../plugin')
 
 describe('plugin utils', () => {
+  beforeEach(() => {
+    mockFs.setMockFiles([])
+    mockFs.setMockJson({})
+  })
+
   const cwd = '/cwd'
   it('should failed parse version', () => {
     expect(parseDependencyVersion('')).toBe(DEFAULT_PLUGIN_BRANCH)
@@ -93,6 +103,31 @@ describe('plugin utils', () => {
   describe('findPluginForInstall', () => {
     it('should failed find plugin - invalid type', () => {
       expect(() => findPluginForInstall(10, [])).toThrowError('Invalid plugin type')
+    })
+  })
+
+  describe('addDevDependency', () => {
+    it('should failed read package.json', () => {
+      expect(() => addDevDependency('', '', '')).toThrowError('Failed read `package.json`')
+    })
+
+    it('should failed read package.json with default param', () => {
+      expect(() => addDevDependency('', '')).toThrowError('Failed read `package.json`')
+    })
+  })
+
+  describe('removeDevDependency', () => {
+    it('should failed read package.json', () => {
+      expect(() => removeDevDependency('', '')).toThrowError('Failed read `package.json`')
+    })
+
+    it('should success read dev dependency', () => {
+      mockFs.setMockJson({
+        [path.resolve('', PACKAGE_JSON_PATH)]: {
+          name: 'name',
+        }
+      })
+      expect(() => removeDevDependency('', '')).not.toThrow()
     })
   })
 })

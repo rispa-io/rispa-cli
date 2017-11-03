@@ -187,4 +187,25 @@ describe('update plugins', () => {
     await expect(runCommand([pluginName]))
       .rejects.toHaveProperty('message', `Failed update subtree '${pluginRemoteUrl}'`)
   })
+
+  it('should success update plugins - skip dependency', async () => {
+    readProjectConfiguration.task.mockImplementation(ctx => {
+      ctx.configuration = {
+        pluginsPath,
+        plugins: [
+          {
+            name: pluginName,
+            remote: pluginRemoteUrl,
+            dependency: true,
+          },
+        ],
+      }
+    })
+
+    await expect(runCommand([ALL_PLUGINS])).resolves.toBeDefined()
+
+    expect(mockGit.getChanges).toBeCalledWith(cwd)
+    expect(mockGit.updateSubtree).not.toBeCalled()
+    expect(mockGit.commit).toBeCalledWith(cwd, `Update plugins: ${pluginName}`)
+  })
 })

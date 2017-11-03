@@ -31,11 +31,13 @@ describe('assemble command', () => {
   it('should run tasks successfully', async () => {
     readProjectConfigurationTask.task.mockImplementation(ctx => {
       ctx.configuration = {
-        plugins: ['rispa-core'],
+        plugins: [{
+          name: 'rispa-core',
+        }],
       }
     })
-    createRestorePluginTask.mockImplementation(name => ({
-      title: name,
+    createRestorePluginTask.mockImplementation(plugin => ({
+      title: plugin.name,
       task: restorePluginTask,
     }))
 
@@ -43,7 +45,7 @@ describe('assemble command', () => {
 
     expect(result).toBeDefined()
     expect(readProjectConfigurationTask.task).toBeCalled()
-    expect(createRestorePluginTask.mock.calls[0][0]).toBe('rispa-core')
+    expect(createRestorePluginTask.mock.calls[0][0]).toEqual({ name: 'rispa-core' })
     expect(cleanCache.task).toBeCalled()
   })
 

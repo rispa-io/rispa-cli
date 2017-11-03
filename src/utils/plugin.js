@@ -3,19 +3,45 @@ const fs = require('fs-extra')
 const spawn = require('cross-spawn')
 const { PACKAGE_JSON_PATH, DEFAULT_PLUGIN_BRANCH, PLUGIN_GIT_PREFIX } = require('../constants')
 
-const readPackageJson = pluginPath => {
-  const packageJsonPath = path.resolve(pluginPath, PACKAGE_JSON_PATH)
+const readPackageJson = rootPath => {
+  const packageJsonPath = path.resolve(rootPath, PACKAGE_JSON_PATH)
   return fs.readJsonSync(packageJsonPath, { throws: false }) || {}
 }
 
-const savePackageJson = (pluginPath, packageInfo) => {
-  const packageJsonPath = path.resolve(pluginPath, PACKAGE_JSON_PATH)
+const savePackageJson = (rootPath, packageInfo) => {
+  const packageJsonPath = path.resolve(rootPath, PACKAGE_JSON_PATH)
   fs.writeFileSync(packageJsonPath, JSON.stringify(packageInfo, null, 2))
 }
 
 const readDependencies = pluginPath => {
   const { dependencies, devDependencies } = readPackageJson(pluginPath)
   return Object.assign({}, dependencies, devDependencies)
+}
+
+const addDevDependency = (projectPath, packageName, packageVersion = 'latest') => {
+  const packageInfo = readPackageJson(projectPath)
+  if (Object.keys(packageInfo).length === 0) {
+    throw new Error('Failed read `package.json`')
+  }
+
+  packageInfo.devDependencies = Object.assign({}, packageInfo.devDependencies, {
+    [packageName]: packageVersion,
+  })
+
+  savePackageJson(projectPath, packageInfo)
+}
+
+const removeDevDependency = (projectPath, packageName) => {
+  const packageInfo = readPackageJson(projectPath)
+  if (Object.keys(packageInfo).length === 0) {
+    throw new Error('Failed read `package.json`')
+  }
+
+  if (packageInfo.devDependencies) {
+    delete packageInfo.devDependencies[packageName]
+  }
+
+  savePackageJson(projectPath, packageInfo)
 }
 
 const parseDependencyVersion = dependencyVersion => {
@@ -116,4 +142,6 @@ module.exports = {
   savePackageJson,
   publishToNpm,
   compareVersions,
+  addDevDependency,
+  removeDevDependency,
 }

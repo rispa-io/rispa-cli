@@ -6,7 +6,7 @@ jest.mock('../../tasks/cleanCache')
 jest.mock('../../utils/git')
 
 const path = require.requireActual('path')
-const { DEV_MODE } = require.requireActual('../../constants')
+const { DEV_MODE, PACKAGE_JSON_PATH } = require.requireActual('../../constants')
 
 const mockFs = require.requireMock('fs-extra')
 const readProjectConfiguration = require.requireMock('../../tasks/readProjectConfiguration')
@@ -143,6 +143,33 @@ describe('remove plugins', () => {
 
     await expect(runCommand(['rispa-core', 'rispa-config']))
       .rejects.toHaveProperty('message', 'Can\'t find plugins with names:\n - rispa-config')
+  })
+
+  it('should success remove plugin from deps', async () => {
+    readProjectConfiguration.task.mockImplementation(ctx => {
+      ctx.configuration = {
+        pluginsPath,
+        plugins: [Object.assign({}, plugin, {
+          dependency: true,
+        })],
+      }
+    })
+    mockGit.getChanges.mockImplementation(() => false)
+    mockFs.setMockJson({
+      [path.resolve(cwd, PACKAGE_JSON_PATH)]: {
+        devDependencies: {
+          [pluginName]: '',
+        }
+      }
+    })
+
+    await expect(runCommand([pluginName]).catch(console.log)).resolves.toBeDefined()
+
+    expect(saveProjectConfiguration.task).toBeCalled()
+    expect(mockGit.getChanges).toBeCalled()
+    expect(mockFs.writeFileSync).toBeCalled()
+    expect(mockGit.commit).toBeCalledWith(cwd, `Remove plugins: ${pluginName}`)
+    expect(cleanCache.task).toBeCalled()
   })
 
   it('should failed remove plugin - tree has modifications', async () => {

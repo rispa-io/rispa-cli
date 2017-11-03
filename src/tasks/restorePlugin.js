@@ -7,25 +7,26 @@ const {
   getRemotes: gitGetRemotes,
 } = require('../utils/git')
 const { improveTask, checkMode } = require('../utils/tasks')
+const { getPluginName } = require('../utils/plugin')
 const { DEV_MODE, PACKAGE_JSON_PATH } = require('../constants')
 
-const createRestorePluginTask = name => improveTask({
-  title: `Restore plugin with name ${chalk.cyan(name)}`,
+const createRestorePluginTask = plugin => improveTask({
+  title: `Restore plugin with name ${chalk.cyan(getPluginName(plugin))}`,
   task: ctx => {
     const { projectPath, configuration } = ctx
-    const { remotes } = configuration
     const pluginsPath = path.resolve(projectPath, configuration.pluginsPath)
+    const { name, remote } = plugin
 
     if (checkMode(ctx, DEV_MODE)) {
       if (!fs.existsSync(path.resolve(pluginsPath, name, PACKAGE_JSON_PATH))) {
-        gitCloneRepository(pluginsPath, remotes[name])
+        gitCloneRepository(pluginsPath, remote)
       }
     } else {
       const remotesInstalled = gitGetRemotes(projectPath)
       if (!remotesInstalled[name]) {
         const pluginsRelPath = path.relative(projectPath, pluginsPath)
         const prefix = `${pluginsRelPath}/${name}`
-        gitGetSubtree(projectPath, prefix, name, remotes[name])
+        gitGetSubtree(projectPath, prefix, name, remote)
       }
     }
   },
