@@ -1,6 +1,6 @@
 const path = require('path')
 const fs = require('fs-extra')
-const { CONFIGURATION_PATH, CONFIGURATION_VERSION } = require('../constants')
+const { CONFIGURATION_PATH } = require('../constants')
 
 const performProjectName = projectName => (
   projectName.replace(/\s+/g, '-')
