@@ -7,6 +7,7 @@ const GenerateCommand = require('./src/commands/generate')
 const CommitCommand = require('./src/commands/commit')
 const ReleaseCommand = require('./src/commands/release')
 const AssembleCommand = require('./src/commands/assemble')
+const MigrateCommand = require('./src/commands/migrate')
 
 const commands = [
   RunPluginScriptCommand,
@@ -18,6 +19,7 @@ const commands = [
   CommitCommand,
   AssembleCommand,
   ReleaseCommand,
+  MigrateCommand,
 ]
 
 const runCommand = (commandName, argv, params, options) => {
