@@ -143,6 +143,7 @@ describe('add plugins', () => {
     mockGithubApi.setMockPluginNamePackageJson({
       [pluginName]: {
         name: pluginPackageName,
+        description: 'description',
       },
     })
 
@@ -150,7 +151,7 @@ describe('add plugins', () => {
       selectedPlugins: [{
         name: pluginName,
         remote: pluginRemoteUrl,
-        ref: DEFAULT_PLUGIN_BRANCH
+        ref: DEFAULT_PLUGIN_BRANCH,
       }],
     })
 

@@ -118,6 +118,29 @@ describe('generate', () => {
     expect(generatorRun).toBeCalled()
   })
 
+  it('should success run selected generator with description', async () => {
+    mockReadConfigurationTask()
+    mockScanPlugins()
+    mockInquirer.setMockAnswers({
+      plugin,
+      pluginName,
+      generatorName,
+    })
+
+    const generatorRun = jest.fn(() => Promise.resolve({}))
+    mockGenerator.setMockGenerators({
+      [generatorName]: {
+        runPrompts: jest.fn(() => Promise.resolve({})),
+        runActions: generatorRun,
+        description: 'description'
+      },
+    })
+
+    await expect(runCommand([])).resolves.toBeDefined()
+
+    expect(generatorRun).toBeCalled()
+  })
+
   it('should failed run generator - cant find plugin', async () => {
     mockReadConfigurationTask()
     mockScanPlugins()

@@ -11,7 +11,13 @@ function mockGenerator() {
   return {
     getGenerator: name => name in mockGenerators ? mockGenerators[name] : defaultGenerator,
     containsGenerator: name => name in mockGenerators,
-    getGeneratorList: () => Object.values(mockGenerators),
+    getGeneratorList: () => Object
+      .entries(mockGenerators)
+      .map(([name, value]) =>
+        Object.assign({}, value, {
+          name,
+        })
+      ),
     setPlopfilePath: jest.fn(),
   }
 }
