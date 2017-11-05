@@ -99,7 +99,7 @@ class GenerateCommand extends Command {
       name: 'generatorName',
       message: 'Select generator:',
       paginated: true,
-      choices: generators.getGeneratorList().map(mapGeneratorToChoices),
+      choices: generators.getGeneratorList().filter(generator => generator.name !== 'project').map(mapGeneratorToChoices),
     }]).then(({ generatorName }) => {
       this.state.generatorName = generatorName
     })
