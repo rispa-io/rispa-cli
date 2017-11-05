@@ -1,4 +1,5 @@
 const { prompt } = require('inquirer')
+const chalk = require('chalk')
 const { getPluginName, equalPluginName } = require('../utils/plugin')
 
 const promptPlugins = choices => prompt([{
@@ -7,6 +8,13 @@ const promptPlugins = choices => prompt([{
   name: 'selectedPlugins',
   choices,
 }])
+
+const prepareName = plugin => {
+  const version = plugin.packageVersion
+  const description = plugin.packageDescription
+
+  return `${getPluginName(plugin)}${chalk.green(version ? ` v${version}` : '')}${chalk.gray(description ? ` - ${description}` : '')}`
+}
 
 const selectPluginsTask = ctx => {
   const { excludePluginsNames = [] } = ctx
@@ -17,7 +25,7 @@ const selectPluginsTask = ctx => {
       !excludePluginsNames.some(pluginName => equalPluginName(pluginName, plugin))
     )
     .map(plugin => ({
-      name: getPluginName(plugin),
+      name: prepareName(plugin),
       value: plugin,
     }))
 
