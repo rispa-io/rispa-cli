@@ -23,7 +23,7 @@ const initGenerators = ctx => {
 }
 
 const mapGeneratorToChoices = generator => ({
-  name: generator.name + chalk.gray(!!generator.description ? ` - ${generator.description}` : ''),
+  name: generator.name + chalk.gray(generator.description ? ` - ${generator.description}` : ''),
   value: generator.name
 })
 

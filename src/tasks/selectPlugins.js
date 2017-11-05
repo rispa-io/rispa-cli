@@ -10,10 +10,10 @@ const promptPlugins = choices => prompt([{
 }])
 
 const prepareName = plugin => {
-  const version = plugin.packageVersion
-  const description = plugin.packageDescription
+  const version = chalk.green(plugin.packageVersion ? ` v${plugin.packageVersion}` : '')
+  const description = chalk.gray(plugin.packageDescription ? ` - ${plugin.packageDescription}` : '')
 
-  return `${getPluginName(plugin)}${chalk.green(version ? ` v${version}` : '')}${chalk.gray(description ? ` - ${description}` : '')}`
+  return `${getPluginName(plugin)}${version}${description}`
 }
 
 const selectPluginsTask = ctx => {
