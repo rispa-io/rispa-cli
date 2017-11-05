@@ -1,6 +1,6 @@
 {
   "name": "@rispa/cli",
-  "version": "4.1.2",
+  "version": "4.1.3",
   "description": "Rispa CLI - command line utility allowing the creation of project structure, managing plugins, run generators",
   "main": "index.js",
   "bin": {
