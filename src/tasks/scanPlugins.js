@@ -1,8 +1,7 @@
 const path = require('path')
 const fs = require('fs-extra')
 const glob = require('glob')
-const { readPluginsPaths } = require('../utils/lerna')
-const { readPackageJson } = require('../utils/plugin')
+const { readPackageJson, readPluginsPaths } = require('../utils/plugin')
 const { savePluginsCache, readPluginsCache } = require('../utils/pluginsCache')
 const {
   PLUGIN_PREFIX,
@@ -61,7 +60,7 @@ const readPlugins = projectPath => {
   const pluginsPaths = readPluginsPaths(projectPath)
 
   const pluginsByPaths = Object.values(Object.assign(
-    getPluginsByPaths(pluginsPaths.lerna, { npm: false }),
+    getPluginsByPaths(pluginsPaths.workspaces, { npm: false }),
     getPluginsByPaths(pluginsPaths.nodeModules, { npm: true })
   ))
 

@@ -6,7 +6,7 @@ const checkUseYarn = projectPath => fs.existsSync(path.resolve(projectPath, YARN
 
 const checkUseYarnLerna = projectPath => {
   const lernaJson = fs.readJsonSync(path.resolve(projectPath, LERNA_JSON_PATH), { throws: false })
-  return lernaJson && (lernaJson.npmClient === 'yarn')
+  return !lernaJson || (lernaJson.npmClient === 'yarn')
 }
 
 module.exports = {

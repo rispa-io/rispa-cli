@@ -114,7 +114,7 @@ describe('add plugins', () => {
     expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, DEFAULT_PLUGIN_BRANCH)
     expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${resolvePluginName}`, resolvePluginName, resolvePluginRemoteUrl, `v${resolvePluginVersion}`)
     expect(mockGit.commit).toBeCalledWith(cwd, `Add plugins: ${pluginName}, ${resolvePluginName}`)
-    expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
+    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['bs'], crossSpawnOptions)
   })
 
   it('should success add select plugin', async () => {
@@ -165,7 +165,7 @@ describe('add plugins', () => {
     expect(mockGit.getChanges).toBeCalled()
     expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, DEFAULT_PLUGIN_BRANCH)
     expect(mockGit.commit).toBeCalledWith(cwd, `Add plugins: ${pluginName}`)
-    expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
+    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['bs'], crossSpawnOptions)
   })
 
   it('should success add plugin in dev mode', async () => {
@@ -193,7 +193,7 @@ describe('add plugins', () => {
     ).resolves.toBeDefined()
 
     expect(mockGit.cloneRepository).toBeCalledWith(pluginsPath, pluginRemoteUrl)
-    expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
+    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['bs'], crossSpawnOptions)
   })
 
   it('should success add plugin in test mode', async () => {
@@ -218,7 +218,7 @@ describe('add plugins', () => {
     })
 
     await expect(
-      runCommand([pluginName])
+      runCommand([pluginName], { yarn: false })
     ).resolves.toBeDefined()
 
     expect(mockGit.cloneRepository).toBeCalledWith(pluginsPath, pluginRemoteUrl, { depth: 1 })
@@ -249,7 +249,7 @@ describe('add plugins', () => {
     mockGit.getChanges.mockImplementationOnce(() => true)
 
     await expect(
-      runCommand([pluginName], { yarn: true })
+      runCommand([pluginName])
     ).resolves.toBeDefined()
 
     expect(mockGit.getChanges).toBeCalled()
@@ -276,7 +276,7 @@ describe('add plugins', () => {
     expect(mockGit.getChanges).toBeCalled()
     expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, undefined)
     expect(mockGit.commit).not.toBeCalled()
-    expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
+    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['bs'], crossSpawnOptions)
   })
 
   it('should success add plugin via git url', async () => {
@@ -297,7 +297,7 @@ describe('add plugins', () => {
     expect(mockGit.getChanges).toBeCalled()
     expect(mockGit.addSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, undefined)
     expect(mockGit.commit).toBeCalledWith(cwd, `Add plugins: ${pluginName}`)
-    expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
+    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['bs'], crossSpawnOptions)
   })
 
   it('should skip add plugin - already exist', async () => {
@@ -333,7 +333,7 @@ describe('add plugins', () => {
     expect(mockGit.getChanges).toBeCalled()
     expect(mockGit.addSubtree).not.toBeCalled()
     expect(mockGit.commit).not.toBeCalled()
-    expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
+    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['bs'], crossSpawnOptions)
   })
 
   it('should failed add plugin - cant find', async () => {
@@ -435,7 +435,7 @@ describe('add plugins', () => {
 
     expect(mockGit.addSubtree).not.toBeCalled()
     expect(mockGit.commit).not.toBeCalled()
-    expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
+    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['bs'], crossSpawnOptions)
   })
 
   it('should failed add plugin - configuration not found', async () => {
@@ -484,6 +484,6 @@ describe('add plugins', () => {
     expect(mockGit.getChanges).toBeCalled()
     expect(mockGit.addSubtree).not.toBeCalled()
     expect(mockGit.commit).toBeCalledWith(cwd, `Add plugins: ${pluginPackageName}`)
-    expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['run', 'bs'], crossSpawnOptions)
+    expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['bs'], crossSpawnOptions)
   })
 })
