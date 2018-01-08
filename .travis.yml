@@ -7,7 +7,7 @@ sudo: false
 
 script:
   - yarn lint
-  - yarn test:coverage
+  #- yarn test:coverages
 
 notifications:
   slack:

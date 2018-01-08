@@ -5,6 +5,6 @@ __mocks__
 __tests__
 .travis.yml
 .npmignore
-.eslintignore
-.eslintrc.js
+.editorconfig
+tslint.json
 rispa-cli-*

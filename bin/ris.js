@@ -10,49 +10,22 @@ const fs = require('fs-extra')
 const os = require('os')
 const createDebug = require('debug')
 const globalPrefix = require('global-prefix')
-const { CONFIGURATION_PATH, CLI_PLUGIN_NAME, CWD, LOCAL_VERSION_PATH, PACKAGE_JSON_PATH } = require('../src/constants')
+const { runner } = require('noladius')
 
-const RunPluginScriptCommand = require('../src/commands/runPluginScript')
-const CreateProjectCommand = require('../src/commands/createProject')
-const AddPluginsCommand = require('../src/commands/addPlugins')
-const RemovePluginsCommand = require('../src/commands/removePlugins')
-const UpdatePluginsCommand = require('../src/commands/updatePlugins')
-const GenerateCommand = require('../src/commands/generate')
-const CommitCommand = require('../src/commands/commit')
-const AssembleCommand = require('../src/commands/assemble')
-const CleanCacheCommand = require('../src/commands/cleanCache')
-const ReleaseCommand = require('../src/commands/release')
-const PostinstallCommand = require('../src/commands/postinstall')
-const VersionCommand = require('../src/commands/version')
-const MigrateCommand = require('../src/commands/migrate')
+const CWD = process.cwd()
+const CLI_REPOSITORY_NAME = 'rispa-cli'
+
+const RunPluginsScriptsCommand = require('../lib/commands/RunPluginsScripts').default
 
 const commands = [
-  RunPluginScriptCommand,
-  CreateProjectCommand,
-  AddPluginsCommand,
-  RemovePluginsCommand,
-  UpdatePluginsCommand,
-  GenerateCommand,
-  CommitCommand,
-  AssembleCommand,
-  ReleaseCommand,
-  CleanCacheCommand,
-  PostinstallCommand,
-  VersionCommand,
-  MigrateCommand,
+  RunPluginsScriptsCommand,
 ]
 
 const logError = createDebug('rispa:error:cli')
 
 const handleError = e => {
+  console.log(`  ${chalk.red.bold('Error:')} ${chalk.yellow(e.message || e)}`)
   logError(e)
-  if (e.errors) {
-    e.errors.forEach(error => logError(error))
-  }
-  if (e.context) {
-    logError('Context:')
-    logError(e.context)
-  }
   process.exit(1)
 }
 
@@ -76,18 +49,23 @@ const parseArgs = args => {
 }
 
 const runCommand = ([firstArg = '', ...args]) => {
-  let Command = commands.find(command => command.commandName === firstArg)
+  let Command = commands.find(command => command.options.name === firstArg)
   if (!Command) {
-    Command = RunPluginScriptCommand
+    Command = RunPluginsScriptsCommand
     args.unshift(firstArg)
   }
 
-  const [argv, params] = parseArgs(args)
+  let initialState = {}
+  let params = {}
+  if ('mapArgsToState' in Command.options) {
+    initialState = Command.options.mapArgsToState(args)
+  }
+  if ('mapArgsToParams' in Command.options) {
+    params = Command.options.mapArgsToParams(args)
+  }
 
-  const command = new Command(argv)
-  command.run(Object.assign(params, {
-    cwd: CWD,
-  })).catch(handleError)
+  runner(Command, params, initialState)
+    .catch(handleError)
 }
 
 const getYarnPrefix = () => {
@@ -99,9 +77,9 @@ const getYarnPrefix = () => {
   return path.join(os.homedir(), '.config', 'yarn', 'global')
 }
 
-const inGlobalYarn = fullpath => fullpath.indexOf(getYarnPrefix()) === 0
+const inGlobalYarn = fullPath => fullPath.indexOf(getYarnPrefix()) === 0
 
-const inGlobalNpm = fullpath => fullpath.indexOf(globalPrefix) === 0
+const inGlobalNpm = fullPath => fullPath.indexOf(globalPrefix) === 0
 
 const isGlobalRun = () => {
   const execPath = fs.realpathSync(process.argv[1])
@@ -110,7 +88,7 @@ const isGlobalRun = () => {
 }
 
 const canRunLocalVersion = () => {
-  const packageJsonPath = path.resolve(CWD, PACKAGE_JSON_PATH)
+  const packageJsonPath = path.resolve(CWD, './package.json')
 
   if (!fs.existsSync(packageJsonPath)) {
     return false
@@ -120,7 +98,8 @@ const canRunLocalVersion = () => {
 
   const deps = Object.keys(dependencies).concat(Object.keys(devDependencies))
   if (deps.indexOf('@rispa/cli') !== -1) {
-    if (fs.existsSync(LOCAL_VERSION_PATH)) {
+    const localVersionPath = path.resolve(CWD, './node_modules/.bin/ris')
+    if (fs.existsSync(localVersionPath)) {
       return true
     }
 
@@ -132,13 +111,13 @@ const canRunLocalVersion = () => {
 }
 
 const readLocalPluginPath = () => {
-  const rispaJsonPath = path.resolve(CWD, CONFIGURATION_PATH)
+  const rispaJsonPath = path.resolve(CWD, './rispa.json')
   const { pluginsPath } = fs.readJsonSync(rispaJsonPath)
 
-  const pluginPackageJsonPath = path.resolve(CWD, pluginsPath, CLI_PLUGIN_NAME, PACKAGE_JSON_PATH)
+  const pluginPackageJsonPath = path.resolve(CWD, pluginsPath, CLI_REPOSITORY_NAME, PACKAGE_JSON_PATH)
   const { bin = {} } = fs.readJsonSync(pluginPackageJsonPath)
 
-  return path.resolve(CWD, pluginsPath, CLI_PLUGIN_NAME, bin.ris)
+  return path.resolve(CWD, pluginsPath, CLI_REPOSITORY_NAME, bin.ris)
 }
 
 const pluginBinExists = pluginPath => {
@@ -165,8 +144,8 @@ const canRunPlugin = () => {
 
   const { plugins = [], pluginsPath } = fs.readJsonSync(rispaJsonPath)
 
-  if (plugins.indexOf(CLI_PLUGIN_NAME) !== -1) {
-    if (pluginBinExists(path.join(pluginsPath, CLI_PLUGIN_NAME))) {
+  if (plugins.indexOf(CLI_REPOSITORY_NAME) !== -1) {
+    if (pluginBinExists(path.join(pluginsPath, CLI_REPOSITORY_NAME))) {
       return true
     }
 
@@ -197,8 +176,9 @@ const args = process.argv.slice(2)
 const globalRun = isGlobalRun()
 
 if (globalRun && canRunLocalVersion()) {
+  const localPath = path.resolve(CWD, './node_modules/.bin/ris')
   // Run local version from node_modules directly - on Windows it will be shell script, on other systems - js file with execute permission
-  runLocalVersion(LOCAL_VERSION_PATH, args)
+  runLocalVersion(localPath, args)
 } else if (globalRun && canRunPlugin()) {
   // Run local version from plugin with node - on all systems it will be js file
   runLocalVersion('node', [readLocalPluginPath()].concat(args))

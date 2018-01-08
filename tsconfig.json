@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "lib": ["es2017"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "emitDecoratorMetadata": true,
+    "preserveConstEnums": true,
+    "experimentalDecorators": true,
+    "outDir": "lib",
+    "rootDir": "src",
+    "target": "es6",
+    "pretty": true,
+    "strict": true,
+    "sourceMap": false,
+    "declaration": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "types/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "src/**/__tests__/*.ts"
+  ]
+}
