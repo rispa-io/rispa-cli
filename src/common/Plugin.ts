@@ -1,10 +1,10 @@
 export default interface Plugin {
-  name?: string,
-  packageName: string,
-  path: string,
-  scripts: string[],
-  activator?: string,
-  generators?: string,
+  name?: string
+  packageName: string
+  path: string
+  scripts: string[]
+  activator?: string
+  generators?: string
 }
 
 export function findPluginByName(plugins: Plugin[], pluginName: string): Plugin | undefined {

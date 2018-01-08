@@ -39,6 +39,7 @@
     "@types/inquirer": "^0.0.35",
     "@types/figures": "^2.0.0",
     "@types/dateformat": "^1.0.1",
+    "@types/axios": "^0.14.0",
     "tslint": "^5.7.0",
     "typescript": "^2.5.3"
   },
@@ -48,12 +49,13 @@
     "debug": "^3.1.0",
     "fs-extra": "^4.0.2",
     "global-prefix": "^1.0.2",
-    "noladius": "^0.2.7",
+    "noladius": "^0.2.8",
     "sudo-block": "^2.0.0",
     "walk-sync": "^0.3.2",
     "inquirer": "^3.3.0",
     "figures": "^2.0.0",
-    "dateformat": "^3.0.2"
+    "dateformat": "^3.0.2",
+    "axios": "^0.17.0"
   },
   "peerDependencies": {
     "yarn": ">=1.0.0"

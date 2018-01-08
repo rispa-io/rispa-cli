@@ -5,11 +5,8 @@ import ProjectConfiguration from '../../common/ProjectConfiguration'
 import { readJson } from '../../helpers/files'
 
 export type State = {
-  projectConfiguration?: ProjectConfiguration
-}
-
-export type Params = {
   projectPath: string
+  projectConfiguration?: ProjectConfiguration
 }
 
 function readConfiguration(configurationPath: string): ProjectConfiguration {
@@ -20,19 +17,21 @@ function readConfiguration(configurationPath: string): ProjectConfiguration {
   }
 }
 
-class ReadProjectConfiguration extends Task<State, Params>{
-  static defaultParams = {
-    projectPath: process.cwd(),
-  }
-
+class ReadProjectConfiguration extends Task<State>{
   run() {
-    const { projectPath } = this.params
+    const { projectPath } = this.state
     const configurationPath = path.resolve(projectPath, CONFIGURATION_PATH)
 
-    const configuration = readConfiguration(configurationPath)
+    const {
+      mode = 'prod',
+      plugins = [],
+    } = readConfiguration(configurationPath)
 
     this.setState({
-      projectConfiguration: configuration,
+      projectConfiguration: {
+        mode,
+        plugins,
+      },
     })
   }
 }

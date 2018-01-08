@@ -6,10 +6,11 @@ import Plugin, { findPluginByName } from '../../common/Plugin'
 import { requestSelectScript, requestSelectPlugin } from './questions'
 import RunPluginsScriptsTask from '../../tasks/RunPluginsScripts'
 import reducer from './reducer'
+import { ProjectPackageInfo } from '../../common/PackageInfo'
 
 @commandOptions({
   name: 'run',
-  mapArgsToState([pluginName, scriptName, ...args]): MapArgs {
+  mapArgsToState([pluginName = '', scriptName = '', ...args]): MapArgs {
     return {
       pluginName,
       scriptName,
@@ -18,13 +19,14 @@ import reducer from './reducer'
   },
 })
 class RunPluginsScripts extends Command<State, object, Actions> {
-  state = {
+  state: State = {
     pluginName: '',
     scriptName: '',
     args: [],
     projectPath: process.cwd(),
     plugins: [],
     selectedPlugins: [],
+    projectPackageInfo: {} as ProjectPackageInfo,
   }
 
   willRun() {
