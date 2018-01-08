@@ -1,10 +1,8 @@
 import { Task } from 'noladius'
 import * as path from 'path'
-import * as fs from 'fs-extra'
 import { ProjectPackageInfo } from '../../common/PackageInfo'
 import { PACKAGE_JSON_PATH } from '../../constants/packages'
 import { readJson } from '../../helpers/files'
-import ProjectConfiguration from '../../common/ProjectConfiguration'
 
 export type State = {
   projectPath: string

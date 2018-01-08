@@ -39,7 +39,6 @@
     "@types/inquirer": "^0.0.35",
     "@types/figures": "^2.0.0",
     "@types/dateformat": "^1.0.1",
-    "@types/axios": "^0.14.0",
     "tslint": "^5.7.0",
     "typescript": "^2.5.3"
   },
@@ -55,7 +54,7 @@
     "inquirer": "^3.3.0",
     "figures": "^2.0.0",
     "dateformat": "^3.0.2",
-    "axios": "^0.17.0"
+    "axios": "^0.17.1"
   },
   "peerDependencies": {
     "yarn": ">=1.0.0"
