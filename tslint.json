@@ -1,9 +1,5 @@
 {
   "extends": [
     "@rispa/tslint-config"
-  ],
-  "rules": {
-    "no-consecutive-blank-lines": [true, 1],
-    "no-trailing-whitespace": [true, "ignore-template-strings"]
-  }
+  ]
 }
