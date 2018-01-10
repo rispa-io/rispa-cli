@@ -1,7 +1,7 @@
 const path = require('path')
 const fs = require('fs-extra')
 const spawn = require('cross-spawn')
-const { PACKAGE_JSON_PATH, DEFAULT_PLUGIN_BRANCH, PLUGIN_GIT_PREFIX } = require('../constants')
+const { PACKAGE_JSON_PATH, DEFAULT_PLUGIN_BRANCH, PLUGIN_GIT_PREFIX, NODE_MODULES_PLUGINS_PATH } = require('../constants')
 
 const readPackageJson = rootPath => {
   const packageJsonPath = path.resolve(rootPath, PACKAGE_JSON_PATH)
@@ -131,9 +131,24 @@ const compareVersions = (version1, version2) => {
   return parseInt(version1.patch, 10) - parseInt(version2.patch, 10)
 }
 
+const readPluginsPaths = projectPath => {
+  const { workspaces = [] } = readPackageJson(projectPath)
+
+  const workspacesPaths = workspaces.map(pluginsPath => path.resolve(projectPath, `./${pluginsPath}`))
+  const nodeModulesPluginsPaths = workspacesPaths
+    .map(pluginsPath => path.resolve(pluginsPath, NODE_MODULES_PLUGINS_PATH))
+    .concat(path.resolve(projectPath, NODE_MODULES_PLUGINS_PATH))
+
+  return {
+    nodeModules: nodeModulesPluginsPaths,
+    workspaces: workspacesPaths,
+  }
+}
+
 module.exports = {
   readPackageJson,
   readDependencies,
+  readPluginsPaths,
   parseDependencyVersion,
   extractPluginNameFromUrl,
   getPluginName,

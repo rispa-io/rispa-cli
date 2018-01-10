@@ -54,7 +54,7 @@ describe('create project', () => {
     expect(mockGit.commit).toBeCalledWith(projectPath, 'Bootstrap deps and install plugins')
   }
 
-  it('should success create project', async () => {
+  it('should success create project via npm', async () => {
     mockFs.setMockFiles([])
 
     mockGithubApi.setMockPlugins([{
@@ -85,7 +85,7 @@ describe('create project', () => {
       },
     })
 
-    await expect(runCommand([projectName])).resolves.toBeDefined()
+    await expect(runCommand([projectName], { yarn: false })).resolves.toBeDefined()
 
     expectSuccessGitCommands()
     expect(mockCrossSpawn.sync).toBeCalledWith('npm', ['install'], crossSpawnOptions)
@@ -122,7 +122,7 @@ describe('create project', () => {
       },
     })
 
-    await expect(runCommand([], { yarn: true })).resolves.toBeDefined()
+    await expect(runCommand([])).resolves.toBeDefined()
 
     expectSuccessGitCommands()
     expect(mockCrossSpawn.sync).toBeCalledWith('yarn', ['install'], crossSpawnOptions)

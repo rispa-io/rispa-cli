@@ -7,7 +7,6 @@ const {
   PLUGIN_PREFIX,
   PLUGIN_ACTIVATOR,
   PLUGIN_GENERATORS,
-  LERNA_JSON_PATH,
   PACKAGE_JSON_PATH,
   PLUGIN_ALIAS,
   PLUGINS_CACHE_PATH,
@@ -28,10 +27,10 @@ describe('scan plugins', () => {
 
   const projectPath = '/cwd'
   const pluginNames = ['rispa-core', 'rispa-webpack']
-  const lernaJsonPath = path.resolve(projectPath, LERNA_JSON_PATH)
-  const lernaPackagesPath = 'packages/'
-  const pluginsPath = path.resolve(projectPath, lernaPackagesPath)
-  const pluginsScanPath = path.resolve(projectPath, `${lernaPackagesPath}*`)
+  const packageJsonPath = path.resolve(projectPath, PACKAGE_JSON_PATH)
+  const workspacesPackagesPath = 'packages/'
+  const pluginsPath = path.resolve(projectPath, workspacesPackagesPath)
+  const pluginsScanPath = path.resolve(projectPath, `${workspacesPackagesPath}*`)
   const plugins = pluginNames.map((pluginName, idx) => {
     const plugin = {
       name: pluginName,
@@ -83,9 +82,9 @@ describe('scan plugins', () => {
     return result
   }, {})
 
-  const lernaJsonFile = {
-    [lernaJsonPath]: {
-      packages: [`${lernaPackagesPath}*`],
+  const projectFiles = {
+    [packageJsonPath]: {
+      workspaces: [`${workspacesPackagesPath}*`],
     },
   }
 
@@ -94,7 +93,7 @@ describe('scan plugins', () => {
       [pluginsScanPath]: pluginsPaths,
     })
 
-    mockFs.setMockJson(Object.assign({}, packageJsonFiles, lernaJsonFile))
+    mockFs.setMockJson(Object.assign({}, packageJsonFiles, projectFiles))
 
     mockFs.setMockFiles(pluginsFiles)
 
@@ -117,7 +116,7 @@ describe('scan plugins', () => {
       [path.resolve(projectPath, NODE_MODULES_PLUGINS_PATH)]: [invalidPluginPath],
     })
 
-    mockFs.setMockJson(Object.assign({}, packageJsonFiles, lernaJsonFile, {
+    mockFs.setMockJson(Object.assign({}, packageJsonFiles, projectFiles, {
       [path.resolve(invalidPluginPath, PACKAGE_JSON_PATH)]: {
         name: invalidPluginName,
       },
@@ -136,7 +135,7 @@ describe('scan plugins', () => {
   })
 
   it('should success scan plugins from cache', () => {
-    mockFs.setMockJson(Object.assign({}, packageJsonFiles, lernaJsonFile, {
+    mockFs.setMockJson(Object.assign({}, packageJsonFiles, projectFiles, {
       [path.resolve(projectPath, PLUGINS_CACHE_PATH)]: {
         plugins,
       },
@@ -158,7 +157,7 @@ describe('scan plugins', () => {
       [pluginsScanPath]: [invalidPluginPath].concat(pluginsPaths),
     })
 
-    mockFs.setMockJson(Object.assign({}, packageJsonFiles, lernaJsonFile))
+    mockFs.setMockJson(Object.assign({}, packageJsonFiles, projectFiles))
 
     mockFs.setMockFiles(pluginsFiles)
 
@@ -172,13 +171,13 @@ describe('scan plugins', () => {
     expect(context).toHaveProperty('plugins', plugins)
   })
 
-  it('should failed scan plugins', () => {
+  it('should success scan plugins with empty workspaces', () => {
     mockGlob.setMockPaths({
       [pluginsScanPath]: pluginsPaths,
     })
 
     mockFs.setMockJson(Object.assign({}, packageJsonFiles, {
-      [lernaJsonPath]: false,
+      [packageJsonPath]: false,
     }))
 
     mockFs.setMockFiles(pluginsFiles)
@@ -187,6 +186,6 @@ describe('scan plugins', () => {
       projectPath,
     }
 
-    expect(() => scanPlugins.task(context)).toThrowError('Incorrect configuration file `lerna.json`')
+    expect(() => scanPlugins.task(context)).not.toThrow()
   })
 })
