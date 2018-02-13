@@ -5,7 +5,7 @@ const mockFs = require.requireMock('fs-extra')
 const mockGit = require.requireMock('../../utils/git')
 
 const path = require.requireActual('path')
-const { PACKAGE_JSON_PATH } = require.requireActual('../../constants')
+const { PACKAGE_JSON_PATH, DEFAULT_PLUGIN_BRANCH } = require.requireActual('../../constants')
 
 const createRestorePluginTask = require.requireActual('../restorePlugin')
 
@@ -14,7 +14,8 @@ describe('createRestorePluginTask', () => {
   const pluginsPath = path.resolve(projectPath, './plugins')
   const plugin = {
     name: 'rispa-core',
-    remote: 'https://remote'
+    remote: 'https://remote',
+    ref: DEFAULT_PLUGIN_BRANCH,
   }
   const genContext = mode => ({
     projectPath,
@@ -49,7 +50,8 @@ describe('createRestorePluginTask', () => {
         projectPath,
         'plugins/rispa-core',
         'rispa-core',
-        'https://remote'
+        'https://remote',
+        DEFAULT_PLUGIN_BRANCH
       )
     })
 
@@ -73,7 +75,8 @@ describe('createRestorePluginTask', () => {
 
       expect(mockGit.cloneRepository).toBeCalledWith(
         pluginsPath,
-        'https://remote'
+        'https://remote',
+        DEFAULT_PLUGIN_BRANCH
       )
     })
 
