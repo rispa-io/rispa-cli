@@ -5,7 +5,7 @@ jest.mock('../../tasks/saveProjectConfiguration')
 jest.mock('../../utils/git')
 
 const path = require.requireActual('path')
-const { ALL_PLUGINS, DEV_MODE, TEST_MODE } = require.requireActual('../../constants')
+const { ALL_PLUGINS, DEV_MODE, TEST_MODE, DEFAULT_PLUGIN_BRANCH } = require.requireActual('../../constants')
 
 const readProjectConfiguration = require.requireMock('../../tasks/readProjectConfiguration')
 const mockInquirer = require.requireMock('inquirer')
@@ -49,6 +49,7 @@ describe('update plugins', () => {
         plugins: [{
           name: pluginName,
           remote: pluginRemoteUrl,
+          ref: DEFAULT_PLUGIN_BRANCH,
         }],
       }
     })
@@ -60,7 +61,7 @@ describe('update plugins', () => {
     await expect(runCommand([pluginName])).resolves.toBeDefined()
 
     expect(mockGit.getChanges).toBeCalledWith(cwd)
-    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl)
+    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, DEFAULT_PLUGIN_BRANCH)
     expect(mockGit.commit).toBeCalledWith(cwd, `Update plugins: ${pluginName}`)
   })
 
@@ -73,7 +74,7 @@ describe('update plugins', () => {
     await expect(runCommand([pluginName])).resolves.toBeDefined()
 
     expect(mockGit.getChanges).toBeCalledWith(cwd)
-    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl)
+    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, DEFAULT_PLUGIN_BRANCH)
     expect(mockGit.commit).not.toBeCalled()
   })
 
@@ -128,9 +129,11 @@ describe('update plugins', () => {
           {
             name: pluginName,
             remote: pluginRemoteUrl,
+            ref: DEFAULT_PLUGIN_BRANCH,
           }, {
             name: pluginName2,
             remote: pluginRemoteUrl2,
+            ref: DEFAULT_PLUGIN_BRANCH,
           },
         ],
       }
@@ -139,8 +142,8 @@ describe('update plugins', () => {
     await expect(runCommand([ALL_PLUGINS])).resolves.toBeDefined()
 
     expect(mockGit.getChanges).toBeCalledWith(cwd)
-    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl)
-    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName2}`, pluginName2, pluginRemoteUrl2)
+    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, DEFAULT_PLUGIN_BRANCH)
+    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName2}`, pluginName2, pluginRemoteUrl2, DEFAULT_PLUGIN_BRANCH)
     expect(mockGit.commit).toBeCalledWith(cwd, `Update plugins: ${pluginName}, ${pluginName2}`)
   })
 
@@ -152,13 +155,14 @@ describe('update plugins', () => {
         {
           name: pluginName,
           remote: pluginRemoteUrl,
+          ref: DEFAULT_PLUGIN_BRANCH,
         },
       ],
     })
 
     await expect(runCommand([])).resolves.toBeDefined()
 
-    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl)
+    expect(mockGit.updateSubtree).toBeCalledWith(cwd, `packages/${pluginName}`, pluginName, pluginRemoteUrl, DEFAULT_PLUGIN_BRANCH)
     expect(mockGit.commit).toBeCalledWith(cwd, `Update plugins: ${pluginName}`)
   })
 
