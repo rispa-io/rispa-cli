@@ -14,7 +14,7 @@ const updatePluginSubtree = (projectPath, pluginsPath, plugin) => {
   const pluginsRelPath = path.relative(projectPath, pluginsPath)
   const prefix = `${pluginsRelPath}/${plugin.name}`
 
-  if (!gitUpdateSubtree(projectPath, prefix, plugin.name, plugin.remote)) {
+  if (!gitUpdateSubtree(projectPath, prefix, plugin.name, plugin.remote, plugin.ref)) {
     throw new Error(`Failed update subtree '${plugin.remote}'`)
   }
 }
