@@ -199,7 +199,7 @@ const checkYarnVersion = () => {
     { cwd: process.cwd(), stdio: 'pipe' }
   )
 
-  const [major, minor, patch] = result.status !== 1 ? String(result.output[1]).split('.') : [0, 0, 0]
+  const [major] = result.status !== 1 ? String(result.output[1]).split('.') : [0, 0, 0]
   if (major < 1) {
     console.log(chalk.red(`Required installed ${chalk.green('yarn')} version ${chalk.cyan('>= 1.0.0')}`))
     process.exit(1)
