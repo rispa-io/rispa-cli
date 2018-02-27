@@ -180,19 +180,35 @@ const canRunPlugin = () => {
 const runLocalVersion = (execPath, args) => {
   console.log(chalk.bold.green('Switch to use local version'))
 
-  const result = spawn.sync(
+  const { status } = spawn.sync(
     execPath,
     args,
     {
       cwd: process.cwd(),
       stdio: 'inherit',
     }
-  ).status
+  )
 
-  process.exit(result)
+  process.exit(status)
+}
+
+const checkYarnVersion = () => {
+  const result = spawn.sync(
+    'yarn',
+    ['--version'],
+    { cwd: process.cwd(), stdio: 'pipe' }
+  )
+
+  const [major, minor, patch] = result.status !== 1 ? String(result.output[1]).split('.') : [0, 0, 0]
+  if (major < 1) {
+    console.log(chalk.red(`Required installed ${chalk.green('yarn')} version ${chalk.cyan('>= 1.0.0')}`))
+    process.exit(1)
+  }
 }
 
 const args = process.argv.slice(2)
+
+checkYarnVersion()
 
 const globalRun = isGlobalRun()
 
