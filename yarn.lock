@@ -15,7 +15,7 @@
     eslint-plugin-jsx-a11y "^4.0.0"
     eslint-plugin-react "^6.10.3"
 
-"@rispa/generator@latest":
+"@rispa/generator@>=4.0.0 < 5.0.0":
   version "4.1.4"
   resolved "https://registry.yarnpkg.com/@rispa/generator/-/generator-4.1.4.tgz#eeede1dcf509332665f64899a186953b0b783765"
   dependencies:
