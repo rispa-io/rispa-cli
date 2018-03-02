@@ -1,5 +1,7 @@
 # Rispa CLI [![Build Status](https://api.travis-ci.org/rispa-io/rispa-cli.svg?branch=master)](https://travis-ci.org/rispa-io/rispa-cli)
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/rispa-io/rispa-cli.svg)](https://greenkeeper.io/)
+
 `ris` is the Rispa CLI command line utility that allows to set up project structure, manage plugins, run generators.
 
 * [Getting Started](#getting-started) – How to use.
