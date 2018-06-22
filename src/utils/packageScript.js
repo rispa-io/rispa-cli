@@ -7,6 +7,7 @@ const callPluginScriptByYarn = (runPath, scriptName, args) => (
     {
       cwd: runPath,
       stdio: 'inherit',
+      env: process.env,
     }
   ).status
 )
@@ -18,6 +19,7 @@ const callPluginScriptByNpm = (runPath, scriptName, args) => (
     {
       cwd: runPath,
       stdio: 'inherit',
+      env: process.env,
     }
   ).status
 )

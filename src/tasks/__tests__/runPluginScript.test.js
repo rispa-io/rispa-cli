@@ -28,7 +28,7 @@ describe('createRunPluginScriptTask', () => {
 
     expect(mockCrossSpawn.sync).toBeCalledWith(
       'npm', ['run', scriptName, ...args],
-      { cwd: pluginPath, stdio: 'inherit' }
+      { cwd: pluginPath, stdio: 'inherit', env: process.env }
     )
   })
 
@@ -37,7 +37,7 @@ describe('createRunPluginScriptTask', () => {
 
     expect(mockCrossSpawn.sync).toBeCalledWith(
       'yarn', [scriptName, ...args],
-      { cwd: pluginPath, stdio: 'inherit' }
+      { cwd: pluginPath, stdio: 'inherit', env: process.env }
     )
   })
 
