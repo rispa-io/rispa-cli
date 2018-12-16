@@ -46,12 +46,9 @@ describe('migration command', () => {
     readProjectConfigurationTask.task.mockImplementation(ctx => {
       ctx.configuration = {
         pluginsPath: '',
-        plugins: [
-          pluginName,
-        ],
-        remotes: {
-          [pluginName]: 'url'
-        },
+        plugins: [{
+          name: pluginName,
+        }],
       }
     })
     saveProjectConfigurationTask.task.mockImplementation(() => {})
@@ -68,9 +65,9 @@ describe('migration command', () => {
       ctx.configuration = {
         version: 0,
         pluginsPath: '',
-        plugins: [
-          pluginName,
-        ],
+        plugins: [{
+          name: pluginName,
+        }],
       }
     })
     saveProjectConfigurationTask.task.mockImplementation(() => {})
