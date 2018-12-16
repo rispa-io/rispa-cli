@@ -19,8 +19,8 @@ const migrateProjectConfiguration = {
   },
   task: ctx => {
     const migrationTasks = []
-    const currentVersion = ctx.configuration.version || 1
-    for (let i = currentVersion; i <= CONFIGURATION_VERSION; ++i) { // eslint-disable-line no-plusplus
+    const currentVersion = ctx.configuration.version || 0
+    for (let i = currentVersion; i < CONFIGURATION_VERSION; ++i) { // eslint-disable-line no-plusplus
       migrationTasks.push(createMigrationTask(`v${i}.migration`, require.resolve(`../migrations/v${i}.migration`)))
     }
 
